@@ -1,20 +1,18 @@
 #!/bin/bash
 
 confs="`seq 4510 10 10000`"
-confs="4510"
-confs="`seq 4620 10 4720`"
 confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-t_sources="`seq 0 6 95`"
-t_sources="0"
+t_sources="`seq 0 16 63`"
 
 t_fwd=21
 t_back=21
 s_size=32 # lattice spatial size
 t_size=64 # lattice temporal size
-nvec=128 # rank basis for baryon elementals
-tagcnf="n$nvec"
+max_nvec=128 # number of eigenvector computed
+nvec=64 # Number of eigenvectors used to compute perambulators
+tagcnf="n$max_nvec"
 
 confspath="/global/project/projectdirs/hadron/b6p3"
 chroma="/global/project/projectdirs/hadron/qcd_software/nersc/cori-knl/parscalar/install/chroma-double/bin/chroma"
@@ -101,24 +99,6 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
               </FermionBC>
             </FermState>
           </FermionAction>
-          <!-- InvertParam>
-            <invType>BICGSTAB_INVERTER</invType>
-            <RsdBiCGStab>1.0e-6</RsdBiCGStab>
-            <MaxBiCGStab>20000</MaxBiCGStab>
-          </InvertParam -->
-          <!-- InvertParam>
-          <invType>QPHIX_CLOVER_INVERTER</invType>
-          <SolverType>BICGSTAB</SolverType>
-          <RsdTarget>2e-07</RsdTarget>
-          <MaxIter>1000</MaxIter>
-          <RsdToleranceFactor>5.0</RsdToleranceFactor>
-          <CloverParams>
-               <Mass>-0.2416</Mass>
-               <clovCoeff>1.20536588031793</clovCoeff>
-          </CloverParams>
-          <AntiPeriodicT>true</AntiPeriodicT>
-          <Verbose>true</Verbose>
-          </InvertParam -->
             <InvertParam>
               <invType>MG_PROTO_QPHIX_EO_CLOVER_INVERTER</invType>
               <CloverParams>

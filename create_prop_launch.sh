@@ -19,7 +19,11 @@ fi
 
 
 runpath="$runpath/run_props_$tag"
-[ -d $runpath ] && (echo Error $runpath exists; exit 1)
+if [ -d $runpath ] ; then
+	echo Error $runpath exists;
+	exit 1
+fi
+
 mkdir -p $runpath
 
 jobi="0"

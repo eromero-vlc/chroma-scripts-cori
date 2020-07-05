@@ -1,9 +1,8 @@
 #!/bin/bash
 
-tag="b"
+tag="c"
 nodes_per_job=1
-procs_per_job=32
-max_jobs=10      # maximum jobs running at the same time from a user
+max_jobs=1      # maximum jobs running at the same time from a user
 max_nodes=4   # maximum nodes running at the same time from a user
 
 runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
@@ -20,7 +19,11 @@ fi
 
 
 runpath="$runpath/run_eigss_$tag"
-[ -d $runpath ] && (echo Error $runpath exists; exit 1)
+if [ -d $runpath ] ; then
+	echo Error $runpath exists;
+	exit 1
+fi
+
 mkdir -p $runpath
 
 jobi="0"
