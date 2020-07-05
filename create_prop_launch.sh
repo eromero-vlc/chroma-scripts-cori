@@ -1,15 +1,14 @@
 #!/bin/bash
 
-tag="b"
-nodes_per_job=1
-procs_per_job=32
-max_jobs=10      # maximum jobs running at the same time from a user
-max_nodes=4   # maximum nodes running at the same time from a user
+tag="a"
+nodes_per_job=2
+max_jobs=1      # maximum jobs running at the same time from a user
+max_nodes=16   # maximum nodes running at the same time from a user
 
 runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
 
-for i in `ls $runpath/run_eigs_*/run.bash`; do
-	[ -f ${i}.launched ] || echo $i
+for i in `ls $runpath/run_prop_*/prop_create_run_*.sh`; do
+	[ -f ${i}.launched ] && grep -q 'CHROMA: ran successfully' ${i%.sh}.out &> /dev/null || echo $i
 done > .h_list
 
 num_jobs="`cat .h_list | wc -l`"
@@ -19,7 +18,7 @@ if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
 fi
 
 
-runpath="$runpath/run_eigss_$tag"
+runpath="$runpath/run_props_$tag"
 [ -d $runpath ] && (echo Error $runpath exists; exit 1)
 mkdir -p $runpath
 
@@ -41,32 +40,35 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 2:00:00
-#SBATCH --nodes $(( batch_jobs_size * nodes_per_job ))
-#SBATCH --ntasks-per-node=32
+#SBATCH -t 04:00:00
+#SBATCH -N $(( batch_jobs_size * nodes_per_job ))
 #SBATCH -A hadron
 #SBATCH --qos=regular
-#SBATCH --constraint=haswell
-#SBATCH -J eigs-batch-${tag}-${jobi}
-#DW jobdw capacity=$(( 16 * batch_size ))GB access_mode=striped type=scratch
+#SBATCH --constraint=knl
+#SBATCH -J prop-batch-${tag}-${jobi}
+`
+	cat $batch_jobs | awk '
+		BEGIN {d="";a[0]=0;}
+		/^#DEPENDENCY/ {if (!($2 in a)) {a[$2]=0;if (d) d=d ":" $2; else d=$2;}}
+		END { if (d) print "#SBATCH -d afterok:" d;}'
+`
 
 `
 	j="0"
 	for i in $batch_jobs; do
-		echo MY_OFFSET=\"-r $j\" bash $i "&> ${i%.bash}.out &"
-		j="$(( j+1 ))"
+		echo MY_OFFSET=\"-r $j\" bash $i "&"
+		j="$(( j+nodes_per_job ))"
 	done
 `
 wait
 EOF
 
 	echo Launching bath job $jobi with $batch_jobs_size jobs
-	until sbatch $runpath/run_${jobi}.sh > $runpath/run_${jobi}.sh.launched; do sleep 60; done
+	until sbatch $runpath/run_${jobi}.sh > $runpath/run_${jobi}.sh.launched; do sleep 60; done && sleep 2
 	sbatch_job_id="`awk '/Submitted/ {print $4}' $runpath/run_${jobi}.sh.launched`"
 	for i in $batch_jobs; do
 		echo $sbatch_job_id > ${i}.launched
 	done
-	sleep 1
 	
 	jobi="$(( jobi+1 ))"
 done

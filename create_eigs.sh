@@ -33,8 +33,8 @@ mkdir -p $runpath
 
 localrunpath="$SCRATCH/tmp/run_${tag}_${cfg}"
 stout_file="${localrunpath}/${confsname}.3d.stdout.n${nvec}.mod${cfg}"
-#local_gauge_file="${localrunpath}/${confsname}.3d.gauge.n${nvec}.mod${cfg}"
-#local_colorvec_file="${localrunpath}/${confsname}.3d.eigs.n${nvec}.mod${cfg}"
+local_gauge_file="${localrunpath}/${confsname}.3d.gauge.n${nvec}.mod${cfg}"
+local_colorvec_file="${localrunpath}/${confsname}.3d.eigs.n${nvec}.mod${cfg}"
 
 #
 # Basis creation
@@ -64,7 +64,7 @@ cat << EOF > $runpath/stdout_creation.xml
         <NamedObject>
           <object_type>ArrayLatticeColorMatrix</object_type>
           <input_id>default_gauge_field</input_id>
-          <output_file>$gauge_file</output_file>
+          <output_file>$local_gauge_file</output_file>
         </NamedObject>
       </elem>
       <!-- elem>
@@ -104,6 +104,7 @@ cat << EOFout > $runpath/run.bash
 #SBATCH -A hadron
 #SBATCH --qos=regular
 #SBATCH -J eigs-$cfg
+#DW jobdw capacity=8GB access_mode=striped type=scratch
 
 . /opt/modules/default/init/bash
 module unload PrgEnv-cray
@@ -121,13 +122,14 @@ export OMP_NUM_THREADS=1
 export OMP_PLACES=threads
 export OMP_PROC_BIND=true
 
-#srun -n 1 \$MY_OFFSET ln -s \$DW_JOB_STRIPED $localrunpath
-srun -n 1 \$MY_OFFSET  mkdir -p $localrunpath
-srun -n 1 \$MY_OFFSET rm -rf $localrunpath/*
+srun -N1 -n1 \$MY_OFFSET rm -rf $localrunpath
+srun -N1 -n1 \$MY_OFFSET ln -s \$DW_JOB_STRIPED $localrunpath
+#srun -N1 -n1 \$MY_OFFSET  mkdir -p $localrunpath
 
-srun -n 1 \$MY_OFFSET rm -f $gauge_file ${stout_file}* ${colorvec_file}
+srun -N1 -n1 \$MY_OFFSET rm -f $gauge_file ${stout_file}* ${colorvec_file}
 echo RUNNING chroma
-srun -n 32 \$MY_OFFSET $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 1 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 2 2 2 4
+srun -N1 -n32 \$MY_OFFSET $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 1 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 2 2 2 4
+srun -N1 -n1 \$MY_OFFSET cp $local_gauge_file $gauge_file &
 
 for t_slice in \`seq 0 $((t_size - 1))\` ; do
 
@@ -139,7 +141,7 @@ cat << EOF > $runpath/laplace_eigs.xml
     <Layout>$s_size $s_size $s_size</Layout>
     <LinearOperator>Laplacian</LinearOperator>
     <t_slice>\$t_slice</t_slice>
-    <gauge_file>$gauge_file</gauge_file>
+    <gauge_file>$local_gauge_file</gauge_file>
     <vec_file>${stout_file}_t_\${t_slice}</vec_file>
   </Param>
   <EigenInfo>
@@ -153,7 +155,7 @@ cat << EOF > $runpath/laplace_eigs.xml
 </LaplaceEigs>
 EOF
 echo RUNNING laplace_eigs for slice \$t_slice
-srun -n 32 \$MY_OFFSET $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
+srun -N1 -n32 \$MY_OFFSET $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
 done #t_slice
 
 cat << EOF > $runpath/vecs_combine_3d.xml
@@ -163,12 +165,14 @@ cat << EOF > $runpath/vecs_combine_3d.xml
   <InputFiles>
   `for i in $( seq 0 $((t_size -1 )) ); do echo "<elem>${stout_file}_t_${i}</elem>" ; done`
   </InputFiles>
-  <OutFile>$colorvec_file</OutFile>
+  <OutFile>$local_colorvec_file</OutFile>
 </VecsCombine>
 EOF
 echo RUNNING vecs_combine_3d
-srun -n 1 \$MY_OFFSET $vecs_combine_3d $runpath/vecs_combine_3d.xml vecs_combine.out
-srun -n 1 \$MY_OFFSET rm -f ${stout_file}*
+srun -N1 -n1 \$MY_OFFSET $vecs_combine_3d $runpath/vecs_combine_3d.xml vecs_combine.out
+srun -N1 -n1 \$MY_OFFSET cp $local_colorvec_file $colorvec_file
+srun -N1 -n1 \$MY_OFFSET rm -f ${stout_file}*
+wait
 echo FINISHED
 EOFout
 
