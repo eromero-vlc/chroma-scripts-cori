@@ -1,35 +1,37 @@
 #!/bin/bash
 
-tag="a"
 nodes_per_job=2
 max_jobs=1      # maximum jobs running at the same time from a user
-max_nodes=16   # maximum nodes running at the same time from a user
+max_nodes=32    # maximum nodes running at the same time from a user
 
 runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
 
+h_list="`mktemp`"
 for i in `ls $runpath/run_prop_*/prop_create_run_*.sh`; do
-	[ -f ${i}.launched ] && grep -q 'CHROMA: ran successfully' ${i%.sh}.out &> /dev/null || echo $i
-done > .h_list
+	[ -f ${i}.launched ] || echo $i
+done > $h_list
 
-num_jobs="`cat .h_list | wc -l`"
+num_jobs="`cat $h_list | wc -l`"
 batch_size="$(( (num_jobs + max_jobs - 1) / max_jobs ))"
 if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
 	batch_size="$((max_nodes / nodes_per_job ))"
 fi
 
-
-runpath="$runpath/run_props_$tag"
-if [ -d $runpath ] ; then
-	echo Error $runpath exists;
-	exit 1
-fi
+tag="0"
+runpath_props=""
+while true; do
+	runpath_props="$runpath/run_props_$tag"
+	[ -d $runpath_props ] || break
+	tag="$(( tag+1 ))"
+done
+runpath="$runpath_props"
 
 mkdir -p $runpath
 
 jobi="0"
 (
 	j="0"
-	for i in `cat .h_list`; do
+	for i in `cat $h_list`; do
 		echo -n "$i "
 		j="$(( j+1 ))"
 		[ "$(( j % batch_size ))" -ne 0 ] || echo
@@ -53,7 +55,7 @@ jobi="0"
 `
 	cat $batch_jobs | awk '
 		BEGIN {d="";a[0]=0;}
-		/^#DEPENDENCY/ {if (!($2 in a)) {a[$2]=0;if (d) d=d ":" $2; else d=$2;}}
+		/^#DEPENDENCY/ {if ($2 && !($2 in a)) {a[$2]=0;if (d) d=d ":" $2; else d=$2;}}
 		END { if (d) print "#SBATCH -d afterok:" d;}'
 `
 
@@ -76,3 +78,5 @@ EOF
 	
 	jobi="$(( jobi+1 ))"
 done
+
+rm $h_list	
