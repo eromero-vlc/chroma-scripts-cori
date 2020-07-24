@@ -1,35 +1,37 @@
 #!/bin/bash
 
-tag="c"
 nodes_per_job=1
 max_jobs=1      # maximum jobs running at the same time from a user
 max_nodes=4   # maximum nodes running at the same time from a user
 
 runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
 
+h_list="`mktemp`"
 for i in `ls $runpath/run_eigs_*/run.bash`; do
 	[ -f ${i}.launched ] || echo $i
-done > .h_list
+done > $h_list
 
-num_jobs="`cat .h_list | wc -l`"
+num_jobs="`cat $h_list | wc -l`"
 batch_size="$(( (num_jobs + max_jobs - 1) / max_jobs ))"
 if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
 	batch_size="$((max_nodes / nodes_per_job ))"
 fi
 
-
-runpath="$runpath/run_eigss_$tag"
-if [ -d $runpath ] ; then
-	echo Error $runpath exists;
-	exit 1
-fi
+tag="0"
+runpath_eigs=""
+while true; do
+	runpath_eigs="$runpath/run_eigss_$tag"
+	[ -d $runpath_eigs ] || break
+	tag="$(( tag+1 ))"
+done
+runpath="$runpath_eigs"
 
 mkdir -p $runpath
 
 jobi="0"
 (
 	j="0"
-	for i in `cat .h_list`; do
+	for i in `cat $h_list`; do
 		echo -n "$i "
 		j="$(( j+1 ))"
 		[ "$(( j % batch_size ))" -ne 0 ] || echo
@@ -73,3 +75,5 @@ EOF
 	
 	jobi="$(( jobi+1 ))"
 done
+
+rm $h_list	
