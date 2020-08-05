@@ -31,6 +31,7 @@ echo $lime_file
 runpath="$PWD/${tag}/run_eigs_$cfg"
 mkdir -p $runpath
 
+mkdir -p $SCRATCH/tmp
 localrunpath="$SCRATCH/tmp/run_${tag}_${cfg}"
 stout_file="${localrunpath}/${confsname}.3d.stdout.n${nvec}.mod${cfg}"
 local_gauge_file="${localrunpath}/${confsname}.3d.gauge.n${nvec}.mod${cfg}"
