@@ -5,6 +5,7 @@ confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 t_sources="`seq 0 16 63`"
+zphase="2.00"
 
 t_fwd=21
 t_back=21
@@ -21,7 +22,7 @@ mkdir -p ${confspath}/${confsprefix}/prop_db
 
 for cfg in $confs; do
 
-runpath="$PWD/${tag}/run_prop_$cfg"
+runpath="$PWD/${tag}/run_prop_${zphase}-$cfg"
 mkdir -p $runpath
 
 for t_source in $t_sources; do
@@ -45,11 +46,19 @@ t_offset="`cat h | while read a b; do echo \$b; done`"
 lime_file="${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"
 [ -f $lime_file ] || continue
 gauge_file="${confspath}/${confsprefix}/cfgs_mod/${confsname}.3d.gauge.${tagcnf}.mod${cfg}"
+if [ -n $zphase ]; then
+colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.phased_${zphase}.eigs.${tagcnf}.mod${cfg}"
+else
 colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.${tagcnf}.mod${cfg}"
-colorvec_file_dep="`cat ${runpath}/../run_eigs_${cfg}/run.bash.launched | tr -d '[:blank:]'`"
-if [ -z $colorvec_file_dep ] ; then echo Not found $prop_file; continue; fi
+fi
+#colorvec_file_dep="`cat ${runpath}/../run_eigs_${cfg}/run.bash.launched | tr -d '[:blank:]'`"
+#if [ -z $colorvec_file_dep ] ; then echo Not found $colorvec_file; continue; fi
 
+if [ -n $zphase ]; then
+prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.phased_${zphase}.${tag}.sdb${cfg}"
+else
 prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.${tag}.sdb${cfg}"
+fi
 if [ ! -f $colorvec_file ]; then
 	echo Missing $colorvec_file
 	continue;
@@ -170,7 +179,7 @@ EOF
 cat << EOF > $runpath/prop_create_run_${t_source}.sh
 #!/bin/bash
 #SBATCH -o $runpath/prop_create_run_${t_source}.out0
-#SBATCH -t 0:40:00
+#SBATCH -t 1:30:00
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=4
 #SBATCH --constraint=knl
