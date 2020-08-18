@@ -1,7 +1,7 @@
 #!/bin/bash
 
 confs="`seq 4510 10 10000`"
-confs="4510"
+confs="7800 1000"
 confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 tag="cl21_32_64_b6p3_m0p2350_m0p2050"
@@ -75,13 +75,14 @@ cat << EOF > $runpath/harom_creation.xml
                 <elem>0 0 -3</elem>
         </mom_list -->
         <mom_list>
-<!--                <elem>0 0 0</elem>
-                <elem>0 0 1</elem>
+            <elem>0 0 0</elem>
+<!--                    <elem>0 0 1</elem>
                 <elem>0 0 -1</elem>
                 <elem>0 0 2</elem>
-                <elem>0 0 -2</elem>	-->
-                <elem>0 0 3</elem>
-                <elem>0 0 -3</elem>
+                <elem>0 0 -2</elem>    
+               <elem>0 0 3</elem>
+                <elem>0 0 -3</elem>	-->
+
         </mom_list>
         <num_vecs>${nvec}</num_vecs>
         <displacement_length>1</displacement_length>

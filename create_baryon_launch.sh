@@ -24,7 +24,7 @@ while true; do
 	[ -d $runpath_bars ] || break
 	tag="$(( tag+1 ))"
 done
-runpath="$runpath_eigs"
+runpath="$runpath_bars"
 
 mkdir -p $runpath
 
