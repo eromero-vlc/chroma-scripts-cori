@@ -1,10 +1,11 @@
 #!/bin/bash
 
 confs="`seq 4510 10 10000`"
-confs="7800 1000"
 confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+
+zphase="2.00"
 
 s_size=32 # lattice spatial size
 t_size=64 # lattice temporal size
@@ -19,18 +20,27 @@ mkdir -p ${confspath}/${confsprefix}/baryon_db
 
 for cfg in $confs; do
 
-runpath="$PWD/${tag}/run_bar_$cfg"
+runpath="$PWD/${tag}/run_bar_${zphase}-$cfg"
 mkdir -p $runpath
 
 lime_file="${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"
 [ -f $lime_file ] || continue
 gauge_file="${confspath}/${confsprefix}/cfgs_mod/${confsname}.3d.gauge.${tagcnf}.mod${cfg}"
+if [ -n $zphase ]; then
+colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.phased_${zphase}.eigs.${tagcnf}.mod${cfg}"
+else
 colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.${tagcnf}.mod${cfg}"
+fi
+colorvec_file_dep=""
 
 #colorvec_file_dep="`cat ${runpath}/../run_eigs_${cfg}/run.bash.launched | tr -d '[:blank:]'`"
 #if [ -z $colorvec_file_dep ] ; then echo Not found $colorvec_file; continue; fi
 
+if [ -n $zphase ]; then
+baryon_file="${confspath}/${confsprefix}/baryon_db/${confsname}.n${nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.${tag}.sdb${cfg}"
+else
 baryon_file="${confspath}/${confsprefix}/baryon_db/${confsname}.n${nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).${tag}.sdb${cfg}"
+fi
 
 #
 # Baryon creation
