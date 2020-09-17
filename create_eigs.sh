@@ -51,7 +51,7 @@ cat << EOF > $runpath/stdout_creation.xml
         <Frequency>1</Frequency>
         <Param>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
-          <link_smear_fact>0.08</link_smear_fact>
+          <link_smear_fact>0.1</link_smear_fact>
           <link_smear_num>10</link_smear_num>
           <no_smear_dir>3</no_smear_dir>
         </Param>
@@ -68,14 +68,14 @@ cat << EOF > $runpath/stdout_creation.xml
           <output_file>$local_gauge_file</output_file>
         </NamedObject>
       </elem>
-      <!-- elem>
+      <elem>
         <Name>WRITE_TIMESLICE_MAP_OBJECT_DISK</Name>
         <NamedObject>
           <object_type>ArrayLatticeColorMatrix</object_type>
           <input_id>stout_gauge_field</input_id>
           <output_file>$stout_file</output_file>
         </NamedObject>
-      </elem -->
+      </elem>
     </InlineMeasurements>
     <nrow>$s_size $s_size $s_size $t_size</nrow>
   </Param>
@@ -142,16 +142,16 @@ cat << EOF > $runpath/laplace_eigs.xml
     <Layout>$s_size $s_size $s_size</Layout>
     <LinearOperator>Laplacian</LinearOperator>
     <t_slice>\$t_slice</t_slice>
-    <gauge_file>$local_gauge_file</gauge_file>
+    <gauge_file>$stout_file</gauge_file>
     <vec_file>${stout_file}_t_\${t_slice}</vec_file>
   </Param>
   <EigenInfo>
     <Nev>$nvec</Nev>
     <PrintLevel>3</PrintLevel>
-    <LambdaC>0.3</LambdaC>
+    <LambdaC>0.5</LambdaC>
     <LambdaMax>15</LambdaMax>
-    <NCheb>-1</NCheb>
-    <Tol>1e-05</Tol>
+    <NCheb>8</NCheb>
+    <Tol>1e-06</Tol>
   </EigenInfo>
 </LaplaceEigs>
 EOF
