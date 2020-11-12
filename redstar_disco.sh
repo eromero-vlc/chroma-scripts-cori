@@ -1,7 +1,6 @@
 #!/bin/bash
 
 confs="`seq 1000 10 3160`"
-confs=1000
 confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 tag="cl21_32_64_b6p3_m0p2350_m0p2050"
@@ -33,20 +32,18 @@ lime_file="${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"
 for t_source in $t_sources; do
 
 # Find t_origin
-perl -e " 
-  srand($cfg);
-
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\\n\"
-" > h
-t_origin="`cat h | while read a b; do echo \$a; done`"
-t_offset="`cat h | while read a b; do echo \$b; done`"
+perl_prog="
+	  srand($cfg);
+	
+	  # Call a few to clear out junk                                                                                                          
+	  foreach \$i (1 .. 20)
+	  {
+	    rand(1.0);
+	  }
+	  \$t_origin = int(rand($t_size));
+	  \$t_offset = ($t_source + \$t_origin) % $t_size;
+	  print \"\$t_offset\";"
+t_offset="`perl -e "$perl_prog"`"
 
 momoperatorsZero="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
 momoperatorsNonZero="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
@@ -234,7 +231,7 @@ cat << EOF > $runpath/nuc_3pt_${value}.xml
   <Param>
     <version>11</version>
     <Nt_corr>$t_corr</Nt_corr>
-    <t_origin>$t_origin</t_origin>
+    <t_origin>$t_offset</t_origin>
     <bc_spec>1</bc_spec>
     <diagnostic_level>1</diagnostic_level>
     <convertUDtoL>true</convertUDtoL>
@@ -420,8 +417,8 @@ cat << EOF > $runpath/nuc_3pt_${value}.xml
   <DBFiles>
     <proj_op_xmls>
     </proj_op_xmls>
-    <corr_graph_db>corr_graph.sdb</corr_graph_db>
-    <corr_graph_xml>corr_graph.nuc_3pt.xml</corr_graph_xml>
+    <corr_graph_db>corr_graph_${value}.sdb</corr_graph_db>
+    <corr_graph_xml>corr_graph.nuc_3pt_${value}.xml</corr_graph_xml>
     <noneval_graph_xml>noneval_graph.xml</noneval_graph_xml>
     <smeared_hadron_node_xml>smeared_hadron_node.xml</smeared_hadron_node_xml>
     <unsmeared_hadron_node_xml>unsmeared_hadron_node.xml</unsmeared_hadron_node_xml>
@@ -447,14 +444,18 @@ cat << EOF > $runpath/run.sh
 `
         echo "#CREATES" $final_db
 `
+
+COMPILER_SUITE=/dist/intel/parallel_studio_2019/parallel_studio_xe_2019
+source  \${COMPILER_SUITE}/psxevars.sh intel64
+
 cd $runpath
 export MKL_NUM_THREADS=1
-export OMP_NUM_THREADS=14
+export OMP_NUM_THREADS=4
 
 echo
 echo "RUNINIG" $redstar_gen_graph nuc_3pt_true.xml out.xml
 echo
-rm -f smeared_hadron_node.sdb unsmeared_hadron_node.sdb graph.sdb $final_db noneval_graph.xml smeared_hadron_node.xml unsmeared_hadron_node.xml graph.sdb corr_graph.sdb
+rm -f smeared_hadron_node.sdb unsmeared_hadron_node.sdb graph.sdb $final_db noneval_graph.xml smeared_hadron_node.xml unsmeared_hadron_node.xml graph.sdb corr_graph*.sdb
 $redstar_gen_graph nuc_3pt_true.xml out.xml
 
 echo
