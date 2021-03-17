@@ -2,12 +2,12 @@
 
 nodes_per_job=2
 max_jobs=1      # maximum jobs running at the same time from a user
-max_nodes=32    # maximum nodes running at the same time from a user
+max_nodes=128    # maximum nodes running at the same time from a user
 
 runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
 
 h_list="`mktemp`"
-for i in `ls $runpath/run_prop_*/prop_create_run_*.sh`; do
+for i in `ls $runpath/run_prop_*/prop_create_run_*.sh|sort`; do
 	[ -f ${i}.launched ] || echo $i
 done > $h_list
 
@@ -46,7 +46,7 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 04:00:00
+#SBATCH -t 03:00:00
 #SBATCH -N $(( batch_jobs_size * nodes_per_job ))
 #SBATCH -A hadron
 #SBATCH --qos=regular
