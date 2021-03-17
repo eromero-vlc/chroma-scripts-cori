@@ -4,7 +4,7 @@ confs="`seq 4510 10 10000`"
 confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-t_sources="`seq 0 16 63`"
+t_sources="`seq 0 1 63`"
 zphase="2.00"
 
 t_fwd=21
@@ -12,11 +12,10 @@ t_back=21
 s_size=32 # lattice spatial size
 t_size=64 # lattice temporal size
 max_nvec=128 # number of eigenvector computed
-nvec=64 # Number of eigenvectors used to compute perambulators
+nvec=96 # Number of eigenvectors used to compute perambulators
 tagcnf="n$max_nvec"
-
 confspath="/global/project/projectdirs/hadron/b6p3"
-chroma="/global/project/projectdirs/hadron/qcd_software/nersc/cori-knl/parscalar/install/chroma-double/bin/chroma"
+chroma="/global/project/projectdirs/hadron/qcd_software/nersc/cori-knl/parscalar/install/chroma2-double/bin/chroma"
 
 mkdir -p ${confspath}/${confsprefix}/prop_db
 
@@ -46,22 +45,19 @@ t_offset="`cat h | while read a b; do echo \$b; done`"
 lime_file="${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"
 [ -f $lime_file ] || continue
 gauge_file="${confspath}/${confsprefix}/cfgs_mod/${confsname}.3d.gauge.${tagcnf}.mod${cfg}"
-if [ -n $zphase ]; then
+if [ "X${zphase}X" != XX ]; then
 colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.phased_${zphase}.eigs.${tagcnf}.mod${cfg}"
 else
 colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.${tagcnf}.mod${cfg}"
 fi
+colorvec_file_dep=""
 #colorvec_file_dep="`cat ${runpath}/../run_eigs_${cfg}/run.bash.launched | tr -d '[:blank:]'`"
 #if [ -z $colorvec_file_dep ] ; then echo Not found $colorvec_file; continue; fi
 
-if [ -n $zphase ]; then
-prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.phased_${zphase}.${tag}.sdb${cfg}"
+if [ "X${zphase}X" != XX ]; then
+prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.phased_${zphase}.sdb${cfg}"
 else
-prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.${tag}.sdb${cfg}"
-fi
-if [ ! -f $colorvec_file ]; then
-	echo Missing $colorvec_file
-	continue;
+prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}"
 fi
 
 #
@@ -87,6 +83,7 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
           <Nt_backward>$t_back</Nt_backward>
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
+          <max_rhs>4</max_rhs>
         </Contractions>
         <Propagator>
           <version>10</version>
