@@ -119,7 +119,7 @@ module load python3
 
 cd $runpath
 export MKL_NUM_THREADS=1
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=64
 export OMP_PLACES=threads
 export OMP_PROC_BIND=true
 
