@@ -1,7 +1,6 @@
 #!/bin/bash
 
-confsdir="/global/project/projectdirs/hadron/b6p3"
-confsdir="$SCRATCH/b6p3"
+confsdir="$HOME/b6p3"
 
 t="`mktemp`"
 for i in `find $confsdir -name '*.globus'` ; do

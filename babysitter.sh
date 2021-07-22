@@ -1,11 +1,12 @@
 #!/bin/bash
 
-. ~/py3/bin/activate
+#. ~/py3/bin/activate
+export LANG=en_US.utf8
 
 while true; do
 	date
 	echo "Current state of the queue"
-	squeue -u $USER
+	bjobs
 	echo "Checking..."
 	bash chroma-scripts-cori/create_genprop_check.sh
 	bash chroma-scripts-cori/create_genprop_clean.sh

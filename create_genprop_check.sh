@@ -20,12 +20,14 @@ transfer () {
 	done
 }
 
+queue="`mktemp`"
+bjobs &> $queue
 ok=0
 fail=0
 nan=0
 for i in $runpath/run_gprop_*/*.launched ; do
 	[ -f ${i%.sh.launched}.verified ] && continue
-	squeue -j `cat $i` &> /dev/null && continue
+	grep -q `cat $i` $queue &> /dev/null && continue
 	if grep -q 'nan' ${i%.sh.launched}.out &> /dev/null ; then
 		echo Removing $i
 		nan="$(( nan+1 ))"

@@ -22,29 +22,35 @@ confsname="cl21_48_96_b6p3_m0p2416_m0p2050-1200"
 tag="cl21_48_96_b6p3_m0p2416_m0p2050-1200"
 ensemble="cl21_48_96_b6p3_m0p2416_m0p2050"
 
+confs="`seq 2430 10 5410`"
+confsprefix="cl21_48_96_b6p3_m0p2416_m0p2050-djm-streams/cl21_48_96_b6p3_m0p2416_m0p2050"
+confsname="cl21_48_96_b6p3_m0p2416_m0p2050"
+tag="cl21_48_96_b6p3_m0p2416_m0p2050-djm-streams"
+ensemble="cl21_48_96_b6p3_m0p2416_m0p2050"
+
 s_size=48 # lattice spatial size
 t_size=96 # lattice temporal size
 max_nvec=128 # number of eigenvector computed
 nvec=128 # Number of eigenvectors used to compute perambulators
 tagcnf="n$max_nvec"
-origconfspath="/global/project/projectdirs/hadron/b6p3"
-confspath="/global/cscratch1/sd/eromero/b6p3"
-chroma="/global/project/projectdirs/hadron/qcd_software_alt/nersc/cori-knl/install/chroma2-double/bin/chroma"
-chroma="/global/project/projectdirs/hadron/chromaform/install-knl/chroma2-mgproto-qphix-avx512/bin/chroma"
-chroma_python="/global/project/projectdirs/hadron/runs-eloy/chroma_python"
+confspath="$HOME/b6p3"
+chromaform="$HOME/chromaform0"
+chroma="$chromaform/install/chroma2-quda-qdp-jit-double-nd4/bin/chroma"
+chroma_python="$HOME/runs/chroma_python"
 
-this_ep="9d6d99eb-6d04-11e5-ba46-22000b92c6ec:"
+this_ep="ef1a9560-7ca1-11e5-992c-22000b96db58:"
 jlab_ep="a6fccca2-d1a2-11e5-9a63-22000b96db58:~/qcd/cache/isoClover/"
 
 for t_source in $t_sources; do
    mkdir -p ${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}
 done
-for d in cfgs cfgs_mod eigs_mod ; do
-rm -f ${confspath}/${confsprefix}/$d
-ln -s ${origconfspath}/${confsprefix}/$d ${confspath}/${confsprefix}/$d
-done
+#for d in cfgs cfgs_mod eigs_mod ; do
+#rm -f ${confspath}/${confsprefix}/$d
+#ln -s ${origconfspath}/${confsprefix}/$d ${confspath}/${confsprefix}/$d
+#done
 
 MG_PARAM_FILE="`mktemp`"
+#MGPROTO
 cat <<EOF > $MG_PARAM_FILE
 AntiPeriodicT                 True
 MGLevels                      3
@@ -63,6 +69,23 @@ VCyclePostSmootherRsdTarget   0.06:0.06
 VCycleBottomSolverMaxIters    100:100
 VCycleBottomSolverNKrylov     8:8
 VCycleBottomSolverRsdTarget   0.06:0.06
+EOF
+
+# QUDA
+cat <<EOF > $MG_PARAM_FILE
+RsdTarget                 1.0e-7
+AntiPeriodicT             True
+SolverType                GCR
+Blocking		  3,3,4,3:2,2,2,2
+NullVectors		  24:32
+SmootherType		  CA_GCR:CA_GCR:CA_GCR
+SmootherTol               0.25:0.25:0.25
+CoarseSolverType	  GCR:CA_GCR
+CoarseResidual            0.1:0.1:0.1
+Pre-SmootherApplications  0:0
+Post-SmootherApplications 8:8
+SubspaceSolver            CG:CG
+RsdTargetSubspaceCreate   5e-06:5e-06
 EOF
 
 lowDispBound=8 # EXCLUSIVE!
@@ -143,39 +166,40 @@ fi
 
 N_COLOR_FILES=1
 if [ "X${zphase}X" != XX ]; then
-python $chroma_python/unsmeared_hadron_node.py  -c ${cfg} -e ${ensemble} -g ${lime_file_pre} -n ${nvec} -f ${N_COLOR_FILES} -v ${colorvec_file_pre} -t ${t_offset} -k ${t_seps_commas} -p ${gprop_file_prefix} -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QPHIX-MG --genprop5 --phase "0.00 0.00 $zphase"  --max-rhs 8 --multiple-writers > $runpath/gprop_creation_${t_source}.xml
+python $chroma_python/unsmeared_hadron_node.py  -c ${cfg} -e ${ensemble} -g ${lime_file_pre} -n ${nvec} -f ${N_COLOR_FILES} -v ${colorvec_file_pre} -t ${t_offset} -k ${t_seps_commas} -p ${gprop_file_prefix} -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --genprop5 --phase "0.00 0.00 $zphase"  --max-rhs 1 --multiple-writers --max_tslices_contractions 4 > $runpath/gprop_creation_${t_source}.xml
 else
-python $chroma_python/unsmeared_hadron_node.py  -c ${cfg} -e ${ensemble} -g ${lime_file_pre} -n ${nvec} -f ${N_COLOR_FILES} -v ${colorvec_file_pre} -t ${t_offset} -k ${t_seps_commas} -p ${gprop_file_prefix} -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QPHIX-MG --genprop5 --max-rhs 8 --multiple-writers > $runpath/gprop_creation_${t_source}.xml
+python $chroma_python/unsmeared_hadron_node.py  -c ${cfg} -e ${ensemble} -g ${lime_file_pre} -n ${nvec} -f ${N_COLOR_FILES} -v ${colorvec_file_pre} -t ${t_offset} -k ${t_seps_commas} -p ${gprop_file_prefix} -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --genprop5 --max-rhs 1 --multiple-writers --max_tslices_contractions 4 > $runpath/gprop_creation_${t_source}.xml
 fi
 
+LT=4
 cat << EOF > $runpath/gprop_create_run_${t_source}.sh
 #!/bin/bash
-#SBATCH -o $runpath/gprop_create_run_${t_source}.out0
-#SBATCH -t 8:00:00
-#SBATCH --nodes=72
-#SBATCH --ntasks-per-node=4
-#SBATCH --constraint=knl
-#SBATCH -A hadron
-#SBATCH --qos=regular
-#SBATCH -J gprop-${cfg}-${t_source}
+#BSUB -P LGT115
+#BSUB -W 2:00
+#BSUB -nnodes 16
+#BSUB -alloc_flags "gpumps smt1"
+#BSUB -J gprop-${cfg}-${t_source}
+#BSUB -o $runpath/gprop_create_run_${t_source}.out0
 #DEPENDENCY $colorvec_file_dep
 `
-	for (( i=1 ; i<=8 ; i++ )); do
+	for (( i=1 ; i<=LT ; i++ )); do
 		echo "#CREATE ${gprop_file}"
-		echo "#GLOBUS_COPY ${this_ep}${gprop_file}.${i}_outof_8 ${jlab_ep}${gprop_file_globus}.${i}_outof_8"
+		echo "#GLOBUS_COPY ${this_ep}${gprop_file}.${i}_outof_$LT ${jlab_ep}${gprop_file_globus}.${i}_outof_$LT"
 	done
 `
-
+source $chromaform/env.sh
 cd $runpath
-export MKL_NUM_THREADS=64
-export OMP_NUM_THREADS=64
-export OMP_PLACES=threads
-export OMP_PROC_BIND=spread
+export SB_LOG=1
+export SB_DEBUG=0
+export SB_ASYNC_ALLTOALL=0
+export OMP_NUM_THREADS=7
+export SB_TRACK_MEM=0
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5
 
 rm -f ${gprop_file}.*
 
-echo srun -n288 -c68 -N72 \$MY_OFFSET --cpu_bind=cores $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 64 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/gprop_creation_${t_source}.xml  -geom 3 3 4 8 &> $runpath/gprop_create_run_${t_source}.out
-srun -n288 -c68 -N72 \$MY_OFFSET --cpu_bind=cores $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 64 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/gprop_creation_${t_source}.xml  -geom 3 3 4 8 &>> $runpath/gprop_create_run_${t_source}.out
+echo jsrun -n96 -g1 -r6 -c7 -a1 $chroma -i $runpath/gprop_creation_${t_source}.xml -geom 2 4 3 4 -pool-max-alloc 0 -pool-max-alignment 512 &> $runpath/gprop_create_run_${t_source}.out
+jsrun -n96 -g1 -r6 -c7 -a1 $chroma -i $runpath/gprop_creation_${t_source}.xml -geom 2 4 3 4 -pool-max-alloc 0 -pool-max-alignment 512 &>> $runpath/gprop_create_run_${t_source}.out
 EOF
 
 done # t_source
