@@ -1,10 +1,10 @@
 #!/bin/bash
 
-nodes_per_job=1
+nodes_per_job=4
 max_jobs=1      # maximum jobs running at the same time from a user
 max_nodes=4   # maximum nodes running at the same time from a user
 
-runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
+runpath="$PWD/cl21_48_128_b6p5_m0p2070_m0p1750"
 
 h_list="`mktemp`"
 for i in `ls $runpath/run_eigs_*/run.bash`; do
@@ -46,15 +46,12 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 3:00:00
 #SBATCH --nodes $(( batch_jobs_size * nodes_per_job ))
-#SBATCH --ntasks-per-node=32
-#SBATCH -A hadron
-#SBATCH --qos=regular
-#SBATCH --constraint=haswell
 #SBATCH -J eigs-batch-${tag}-${jobi}
-#DW jobdw capacity=$(( 16 * batch_size ))GB access_mode=striped type=scratch
-
+#SBATCH -t 8:00:00
+#SBATCH --ntasks-per-node=2
+#SBATCH --cpus-per-task=20
+#SBATCH --account=cib@cpu
 `
 	j="0"
 	for i in $batch_jobs; do

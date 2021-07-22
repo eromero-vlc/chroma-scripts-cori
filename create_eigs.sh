@@ -1,18 +1,20 @@
 #!/bin/bash
 
-confs="`seq 4510 10 10000`"
-confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
-confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+confs="`seq 800 10 4000`"
+confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
+confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
+tag="cl21_48_128_b6p5_m0p2070_m0p1750"
 
-s_size=32 # lattice spatial size
-t_size=64 # lattice temporal size
+s_size=48 # lattice spatial size
+t_size=128 # lattice temporal size
 nvec=128  # number of eigenvectors
 
-confspath="/global/project/projectdirs/hadron/b6p3"
-chroma="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/chroma/bin/chroma"
-laplace_eigs="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/laplace_eigs/laplace_eigs"
-vecs_combine_3d="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/laplace_eigs/vecs_combine_3d"
+confspath="/gpfsdswork/projects/rech/ual/uie52up/ppdfs"
+chromaform="\$HOME/scratch/chromaform2"
+chroma="$chromaform/install/chroma2-mgproto-qphix-qdpxx-double-nd4/bin/chroma"
+chroma="$chromaform/install/chroma-qdpxx-single-nd4/bin/chroma"
+laplace_eigs="$chromaform/install/laplace_eigs-qdpxx-single-nd3/laplace_eigs"
+vecs_combine_3d="$chromaform/install/laplace_eigs-qdpxx-single-nd3/vecs_combine_3d"
 
 
 mkdir -p ${confspath}/${confsprefix}/stout_mod
@@ -31,11 +33,7 @@ echo $lime_file
 runpath="$PWD/${tag}/run_eigs_$cfg"
 mkdir -p $runpath
 
-mkdir -p $SCRATCH/tmp
-localrunpath="$SCRATCH/tmp/run_${tag}_${cfg}"
-stout_file="${localrunpath}/${confsname}.3d.stdout.n${nvec}.mod${cfg}"
-local_gauge_file="${localrunpath}/${confsname}.3d.gauge.n${nvec}.mod${cfg}"
-local_colorvec_file="${localrunpath}/${confsname}.3d.eigs.n${nvec}.mod${cfg}"
+stout_file="${confspath}/${confsprefix}/stout_mod/${confsname}.3d.stdout.n${nvec}.mod${cfg}"
 
 #
 # Basis creation
@@ -51,7 +49,7 @@ cat << EOF > $runpath/stdout_creation.xml
         <Frequency>1</Frequency>
         <Param>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
-          <link_smear_fact>0.1</link_smear_fact>
+          <link_smear_fact>0.08</link_smear_fact>
           <link_smear_num>10</link_smear_num>
           <no_smear_dir>3</no_smear_dir>
         </Param>
@@ -65,7 +63,7 @@ cat << EOF > $runpath/stdout_creation.xml
         <NamedObject>
           <object_type>ArrayLatticeColorMatrix</object_type>
           <input_id>default_gauge_field</input_id>
-          <output_file>$local_gauge_file</output_file>
+          <output_file>$gauge_file</output_file>
         </NamedObject>
       </elem>
       <elem>
@@ -98,39 +96,25 @@ EOF
 cat << EOFout > $runpath/run.bash
 #!/bin/bash
 #SBATCH -o $runpath/eig_create_run.out
-#SBATCH -t 0:40:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=32
-#SBATCH --constraint=haswell
-#SBATCH -A hadron
-#SBATCH --qos=regular
+#SBATCH -t 4:00:00
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=2
+#SBATCH --cpus-per-task=20
+#SBATCH --account=cib@cpu
 #SBATCH -J eigs-$cfg
-#DW jobdw capacity=8GB access_mode=striped type=scratch
 
-. /opt/modules/default/init/bash
-module unload PrgEnv-cray
-module unload PrgEnv-intel
-module unload PrgEnv-pgi
-module unload PrgEnv-gnu
-module unload darshan
-module load PrgEnv-intel
-module load craype-haswell
-module load python3
+. $chromaform/env.sh
 
 cd $runpath
-export MKL_NUM_THREADS=1
-export OMP_NUM_THREADS=64
-export OMP_PLACES=threads
-export OMP_PROC_BIND=true
+export MKL_NUM_THREADS=20
+export OMP_NUM_THREADS=20
+#export OMP_PLACES=threads
+#export OMP_PROC_BIND=true
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$chromaform/install/primme/lib
 
-srun -N1 -n1 \$MY_OFFSET rm -rf $localrunpath
-srun -N1 -n1 \$MY_OFFSET ln -s \$DW_JOB_STRIPED $localrunpath
-#srun -N1 -n1 \$MY_OFFSET  mkdir -p $localrunpath
-
-srun -N1 -n1 \$MY_OFFSET rm -f $gauge_file ${stout_file}* ${colorvec_file}
+rm -f $gauge_file ${stout_file}* ${colorvec_file}
 echo RUNNING chroma
-srun -N1 -n32 \$MY_OFFSET $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 1 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 2 2 2 4
-srun -N1 -n1 \$MY_OFFSET cp $local_gauge_file $gauge_file &
+srun $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c \$OMP_NUM_THREADS -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 1 1 2 4
 
 for t_slice in \`seq 0 $((t_size - 1))\` ; do
 
@@ -148,15 +132,15 @@ cat << EOF > $runpath/laplace_eigs.xml
   <EigenInfo>
     <Nev>$nvec</Nev>
     <PrintLevel>3</PrintLevel>
-    <LambdaC>0.5</LambdaC>
+    <LambdaC>0.3</LambdaC>
     <LambdaMax>15</LambdaMax>
-    <NCheb>8</NCheb>
-    <Tol>1e-06</Tol>
+    <NCheb>-1</NCheb>
+    <Tol>1e-05</Tol>
   </EigenInfo>
 </LaplaceEigs>
 EOF
 echo RUNNING laplace_eigs for slice \$t_slice
-srun -N1 -n32 \$MY_OFFSET $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
+srun  $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
 done #t_slice
 
 cat << EOF > $runpath/vecs_combine_3d.xml
@@ -166,14 +150,11 @@ cat << EOF > $runpath/vecs_combine_3d.xml
   <InputFiles>
   `for i in $( seq 0 $((t_size -1 )) ); do echo "<elem>${stout_file}_t_${i}</elem>" ; done`
   </InputFiles>
-  <OutFile>$local_colorvec_file</OutFile>
+  <OutFile>${colorvec_file}</OutFile>
 </VecsCombine>
 EOF
 echo RUNNING vecs_combine_3d
-srun -N1 -n1 \$MY_OFFSET $vecs_combine_3d $runpath/vecs_combine_3d.xml vecs_combine.out
-srun -N1 -n1 \$MY_OFFSET cp $local_colorvec_file $colorvec_file
-srun -N1 -n1 \$MY_OFFSET rm -f ${stout_file}*
-wait
+srun  $vecs_combine_3d $runpath/vecs_combine_3d.xml vecs_combine.out
 echo FINISHED
 EOFout
 

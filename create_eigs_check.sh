@@ -1,6 +1,6 @@
 #!/bin/bash
 
-runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
+runpath="$PWD/cl21_48_128_b6p5_m0p2070_m0p1750"
 
 for i in `ls $runpath/run_eigs{,phase}_*/*.launched` ; do
 	[ -f ${i%.bash.launched}.verified ] && continue
