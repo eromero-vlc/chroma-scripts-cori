@@ -1,6 +1,6 @@
 #!/bin/bash
 
-runpath="$PWD/cl21_48_96_b6p3_m0p2416_m0p2050*"
+runpath="$PWD/cl21*"
 
 clean () {
 	tsk="$1"
@@ -46,6 +46,9 @@ echo OK: $ok  Fails: $fail  nan: $nan
 
 # Transfer files
 if [ -f $t ] ; then
+        cat $t | while read orig dest ; do
+                echo pending $orig $dest > ${orig#*:}.globus
+        done
 	origep="`head -1 $t | while read orig dest ; do  echo ${orig%:*} ; done`"
 	destep="`head -1 $t | while read orig dest ; do  echo ${dest%:*} ; done`"
 	cat $t | while read orig dest ; do

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-nodes_per_job=2
+nodes_per_job=32
 max_jobs=1      # maximum jobs running at the same time from a user
-max_nodes=128    # maximum nodes running at the same time from a user
+max_nodes=128   # maximum nodes running at the same time from a user
 
-runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
+runpath="$PWD/cl21_48_128_b6p5_m0p2070_m0p1750"
 
 h_list="`mktemp`"
 for i in `ls $runpath/run_prop_*/prop_create_run_*.sh|sort`; do
@@ -16,6 +16,7 @@ batch_size="$(( (num_jobs + max_jobs - 1) / max_jobs ))"
 if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
 	batch_size="$((max_nodes / nodes_per_job ))"
 fi
+batch_size=1
 
 tag="0"
 runpath_props=""
@@ -48,10 +49,12 @@ jobi="0"
 #SBATCH -o $runpath/run_${jobi}.out
 #SBATCH -t 03:00:00
 #SBATCH -N $(( batch_jobs_size * nodes_per_job ))
-#SBATCH -A hadron
-#SBATCH --qos=regular
-#SBATCH --constraint=knl
 #SBATCH -J prop-batch-${tag}-${jobi}
+#SBATCH --account=qjs@gpu
+#SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=10
+#SBATCH --hint=nomultithread
+#SBATCH --gres=gpu:4
 `
 	cat $batch_jobs | awk '
 		BEGIN {d="";a[0]=0;}

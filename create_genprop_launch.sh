@@ -1,12 +1,10 @@
 #!/bin/bash
 
-nodes_per_job=72
+nodes_per_job=32
 max_jobs=1      # maximum jobs running at the same time from a user
 max_nodes=1100   # maximum nodes running at the same time from a user
 
-runpath="$PWD/cl21_48_96_b6p3_m0p2416_m0p2050"
-runpath="$PWD/cl21_48_96_b6p3_m0p2416_m0p2050-1000"
-runpath="$PWD/cl21_48_96_b6p3_m0p2416_m0p2050-1200"
+runpath="$PWD/cl21_48_128_b6p5_m0p2070_m0p1750"
 
 h_list="`mktemp`"
 for i in `ls $runpath/run_gprop_*/gprop_create_run_*.sh|sort`; do
@@ -18,6 +16,7 @@ batch_size="$(( (num_jobs + max_jobs - 1) / max_jobs ))"
 if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
 	batch_size="$((max_nodes / nodes_per_job ))"
 fi
+batch_size=1
 
 tag="0"
 runpath_props=""
@@ -48,12 +47,13 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 04:30:00
-#SBATCH -N $(( batch_jobs_size * nodes_per_job ))
-#SBATCH -A hadron
-#SBATCH --qos=regular
+#SBATCH --account=ual@gpu
 #SBATCH --ntasks-per-node=4
-#SBATCH --constraint=knl
+#SBATCH --cpus-per-task=10
+#SBATCH --hint=nomultithread
+#SBATCH --time=3:00:00
+#SBATCH --gres=gpu:4
+#SBATCH -N $(( batch_jobs_size * nodes_per_job ))
 #SBATCH -J gprop-batch-${tag}-${jobi}
 `
 	cat $batch_jobs | awk '
