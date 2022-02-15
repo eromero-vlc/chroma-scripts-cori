@@ -3,7 +3,8 @@
 confsdir="/gpfsdswork/projects/rech/ual/uie52up/ppdfs/cl21_48_128_b6p5_m0p2070_m0p1750"
 
 t="`mktemp`"
-for i in `find $confsdir -name '*.globus'` ; do
+for i in `find -L $confsdir -name '*.globus'` ; do
+	echo checking $i
 	cat $i | while read globus_task orig dest ; do
 		if [ $globus_task == pending ]; then
 			status="FAILED"

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 confs="`seq 800 10 4000`"
-confs=1010
 confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
 confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
@@ -15,13 +14,14 @@ t_size=128 # lattice temporal size
 
 t_sources="`seq 0 24 95`"
 t_seps="4 6 8 10 12 14"
-zphase="0.00"
+zphase="3.00"
 
 max_nvec=128 # number of eigenvector computed
 nvec=128 # Number of eigenvectors used to compute perambulators
 tagcnf="n$max_nvec"
 confspath="/gpfsdswork/projects/rech/ual/uie52up/ppdfs"
-chromaform="\$HOME/work/chromaform"
+chromaform="/gpfswork/rech/ual/uie52up/chromaform"
+chromaform="\$HOME/work/chromaform2"
 chroma="$chromaform/install/chroma2-quda-qdp-jit-double-nd4/bin/chroma"
 chroma_python="/gpfsdswork/projects/rech/ual/uie52up/chroma-scripts-cori/chroma_python"
 
@@ -147,7 +147,7 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
       <Frequency>1</Frequency>
       <Param>
         <Contractions>
-          <mass_label>U-0.2350</mass_label>
+          <mass_label>U-0.2070</mass_label>
           <num_vecs>$nvec</num_vecs>
           <t_sources>$t_offset</t_sources>
           <Nt_forward>$t_fwd</Nt_forward>
@@ -208,7 +208,7 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
                 <Precision>HALF</Precision>
                 <Reconstruct>RECONS_8</Reconstruct>
                 <Blocking>
-                  <elem>3 3 3 4</elem>
+                  <elem>3 3 4 4</elem>
                   <elem>2 2 2 2</elem>
                 </Blocking>
                 <CoarseSolverType>
@@ -320,13 +320,13 @@ cat << EOF > $runpath/prop_create_run_${t_source}.sh
 #SBATCH -o $runpath/gprop_create_run_${t_source}.out0
 #SBATCH --account=qjs@gpu
 #SBATCH --job-name=prop48_128
-##SBATCH --constraint=v100-32g
-#SBATCH --nodes=64
-#SBATCH --ntasks=256
+##SBATCH --constraint=v100-16g
+#SBATCH --nodes=32
+#SBATCH --ntasks=128
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=10
 #SBATCH --hint=nomultithread
-#SBATCH --time=0:30:00
+#SBATCH --time=4:00:00
 #SBATCH --gres=gpu:4
 #DEPENDENCY $colorvec_file_dep
 
@@ -339,7 +339,7 @@ export OMP_PROC_BIND=spread
 . $chromaform/env.sh
 rm -f $prop_file
 
-srun -N64 -n256 -c10 \$MY_OFFSET --cpu_bind=cores $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 10 -sy 1 -sz 1 -minct 1 -pool-max-alloc 0 -pool-max-alignment 512 -i $runpath/prop_creation_${t_source}.xml  -geom 2 4 4 8 &> $runpath/prop_create_run_${t_source}.out
+srun -N32 -n128 -c10 \$MY_OFFSET --cpu_bind=cores $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 10 -sy 1 -sz 1 -minct 1 -pool-max-alloc 0 -pool-max-alignment 512 -i $runpath/prop_creation_${t_source}.xml  -geom 2 4 2 8 &> $runpath/prop_create_run_${t_source}.out
 EOF
 
 done # t_source

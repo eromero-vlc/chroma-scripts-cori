@@ -1,6 +1,7 @@
 #!/bin/bash
 
 confs="`seq 800 10 4000`"
+confs="`seq 3810 10 7630`"
 confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
 confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
@@ -13,14 +14,17 @@ t_size=128 # lattice temporal size
 t_sources="`seq 0 24 95`"
 t_seps="4 6 8 10 12 14"
 zphase="1.00"
-zphase="-3.00"
+zphase="-2.00"
+zphase="-1.00"
 
 max_nvec=128 # number of eigenvector computed
 nvec=128  # number of eigenvectors
 tagcnf="n$max_nvec"
 confspath="/gpfsdswork/projects/rech/ual/uie52up/ppdfs"
-chromaform="\$HOME/scratch/chromaform2"
-chroma="$chromaform/install/chroma2-quda-qdp-jit-double-nd4/bin/chroma"
+chromaform="\$HOME/work/chromaform2"
+chroma="$chromaform/install/chroma2-quda-qdp-jit-no-concepts-double-nd4/bin/chroma"
+chromaform="\$HOME/work/chromaform"
+chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4/bin/chroma"
 chroma_python="/gpfsdswork/projects/rech/ual/uie52up/chroma-scripts-cori/chroma_python"
 
 this_ep="9d6d99eb-6d04-11e5-ba46-22000b92c6ec:"
@@ -157,9 +161,9 @@ LT=4
 cat << EOF > $runpath/gprop_create_run_${t_source}.sh
 #!/bin/bash
 #SBATCH -o $runpath/gprop_create_run_${t_source}.out0
-#SBATCH --account=ual@gpu
+#SBATCH --account=qjs@gpu
 #SBATCH --job-name=gprop48_128
-##SBATCH --constraint=v100-32g
+#SBATCH --constraint=v100-16g
 #SBATCH --nodes=32
 #SBATCH --ntasks=128
 #SBATCH --ntasks-per-node=4
@@ -167,6 +171,7 @@ cat << EOF > $runpath/gprop_create_run_${t_source}.sh
 #SBATCH --hint=nomultithread
 #SBATCH --time=8:00:00
 #SBATCH --gres=gpu:4
+#SBATCH --exclusive
 #DEPENDENCY $colorvec_file_dep
 `
 	for (( i=1 ; i<=LT ; i++ )); do
@@ -183,10 +188,14 @@ export SB_ASYNC_ALLTOALL=0
 export SB_UNPACK_ALT=1 
 export OMP_NUM_THREADS=12
 export SB_TRACK_MEM=1
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
+export GPU_DEVICE_ORDINAL="0,1,2,3"
 
 rm -f ${gprop_file}.*
 . $chromaform/env.sh
 
+#srun env &>  $runpath/gprop_create_run_${t_source}.out
+#srun nvidia-smi &>>  $runpath/gprop_create_run_${t_source}.out
 echo srun -n128 -c10 -N32 \$MY_OFFSET $chroma -i $runpath/gprop_creation_${t_source}.xml  -geom 2 4 2 8 -pool-max-alloc 0 -pool-max-alignment 512 > $runpath/gprop_create_run_${t_source}.out
 srun -n128 -c10 -N32 \$MY_OFFSET $chroma -i $runpath/gprop_creation_${t_source}.xml  -geom 2 4 2 8 -pool-max-alloc 0 -pool-max-alignment 512 &>> $runpath/gprop_create_run_${t_source}.out
 EOF

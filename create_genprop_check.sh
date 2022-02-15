@@ -23,9 +23,12 @@ transfer () {
 ok=0
 fail=0
 nan=0
+sq="`mktemp`"
+squeue -u $USER --array > $sq
 for i in $runpath/run_gprop_*/*.launched ; do
 	[ -f ${i%.sh.launched}.verified ] && continue
-	squeue -j `cat $i` &> /dev/null && continue
+	#squeue -j `cat $i` &> /dev/null && continue
+	grep "\<`cat $i`\>" $sq &> /dev/null && continue
 	if grep -q 'nan' ${i%.sh.launched}.out &> /dev/null ; then
 		echo Removing $i
 		nan="$(( nan+1 ))"
@@ -69,3 +72,5 @@ if [ -f $t ] ; then
 	done || exit 1
 	rm -f $t ${t}_*
 fi
+
+rm -f $sq

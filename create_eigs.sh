@@ -1,6 +1,7 @@
 #!/bin/bash
 
 confs="`seq 800 10 4000`"
+confs="`seq 3810 10 7630`"
 confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
 confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 tag="cl21_48_128_b6p5_m0p2070_m0p1750"
@@ -10,7 +11,7 @@ t_size=128 # lattice temporal size
 nvec=128  # number of eigenvectors
 
 confspath="/gpfsdswork/projects/rech/ual/uie52up/ppdfs"
-chromaform="\$HOME/scratch/chromaform2"
+chromaform="\$HOME/work/chromaform2"
 chroma="$chromaform/install/chroma2-mgproto-qphix-qdpxx-double-nd4/bin/chroma"
 chroma="$chromaform/install/chroma-qdpxx-single-nd4/bin/chroma"
 laplace_eigs="$chromaform/install/laplace_eigs-qdpxx-single-nd3/laplace_eigs"
