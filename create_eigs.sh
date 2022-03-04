@@ -1,15 +1,17 @@
 #!/bin/bash
 
 confs="`seq 4510 10 10000`"
-confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
-confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+confs="`seq 4510 10 7000`"
+confs=540
+confsprefix="cl21_72_192_b6p5_m0p2091_m0p1778"
+confsname="cl21_72_192_b6p5_m0p2091_m0p1778"
+tag="cl21_72_192_b6p5_m0p2091_m0p1778"
 
-s_size=32 # lattice spatial size
-t_size=64 # lattice temporal size
+s_size=72 # lattice spatial size
+t_size=192 # lattice temporal size
 nvec=128  # number of eigenvectors
 
-confspath="/global/project/projectdirs/hadron/b6p3"
+confspath="/global/project/projectdirs/hadron/b6p5"
 chroma="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/chroma/bin/chroma"
 laplace_eigs="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/laplace_eigs/laplace_eigs"
 vecs_combine_3d="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/laplace_eigs/vecs_combine_3d"
@@ -99,7 +101,7 @@ cat << EOFout > $runpath/run.bash
 #!/bin/bash
 #SBATCH -o $runpath/eig_create_run.out
 #SBATCH -t 0:40:00
-#SBATCH --nodes=1
+#SBATCH --nodes=16
 #SBATCH --ntasks-per-node=32
 #SBATCH --constraint=haswell
 #SBATCH -A hadron
@@ -129,10 +131,10 @@ srun -N1 -n1 \$MY_OFFSET ln -s \$DW_JOB_STRIPED $localrunpath
 
 srun -N1 -n1 \$MY_OFFSET rm -f $gauge_file ${stout_file}* ${colorvec_file}
 echo RUNNING chroma
-srun -N1 -n32 \$MY_OFFSET $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 1 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 2 2 2 4
+srun -N16 -n$((32*16)) \$MY_OFFSET $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 1 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 4 4 4 8
 srun -N1 -n1 \$MY_OFFSET cp $local_gauge_file $gauge_file &
 
-for t_slice in \`seq 0 $((t_size - 1))\` ; do
+for t_slice in \`seq 0 $((10 - 1))\` ; do
 
 cat << EOF > $runpath/laplace_eigs.xml
 <?xml version="1.0"?>
@@ -156,7 +158,7 @@ cat << EOF > $runpath/laplace_eigs.xml
 </LaplaceEigs>
 EOF
 echo RUNNING laplace_eigs for slice \$t_slice
-srun -N1 -n32 \$MY_OFFSET $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
+srun -N16 -n$((32*16)) \$MY_OFFSET $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
 done #t_slice
 
 cat << EOF > $runpath/vecs_combine_3d.xml
@@ -164,7 +166,7 @@ cat << EOF > $runpath/vecs_combine_3d.xml
   <version>1</version>
   <Layout>$s_size $s_size $s_size $t_size</Layout>
   <InputFiles>
-  `for i in $( seq 0 $((t_size -1 )) ); do echo "<elem>${stout_file}_t_${i}</elem>" ; done`
+  `for i in $( seq 0 $((10 -1 )) ); do echo "<elem>${stout_file}_t_${i}</elem>" ; done`
   </InputFiles>
   <OutFile>$local_colorvec_file</OutFile>
 </VecsCombine>

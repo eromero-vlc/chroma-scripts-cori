@@ -46,12 +46,12 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 0:20:00
+#SBATCH -t 0:50:00
 #SBATCH --nodes $(( batch_jobs_size * nodes_per_job ))
 #SBATCH --ntasks-per-node=32
 #SBATCH -A hadron
-#SBATCH --qos=regular
 #SBATCH --constraint=haswell
+#SBATCH -q test
 #SBATCH -J eigsphase-batch-${tag}-${jobi}
 
 `

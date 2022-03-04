@@ -48,7 +48,7 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 04:30:00
+#SBATCH -t 06:30:00
 #SBATCH -N $(( batch_jobs_size * nodes_per_job ))
 #SBATCH -A hadron
 #SBATCH --qos=regular

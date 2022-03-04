@@ -1,6 +1,7 @@
 #!/bin/bash
 
 confs="`seq 4510 10 10000`"
+confs="`seq 4510 10 7000`"
 
 
 
