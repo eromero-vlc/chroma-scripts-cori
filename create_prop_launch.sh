@@ -1,21 +1,13 @@
 #!/bin/bash
 
-nodes_per_job=2
-max_jobs=1      # maximum jobs running at the same time from a user
-max_nodes=128    # maximum nodes running at the same time from a user
-
-runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
-
+runpath="$PWD/cl21_32_64_b6p3_m0p2390_m0p2050"
+max_jobs=100
 h_list="`mktemp`"
 for i in `ls $runpath/run_prop_*/prop_create_run_*.sh|sort`; do
 	[ -f ${i}.launched ] || echo $i
 done > $h_list
 
 num_jobs="`cat $h_list | wc -l`"
-batch_size="$(( (num_jobs + max_jobs - 1) / max_jobs ))"
-if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
-	batch_size="$((max_nodes / nodes_per_job ))"
-fi
 
 tag="0"
 runpath_props=""
@@ -28,55 +20,38 @@ runpath="$runpath_props"
 
 mkdir -p $runpath
 
-jobi="0"
-(
+num_jobs="`cat $h_list | wc -w`"
+num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
+max_jobs_in_bundle="$(( (num_jobs+max_jobs-1)/max_jobs ))"
+cat << EOF > $runpath/run.sh
+#!/bin/bash -l
+#SBATCH -o $runpath/run_${tag}_%a.out
+#SBATCH --account=p200054
+#SBATCH -t $(( 30*max_jobs_in_bundle ))
+#SBATCH --nodes=1
+#SBATCH --gpus-per-task=1
+#SBATCH -p gpu -q default
+#SBATCH --ntasks-per-node=4 # number of tasks per node
+#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH -J gprop-batch-${tag}
+#SBATCH --array=0-$((num_bundle_jobs-1))%100
+
+`
 	j="0"
-	for i in `cat $h_list`; do
-		echo -n "$i "
+	cat $h_list | while read i; do
+		echo "if [ $(( j / max_jobs_in_bundle )) == \\\$SLURM_ARRAY_TASK_ID ] ; then bash -l $i ; fi"
 		j="$(( j+1 ))"
-		[ "$(( j % batch_size ))" -ne 0 ] || echo
-	done
-	echo
-) | while read batch_jobs ; do
-
-	echo "BATCH" $batch_jobs
-	batch_jobs_size="`echo $batch_jobs | wc -w`"
-	[ $batch_jobs_size -gt 0 ] || continue
-
-	cat << EOF > $runpath/run_${jobi}.sh
-#!/bin/bash
-#SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 03:00:00
-#SBATCH -N $(( batch_jobs_size * nodes_per_job ))
-#SBATCH -A hadron
-#SBATCH --qos=regular
-#SBATCH --constraint=knl
-#SBATCH -J prop-batch-${tag}-${jobi}
-`
-	cat $batch_jobs | awk '
-		BEGIN {d="";a[0]=0;}
-		/^#DEPENDENCY/ {if ($2 && !($2 in a)) {a[$2]=0;if (d) d=d ":" $2; else d=$2;}}
-		END { if (d) print "#SBATCH -d afterok:" d;}'
-`
-
-`
-	j="0"
-	for i in $batch_jobs; do
-		echo MY_OFFSET=\"-r $j\" bash $i "&"
-		j="$(( j+nodes_per_job ))"
 	done
 `
-wait
 EOF
 
-	echo Launching bath job $jobi with $batch_jobs_size jobs
-	until sbatch $runpath/run_${jobi}.sh > $runpath/run_${jobi}.sh.launched; do sleep 60; done && sleep 2
-	sbatch_job_id="`awk '/Submitted/ {print $4}' $runpath/run_${jobi}.sh.launched`"
-	for i in $batch_jobs; do
-		echo $sbatch_job_id > ${i}.launched
-	done
-	
-	jobi="$(( jobi+1 ))"
+until sbatch $runpath/run.sh > $runpath/run.sh.launched; do sleep 60; done && sleep 2
+echo Launched bath job $tag with $num_jobs jobs
+sbatch_job_id="`awk '/Submitted/ {print $4}' $runpath/run.sh.launched`"
+j="1"
+cat $h_list | while read i; do
+	echo ${sbatch_job_id}_$j > ${i}.launched
+	j="$(( j+1 ))"
 done
 
 rm $h_list	
