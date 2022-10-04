@@ -5,7 +5,7 @@ runpath="$PWD/cl21_32_64_b6p3_m0p2390_m0p2050"
 ok=0
 fail=0
 nan=0
-for i in $runpath/run_prop_*/*.launched ; do
+for i in $runpath/run_gprop_*/*.launched ; do
 	[ -f ${i%.sh.launched}.verified ] && continue
 	squeue -j `cat $i` &> /dev/null && continue
 	if grep -q 'nan' ${i%.sh.launched}.out &> /dev/null ; then
