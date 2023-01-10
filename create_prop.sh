@@ -1,18 +1,19 @@
 #!/bin/bash
 
-confs="`seq 3590 10 5420`"
-confsprefix="cl21_32_64_b6p3_m0p2390_m0p2050"
-confsname="cl21_32_64_b6p3_m0p2390_m0p2050"
-tag="cl21_32_64_b6p3_m0p2390_m0p2050"
-t_sources="0 16 32 48"
-zphase="0.00"
+confs="`seq 10000 10 20070`"
+confs="`seq 15500 10 20070`"
+confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
+tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+t_sources="`seq 0 63`"
+zphase="-2.00"
 
 t_fwd=64
 t_back=0
 s_size=32 # lattice spatial size
 t_size=64 # lattice temporal size
 max_nvec=128 # number of eigenvector computed
-nvec=64 # Number of eigenvectors used to compute perambulators
+nvec=96 # Number of eigenvectors used to compute perambulators
 tagcnf="n$max_nvec"
 confspath="/mnt/tier2/project/p200054/cache/b6p3"
 chromaform="/mnt/tier2/project/p200054/chromaform"
@@ -47,18 +48,16 @@ lime_file="`ls ${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime*`"
 lime_file_noref="${lime_file%.ref????}"
 ref="${lime_file#${lime_file_noref}}"
 [ -f $lime_file ] || continue
-colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}${ref}"
+colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}${ref}"
 [ -f $colorvec_file ] || continue
-echo $colorvec_file
 
 if [ "X${zphase}X" != X0.00X ]; then
-#cl21_32_64_b6p3_m0p2390_m0p2050.phased_2.00.prop.n64.light.t0_0.sdb2180.ref0000
-prop_file="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${confsname}.phased_${zphase}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
-mkdir -p ${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/
+# Example: phased/prop_db/d001_2.00/11010/11010/cl21_32_64_b6p3_m0p2350_m0p2050.phased_2.00.prop.n96.light.t0_1.sdb11010
+prop_file="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${cfg}/${confsname}.phased_${zphase}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
 else
 prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
-mkdir -p ${confspath}/${confsprefix}/prop_db
 fi
+mkdir -p `dirname ${prop_file}`
 
 #
 # Propagators creation
@@ -76,7 +75,7 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
       <Frequency>1</Frequency>
       <Param>
         <Contractions>
-          <mass_label>U-0.2390</mass_label>
+          <mass_label>U-0.2350</mass_label>
           <num_vecs>$nvec</num_vecs>
           <t_sources>$t_offset</t_sources>
           <Nt_forward>$t_fwd</Nt_forward>
@@ -93,7 +92,7 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
           <numRetries>1</numRetries>
           <FermionAction>
             <FermAct>CLOVER</FermAct>
-            <Mass>-0.2390</Mass>
+            <Mass>-0.2350</Mass>
             <clovCoeff>1.20536588031793</clovCoeff>
             <FermState>
               <Name>STOUT_FERM_STATE</Name>
@@ -109,7 +108,7 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
             <InvertParam>
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
-                <Mass>-0.2390</Mass>
+                <Mass>-0.2350</Mass>
                 <clovCoeff>1.20536588031793</clovCoeff>
                 <AnisoParam>
                   <anisoP>false</anisoP>
@@ -232,7 +231,7 @@ export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$chromaform/install/llvm/lib
 
 rm -f $prop_file
 
-srun $chroma -i $runpath/prop_creation_${t_source}.xml -geom 1 1 2 2 -pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /apps/USE/easybuild/release/2021.3/software/CUDA/11.4.2/nvvm/libdevice &> $runpath/prop_create_run_${t_source}.out
+srun \$MY_ARGS -n 4 -N 1 $chroma -i $runpath/prop_creation_${t_source}.xml -geom 1 1 2 2 -pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /apps/USE/easybuild/release/2021.3/software/CUDA/11.4.2/nvvm/libdevice &> $runpath/prop_create_run_${t_source}.out
 EOF
 
 done # t_source
