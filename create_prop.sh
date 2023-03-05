@@ -1,18 +1,18 @@
 #!/bin/bash
 
-confs="`seq 10000 10 20070`"
-confs="`seq 15500 10 20070`"
-confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
-confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+confs="`seq 12200 10 16640`"
+confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050_extension/backups/cl21_32_64_b6p3_m0p2350_m0p2050-11900"
+confsname="cl21_32_64_b6p3_m0p2350_m0p2050-11900"
+tag="cl21_32_64_b6p3_m0p2350_m0p2050_extension-backups-11900"
+
 t_sources="`seq 0 63`"
-zphase="-2.00"
+zphase="2.00"
 
 t_fwd=64
 t_back=0
 s_size=32 # lattice spatial size
 t_size=64 # lattice temporal size
-max_nvec=128 # number of eigenvector computed
+max_nvec=96 # number of eigenvector computed
 nvec=96 # Number of eigenvectors used to compute perambulators
 tagcnf="n$max_nvec"
 confspath="/mnt/tier2/project/p200054/cache/b6p3"
@@ -48,14 +48,15 @@ lime_file="`ls ${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime*`"
 lime_file_noref="${lime_file%.ref????}"
 ref="${lime_file#${lime_file_noref}}"
 [ -f $lime_file ] || continue
-colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}${ref}"
+colorvec_file="${confspath}/${confsprefix}/eig/${confsname}_eigen_z0_light.${cfg}.eig"
 [ -f $colorvec_file ] || continue
 
 if [ "X${zphase}X" != X0.00X ]; then
 # Example: phased/prop_db/d001_2.00/11010/11010/cl21_32_64_b6p3_m0p2350_m0p2050.phased_2.00.prop.n96.light.t0_1.sdb11010
-prop_file="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${cfg}/${confsname}.phased_${zphase}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
+prop_file="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
 else
-prop_file="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
+# Example: peram/11580/cl21_32_64_b6p3_m0p2350_m0p2050-11200_peram_z0_light.11580.T0.peram
+prop_file="${confspath}/${confsprefix}/peram/${cfg}/${confsname}_peram_z0_light.${cfg}.T${t_source}.peram"
 fi
 mkdir -p `dirname ${prop_file}`
 

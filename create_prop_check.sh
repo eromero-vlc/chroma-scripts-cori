@@ -1,6 +1,6 @@
 #!/bin/bash
 
-runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050_extension-backups-11900"
 
 ok=0
 fail=0

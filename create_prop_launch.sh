@@ -1,8 +1,8 @@
 #!/bin/bash
 
-runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050-5162"
-max_jobs=90 # should be 100
-max_hours=8 # should be 24
+runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050_extension-backups-11900"
+max_jobs=50 # should be 100
+max_hours=20 # should be 24
 num_nodes_per_job=1
 minutes_per_job=15
 
