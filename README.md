@@ -19,15 +19,12 @@ Scripts to manage the chroma's workflow on SLURM
 
 ## Basic script usage
 
-1. Modify the variables at the beginning of each script
-   (*FIXME* factorize out the common configuration into a single file)
+1. Modify `ensembles.sh`, which centralizes most of the options
 
-2. Run `create_eigs.sh`, `create_props.sh` ... to create jobs
+2. Run `create.sh` to create jobs
 
-3. Run `create_eigs_launch.sh`, `create_props_launch.sh` ...
-   to submit jobs that haven't been submitted already
+3. Run `launch.sh` to submit jobs that haven't been submitted yet
+   or failed
 
-4. Run `create_eigs_check.sh`, `create_props_check.sh` ...
-   to remove the submitted mark on unsuccessfully finished jobs
-
-
+4. Run `check.sh` to start globus transfers to jlab from
+   successful jobs and mark failed jobs to relaunch
