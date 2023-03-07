@@ -123,6 +123,7 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
+			output="$runpath/baryon_${zphase}.out"
 			cat << EOF > $runpath/baryon_${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/baryon_${zphase}.out0
@@ -131,11 +132,35 @@ $slurm_sbatch_prologue
 #SBATCH --ntasks-per-node=4
 #SBATCH -J bar-${cfg}-${zphase}
 
-$slurm_script_prologue
+run() {
+	$slurm_script_prologue
+	cd $runpath
+	rm -f $baryon_file
+	srun \$MY_ARGS -n 4 -N 1 $chroma -i ${baryon_xml} -geom 1 1 2 2 $chroma_extra_args &> $output
+}
 
-cd $runpath
-rm -f $baryon_file
-srun \$MY_ARGS -n 4 -N 1 $chroma -i ${baryon_xml} -geom 1 1 2 2 $chroma_extra_args &> $runpath/baryon_${zphase}.out
+check() {
+	grep -q "FINISHED chroma" ${output} && exit 0
+	exit 1
+}
+
+deps() {
+	echo $lime_file $colorvec_file
+}
+
+outs() {
+	echo $baryon_file
+}
+
+class() {
+	# class max_minutes nodes
+	echo b 600 1
+}
+
+globus() {}
+
+eval "\${1:-run}"
+
 EOF
 		done # zphase
 	done # cfg

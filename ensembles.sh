@@ -29,6 +29,7 @@ ensemble0() {
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eig/${confsname}_eigen_z0_light.${cfg}.eig"; }
+	eigs_transfer_back="yes"
 
 	# Props options
 	prop_t_sources="`seq 0 63`"
@@ -46,6 +47,7 @@ ensemble0() {
 			echo "${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}"
 		fi
 	}
+	prop_transfer_back="yes"
 
 	# Genprops options
 	gprop_t_sources="0 16 32 48"
@@ -54,6 +56,7 @@ ensemble0() {
 	gprop_file_name() {
 		echo "${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 	}
+	gprop_transfer_back="yes"
 
 	# Meson options
 	meson_zphases="0.00 2.00"

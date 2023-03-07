@@ -185,6 +185,7 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
+			output="$runpath/prop_t${t_source}_z${zphase}.out"
 			cat << EOF > $runpath/prop_t${t_source}_z${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
@@ -195,11 +196,36 @@ $slurm_sbatch_prologue
 #SBATCH --cpus-per-task=32 # number of cores per task
 #SBATCH -J prop-${cfg}-${t_source}-${zphase}
 
-$slurm_script_prologue
+run() {
+	$slurm_script_prologue
+	cd $runpath
+	rm -f $prop_file
+	srun \$MY_ARGS -n 4 -N 1 $chroma -i ${prop_xml} -geom 1 1 2 2 $chroma_extra_args &> $output
+}
 
-cd $runpath
-rm -f $prop_file
-srun \$MY_ARGS -n 4 -N 1 $chroma -i ${prop_xml} -geom 1 1 2 2 $chroma_extra_args &> $runpath/prop_t${t_source}_z${zphase}.out
+check() {
+	grep -q "FINISHED chroma" ${output} && exit 0
+	exit 1
+}
+
+deps() {
+	echo $lime_file $colorvec_file
+}
+
+outs() {
+	echo $prop_file
+}
+
+class() {
+	# class max_minutes nodes
+	echo b 600 1
+}
+
+globus() {
+	[ $prop_transfer_back == yes ] && echo ${this_ep}$prop_file ${jlab_ep}/${prop_file#${confspath}}
+}
+
+eval "\${1:-run}"
 EOF
 
 		done # zphase

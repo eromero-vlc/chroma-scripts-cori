@@ -74,7 +74,7 @@ done | while jobtag minutes_per_job num_nodes_per_job jobs; do
 		done | while read js; do
 			echo "("
 			for job in $js; do
-				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash -l $job"
+				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash -l $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"

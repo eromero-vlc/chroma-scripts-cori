@@ -108,6 +108,7 @@ EOF
 			mkdir -p `dirname ${gprop_xml}`
 			$PYTHON $chroma_python/unsmeared_hadron_node.py  -c ${cfg} -e ${ensemble} -g ${lime_file_pre} -n ${nvec} -f ${N_COLOR_FILES} -v ${colorvec_file_pre} -t ${t_offset} -k ${t_seps_commas} -p ${gprop_file_prefix} -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 --genprop5 --genprop4-format > $gprop_xml
 
+			output="$runpath/gprop_t${t_source}_z${zphase}.out"
 			cat << EOF > $runpath/gprop_t${t_source}_z${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/gprop_t${t_source}_z${zphase}.out0
@@ -116,13 +117,38 @@ $slurm_sbatch_prologue
 #SBATCH --gpus-per-task=1
 #SBATCH --ntasks-per-node=4 # number of tasks per node
 #SBATCH --cpus-per-task=32 # number of cores per task
-#SBATCH -J prop-${cfg}-${t_source}
+#SBATCH -J gprop-${cfg}-${t_source}
 
-$slurm_script_prologue
+run() {
+	$slurm_script_prologue
+	cd $runpath
+	rm -f ${gprop_file}*
+	srun $chroma -i ${gprop_xml} -geom 1 2 2 2 $chroma_extra_args &> $output
+}
 
-cd $runpath
-rm -f ${gprop_file}*
-srun $chroma -i ${gprop_xml} -geom 1 2 2 2 $chroma_extra_args &> $runpath/gprop_t${t_source}_z${zphase}.out
+check() {
+	grep -q "FINISHED chroma" ${output} && exit 0
+	exit 1
+}
+
+deps() {
+	echo $lime_file $colorvec_file
+}
+
+outs() {
+	echo $gprop_file
+}
+
+class() {
+	# class max_minutes nodes
+	echo b 600 1
+}
+
+globus() {
+	[ $gprop_transfer_back == yes ] && echo ${this_ep}$gprop_file ${jlab_ep}/${gprop_file#${confspath}}
+}
+
+eval "\${1:-run}"
 EOF
 
 		done # t_source

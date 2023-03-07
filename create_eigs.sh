@@ -105,10 +105,10 @@ class() {
 }
 
 globus() {
-	echo ${this_ep}$colorvec_file ${jlab_ep}/${colorvec_file#${confspath}}
+	[ $eigs_transfer_back == yes ] && echo ${this_ep}$colorvec_file ${jlab_ep}/${colorvec_file#${confspath}}
 }
 
-eval "$1"
+eval "\${1:-run}"
 EOF
 	done # cfg
 done # ens
