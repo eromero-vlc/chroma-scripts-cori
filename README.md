@@ -1,11 +1,15 @@
-# chroma-scripts-cori
+# chroma-scripts
 
-Scripts to manage the chroma's workflow on [NERSC's cori](https://docs.nersc.gov/systems/cori/).
+Scripts to manage the chroma's workflow on SLURM
 
 ```           
-  lime --->  *laplace_eigs*  --> eigs.mod ---> *harom* ---> baryon.mod -\
-                                     \                                   )-> *redstar*
-                                      \------> *chroma* ---> prop.mod --/
+  lime --> *chroma* --> eigs.mod --> *chroma* +-> meson.mod   -+-> *redstar*
+                                              |                |
+                                              +-> baryon.mod  -+
+                                              |                |
+                                              +-> prop.mod    -+
+                                              |                |
+                                              +-> genprop.mod -+
 ```
 ## Basic characteristics
 
@@ -13,8 +17,6 @@ Scripts to manage the chroma's workflow on [NERSC's cori](https://docs.nersc.gov
 
 - Group similar tasks into a single SLURM job
 
-- Mark dependencies between SLURM jobs
-  
 ## Basic script usage
 
 1. Modify the variables at the beginning of each script

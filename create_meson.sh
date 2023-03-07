@@ -13,33 +13,32 @@ for ens in $ensembles; do
 
 		runpath="$PWD/${tag}/conf_${cfg}"
 
-		for zphase in $baryon_zphases; do
+		for zphase in $meson_zphases; do
 
-			baryon_file="`baryon_file_name`"
-			mkdir -p `dirname ${baryon_file}`
+			meson_file="`meson_file_name`"
+			mkdir -p `dirname ${meson_file}`
 
 			#
-			# Baryon creation
+			# Meson creation
 			#
 
-			baryon_xml="$runpath/baryon_${zphase}.xml"
-			cat << EOF > $baryon_xml
+			meson_xml="$runpath/meson_${zphase}.xml"
+			cat << EOF > $meson_xml
 <?xml version="1.0"?>
 <chroma>
 <Param>
   <InlineMeasurements>
     <elem>
-      <Name>BARYON_MATELEM_COLORVEC_SUPERB</Name>
+      <Name>MESON_MATELEM_COLORVEC_SUPERB</Name>
       <Frequency>1</Frequency>
+      
       <Param>
-        <version>2</version>
-        <max_tslices_in_contraction>1</max_tslices_in_contraction>
-        <max_moms_in_contraction>1</max_moms_in_contraction>
-        <max_vecs>1</max_vecs>
-        
+        <version>4</version>
         <use_derivP>true</use_derivP>
         <t_source>0</t_source>
         <Nt_forward>$t_size</Nt_forward>
+        <mom2_min>1</mom2_min>
+        <mom2_max>2</mom2_max>
         <mom_list>
                 <elem>0 0 0</elem>
                 <elem>1 0 0</elem>
@@ -62,30 +61,26 @@ for ens in $ensembles; do
                 <elem>0 0 -3</elem>
         </mom_list>
         <num_vecs>$nvec</num_vecs>
+        <phase>0 0 $zphase</phase>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
+        <max_tslices_in_contraction>1</max_tslices_in_contraction>
 
         <!-- List of displacement arrays -->
         <displacement_list>
-          <elem><left>0</left><middle>0</middle><right>0</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>
-          <elem><left>0</left><middle>1</middle><right>1</right></elem>
-          <elem><left>0</left><middle>1</middle><right>2</right></elem>
-          <elem><left>0</left><middle>1</middle><right>3</right></elem>
-          <elem><left>0</left><middle>2</middle><right>2</right></elem>
-          <elem><left>0</left><middle>2</middle><right>3</right></elem>
-          <elem><left>0</left><middle>3</middle><right>3</right></elem>
+          <elem></elem>
+          <elem>1</elem>
+          <elem>2</elem>
+          <elem>3</elem>
+          <elem>1 1</elem>
+          <elem>2 2</elem>
+          <elem>3 3</elem>
+          <elem>1 2</elem>
+          <elem>1 3</elem>
+          <elem>2 1</elem>
+          <elem>2 3</elem>
+          <elem>3 1</elem>
+          <elem>3 2</elem>
         </displacement_list>
     
         <Should the smearing be the same as the colorvec? 
@@ -123,19 +118,19 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-			cat << EOF > $runpath/baryon_${zphase}.sh
+			cat << EOF > $runpath/meson_${zphase}.sh
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/baryon_${zphase}.out0
+#SBATCH -o $runpath/meson_${zphase}.out0
 #SBATCH -t 0:40:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
-#SBATCH -J bar-${cfg}-${zphase}
+#SBATCH -J meson-${cfg}-${zphase}
 
 $slurm_script_prologue
 
 cd $runpath
-rm -f $baryon_file
-srun \$MY_ARGS -n 4 -N 1 $chroma -i ${baryon_xml} -geom 1 1 2 2 $chroma_extra_args &> $runpath/baryon_${zphase}.out
+rm -f $meson_file
+srun \$MY_ARGS -n 4 -N 1 $chroma -i ${meson_xml} -geom 1 1 2 2 $chroma_extra_args &> $runpath/meson_${zphase}.out
 EOF
 		done # zphase
 	done # cfg

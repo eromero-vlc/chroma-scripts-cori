@@ -1,35 +1,23 @@
 #!/bin/bash
 
-confs="`seq 12200 10 16640`"
-confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050_extension/backups/cl21_32_64_b6p3_m0p2350_m0p2050-11900"
-confsname="cl21_32_64_b6p3_m0p2350_m0p2050-11900"
-tag="cl21_32_64_b6p3_m0p2350_m0p2050_extension-backups-11900"
+source ensembles.sh
 
-t_sources="`seq 0 63`"
-zphase="2.00"
+for ens in $ensembles; do
+	# Load the variables from the function
+	eval "$ens"
 
-t_fwd=64
-t_back=0
-s_size=32 # lattice spatial size
-t_size=64 # lattice temporal size
-max_nvec=96 # number of eigenvector computed
-nvec=96 # Number of eigenvectors used to compute perambulators
-tagcnf="n$max_nvec"
-confspath="/mnt/tier2/project/p200054/cache/b6p3"
-chromaform="/mnt/tier2/project/p200054/chromaform"
-chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-superbblas-cuda/bin/chroma"
+	for cfg in $confs; do
+		lime_file_name="`lime_file_name`"
+		colorvec_file="`colorvec_file_name`"
+		[ -f $lime_file ] || continue
 
-mkdir -p ${confspath}/${confsprefix}/prop_db
+		runpath="$PWD/${tag}/conf_${cfg}"
 
-for cfg in $confs; do
+		for t_source in $prop_t_sources; do
+		for zphase in $prop_zphases; do
 
-runpath="$PWD/${tag}/run_prop_${zphase}-$cfg"
-mkdir -p $runpath
-
-for t_source in $t_sources; do
-
-# Find t_origin
-perl -e " 
+			# Find t_origin
+			perl -e " 
   srand($cfg);
 
   # Call a few to clear out junk                                                                                                          
@@ -41,30 +29,19 @@ perl -e "
   \$t_offset = ($t_source + \$t_origin) % $t_size;
   print \"\$t_origin \$t_offset\\n\"
 " > h
-t_origin="`cat h | while read a b; do echo \$a; done`"
-t_offset="`cat h | while read a b; do echo \$b; done`"
+			t_origin="`cat h | while read a b; do echo \$a; done`"
+			t_offset="`cat h | while read a b; do echo \$b; done`"
 
-lime_file="`ls ${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime*`"
-lime_file_noref="${lime_file%.ref????}"
-ref="${lime_file#${lime_file_noref}}"
-[ -f $lime_file ] || continue
-colorvec_file="${confspath}/${confsprefix}/eig/${confsname}_eigen_z0_light.${cfg}.eig"
-[ -f $colorvec_file ] || continue
+			prop_file="`prop_file_name`"
+			mkdir -p `dirname ${prop_file}`
 
-if [ "X${zphase}X" != X0.00X ]; then
-# Example: phased/prop_db/d001_2.00/11010/11010/cl21_32_64_b6p3_m0p2350_m0p2050.phased_2.00.prop.n96.light.t0_1.sdb11010
-prop_file="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${nvec}.light.t0_${t_source}.sdb${cfg}${ref}"
-else
-# Example: peram/11580/cl21_32_64_b6p3_m0p2350_m0p2050-11200_peram_z0_light.11580.T0.peram
-prop_file="${confspath}/${confsprefix}/peram/${cfg}/${confsname}_peram_z0_light.${cfg}.T${t_source}.peram"
-fi
-mkdir -p `dirname ${prop_file}`
+			#
+			# Propagators creation
+			#
 
-#
-# Propagators creation
-#
-
-cat << EOF > $runpath/prop_creation_${t_source}.xml
+			prop_xml="$runpath/prop_t${t_source}_z${zphase}.xml"
+			mkdir -p `dirname ${prop_xml}`
+			cat << EOF > $prop_xml
 <?xml version="1.0"?>
 
 <chroma>
@@ -76,11 +53,11 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
       <Frequency>1</Frequency>
       <Param>
         <Contractions>
-          <mass_label>U-0.2350</mass_label>
+          <mass_label>${prop_mass_label}</mass_label>
           <num_vecs>$nvec</num_vecs>
           <t_sources>$t_offset</t_sources>
-          <Nt_forward>$t_fwd</Nt_forward>
-          <Nt_backward>$t_back</Nt_backward>
+          <Nt_forward>$prop_t_fwd</Nt_forward>
+          <Nt_backward>$prop_t_back</Nt_backward>
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
           <max_rhs>1</max_rhs>
@@ -93,8 +70,8 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
           <numRetries>1</numRetries>
           <FermionAction>
             <FermAct>CLOVER</FermAct>
-            <Mass>-0.2350</Mass>
-            <clovCoeff>1.20536588031793</clovCoeff>
+            <Mass>${prop_mass}</Mass>
+            <clovCoeff>${prop_clov}</clovCoeff>
             <FermState>
               <Name>STOUT_FERM_STATE</Name>
               <rho>0.125</rho>
@@ -109,8 +86,8 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
             <InvertParam>
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
-                <Mass>-0.2350</Mass>
-                <clovCoeff>1.20536588031793</clovCoeff>
+                <Mass>${prop_mass}</Mass>
+                <clovCoeff>${prop_clover}</clovCoeff>
                 <AnisoParam>
                   <anisoP>false</anisoP>
                   <t_dir>3</t_dir>
@@ -208,32 +185,24 @@ cat << EOF > $runpath/prop_creation_${t_source}.xml
 </chroma>
 EOF
 
-cat << EOF > $runpath/prop_create_run_${t_source}.sh
-#!/bin/bash -l
-#SBATCH -o $runpath/prop_create_run_${t_source}.out0
-#SBATCH --account=p200054
+			cat << EOF > $runpath/prop_t${t_source}_z${zphase}.sh
+$slurm_sbatch_prologue
+#SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
 #SBATCH -t 0:30:00
 #SBATCH --nodes=1
 #SBATCH --gpus-per-task=1
-#SBATCH -p gpu -q short
 #SBATCH --ntasks-per-node=4 # number of tasks per node
 #SBATCH --cpus-per-task=32 # number of cores per task
-#SBATCH -J prop-${cfg}-${t_source}
-#DEPENDENCY $colorvec_file_dep
+#SBATCH -J prop-${cfg}-${t_source}-${zphase}
 
-. $chromaform/env.sh
+$slurm_script_prologue
 
 cd $runpath
-export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=12
-export CUDA_VISIBLE_DEVICES="0,1,2,3"
-export GPU_DEVICE_ORDINAL="0,1,2,3"
-export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$chromaform/install/llvm/lib
-
 rm -f $prop_file
-
-srun \$MY_ARGS -n 4 -N 1 $chroma -i $runpath/prop_creation_${t_source}.xml -geom 1 1 2 2 -pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /apps/USE/easybuild/release/2021.3/software/CUDA/11.4.2/nvvm/libdevice &> $runpath/prop_create_run_${t_source}.out
+srun \$MY_ARGS -n 4 -N 1 $chroma -i ${prop_xml} -geom 1 1 2 2 $chroma_extra_args &> $runpath/prop_t${t_source}_z${zphase}.out
 EOF
 
-done # t_source
-done # cfg
+		done # zphase
+		done # t_source
+	done # cfg
+done # ens
