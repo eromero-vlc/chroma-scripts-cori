@@ -1,6 +1,6 @@
 #!/bin/bash
 
-runpath="$PWD/cl21_48_96_b6p3_m0p2416_m0p2050*"
+runpath="$PWD/cl21_48_128_b6p5_m0p2070_m0p1750*"
 
 clean () {
 	tsk="$1"
@@ -23,22 +23,27 @@ transfer () {
 ok=0
 fail=0
 nan=0
+sq="`mktemp`"
+squeue -u $USER --array > $sq
 for i in $runpath/run_gprop_*/*.launched ; do
-	[ -f ${i%.sh.launched}.verified ] && continue
-	squeue -j `cat $i` &> /dev/null && continue
-	if grep -q 'nan' ${i%.sh.launched}.out &> /dev/null ; then
+	ir="${i%.sh.launched}"
+	[ -f ${ir}.verified ] && continue
+	#squeue -j `cat $i` &> /dev/null && continue
+	grep "\<`cat $i`\>" $sq &> /dev/null && continue
+	if grep -q 'nan' ${ir}.out &> /dev/null ; then
 		echo Removing $i
 		nan="$(( nan+1 ))"
-		clean ${i%.sh.launched}.sh
+		clean ${ir}.sh
 		rm -f $i
-	elif grep -q 'CHROMA: ran successfully' ${i%.sh.launched}.out &> /dev/null ; then
+	elif (! grep -q "slurmstepd: error" ${ir}.out &>/dev/null ) && grep -q 'CHROMA: ran successfully' ${ir}.out &> /dev/null ; then
+		echo Transferring $i
 		ok="$(( ok+1 ))"
-		transfer ${i%.sh.launched}.sh
-		touch ${i%.sh.launched}.verified
+		transfer ${ir}.sh
+		touch ${ir}.verified
 	else
 		echo Removing $i
 		fail="$(( fail+1 ))"
-		clean ${i%.sh.launched}.sh
+		clean ${ir}.sh
 		rm -f $i
 	fi
 done
@@ -46,6 +51,9 @@ echo OK: $ok  Fails: $fail  nan: $nan
 
 # Transfer files
 if [ -f $t ] ; then
+        cat $t | while read orig dest ; do
+                echo pending $orig $dest > ${orig#*:}.globus
+        done
 	origep="`head -1 $t | while read orig dest ; do  echo ${orig%:*} ; done`"
 	destep="`head -1 $t | while read orig dest ; do  echo ${dest%:*} ; done`"
 	cat $t | while read orig dest ; do
@@ -66,3 +74,5 @@ if [ -f $t ] ; then
 	done || exit 1
 	rm -f $t ${t}_*
 fi
+
+rm -f $sq
