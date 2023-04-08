@@ -21,10 +21,12 @@ Scripts to manage the chroma's workflow on SLURM
 
 1. Modify `ensembles.sh`, which centralizes most of the options
 
-2. Run `create.sh` to create jobs
+2. If using globus, check credentials with `globus_chech.sh`
 
-3. Run `launch.sh` to submit jobs that haven't been submitted yet
+3. Run `create.sh` to create jobs
+
+4. Run `launch.sh` to submit jobs that haven't been submitted yet
    or failed
 
-4. Run `check.sh` to start globus transfers to jlab from
+5. Run `check.sh` to start globus transfers to jlab from
    successful jobs and mark failed jobs to relaunch

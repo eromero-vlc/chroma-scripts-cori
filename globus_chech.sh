@@ -14,4 +14,4 @@ if ! globus ls $jlab_ep &> $t ; then
 fi
 rm -f $t
 [ $success == 0 ] && exit 1
-echo "is working"
+echo "globus is working"
