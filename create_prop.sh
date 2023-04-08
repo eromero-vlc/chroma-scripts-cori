@@ -6,6 +6,9 @@ for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
+	# Check for running props
+	[ $run_props != yes ] && continue
+
 	for cfg in $confs; do
 		lime_file_name="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -204,7 +207,7 @@ run() {
 }
 
 check() {
-	grep -q "FINISHED chroma" ${output} && exit 0
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} && exit 0
 	exit 1
 }
 
@@ -222,7 +225,7 @@ class() {
 }
 
 globus() {
-	[ $prop_transfer_back == yes ] && echo ${this_ep}$prop_file ${jlab_ep}/${prop_file#${confspath}}
+	[ $prop_transfer_back == yes ] && echo ${prop_file}.globus ${this_ep}${prop_file#${confspath}} ${jlab_ep}${prop_file#${confspath}} ${prop_delete_after_transfer_back}
 }
 
 eval "\${1:-run}"

@@ -6,6 +6,9 @@ for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
+	# Check for running baryons
+	[ $run_baryons != yes ] && continue
+
 	for cfg in $confs; do
 		lime_file_name="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -140,7 +143,7 @@ run() {
 }
 
 check() {
-	grep -q "FINISHED chroma" ${output} && exit 0
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} && exit 0
 	exit 1
 }
 

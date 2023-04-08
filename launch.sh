@@ -5,7 +5,7 @@ runtag="0"
 runpath=""
 while true; do
 	runpath="$PWD/runs/$runtag"
-	[ -d $runpath_props ] || break
+	[ -d $runpath ] || break
 	runtag="$(( runtag+1 ))"
 done
 mkdir -p $runpath
@@ -21,24 +21,26 @@ for ens in $ensembles; do
 
 	runpathens="$PWD/${tag}"
 	find $runpathens -name '*.sh' | while read f; do
-		[ -f $f.launched ] || $f class >> $jobsfile
+		[ -f $f.launched ] || echo `bash $f class` $f >> $jobsfile
 	done
 done
 
 last_c="_"
 tag="0"
+echo z 0 0 >> $jobsfile
 sort $jobsfile | while read class max_mins nodes job; do
 	c="${class}_${max_mins}_${nodes}"
 	if [ $c != $last_c ]; then
 		[ $last_c != _ ] && echo
 		echo -n $tag $max_mins $nodes
 		tag="$(( tag+1 ))"
+		last_c="$c"
 	fi
 	echo -n " $job"
-done | while jobtag minutes_per_job num_nodes_per_job jobs; do
+done | while read jobtag minutes_per_job num_nodes_per_job jobs; do
 	# Remove the tracking for all files that are going to be created
 	for j in $jobs; do
-		for f in `$j outs`; do
+		for f in `bash $j outs`; do
 			rm -f ${f}.launched
 		done
 	done
@@ -89,7 +91,7 @@ EOF
 	cat << EOF > $runpath/run_${jobtag}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
-#SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
+#SBATCH -t $(( (minutes_per_job*max_jobs_in_seq+3599)/3600 )):00:00
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
 #SBATCH --gpus-per-task=1
 #SBATCH --ntasks-per-node=4 # number of tasks per node
@@ -99,7 +101,7 @@ $slurm_sbatch_prologue
 `
 	dep_jobs="$(
 		for j in $jobs; do
-			for f in $( $j deps ); do
+			for f in $( bash $j deps ); do
 				[ -f ${f}.launched ] && cat ${f}.launched
 			done
 		done | sort -u | paste -sd ":"
@@ -114,11 +116,12 @@ EOF
 	echo Launched bath job ${runtag}-${jobtag} with $num_jobs jobs
 	sbatch_job_id="`awk '/Submitted/ {print $4}' $runpath/run_${jobtag}.sh.launched`"
 	ji="0"
-	echo $jobs | while read j; do
-		for f in $j $( $j out ); do
-		echo ${sbatch_job_id}_$((ji/max_jobs_in_bundle)) > ${f}.launched
+	for j in $jobs; do
+		for f in $j $( bash $j outs ); do
+			echo ${sbatch_job_id}_$((ji/max_jobs_in_bundle)) > ${f}.launched
+		done
 		ji="$(( ji+1 ))"
 	done
 done
 
-rm $jobsfile
+rm -f $jobsfile

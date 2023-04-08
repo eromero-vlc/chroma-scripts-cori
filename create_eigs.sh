@@ -87,7 +87,7 @@ run() {
 }
 
 check() {
-	grep -q "FINISHED chroma" ${output} && exit 0
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} && exit 0
 	exit 1
 }
 
@@ -105,7 +105,7 @@ class() {
 }
 
 globus() {
-	[ $eigs_transfer_back == yes ] && echo ${this_ep}$colorvec_file ${jlab_ep}/${colorvec_file#${confspath}}
+	[ $eigs_transfer_back == yes ] && echo ${colorvec_file}.globus ${this_ep}${colorvec_file#${confspath}} ${jlab_ep}${colorvec_file#${confspath}} ${eigs_delete_after_transfer_back}
 }
 
 eval "\${1:-run}"
