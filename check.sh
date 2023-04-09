@@ -8,6 +8,8 @@ squeue -u $USER --array > $sq
 t="`mktemp`"
 ok="`mktemp`"
 fail="`mktemp`"
+globus_status_cache="`mktemp`"
+
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
@@ -36,16 +38,26 @@ for ens in $ensembles; do
 			if [ $globus_task == pending ]; then
 				status="FAILED"
 			else
-				status="`globus task show --jq 'status' $globus_task`"
+				if grep -q $globus_task $globus_status_cache; then
+					status="`grep $globus_task $globus_status_cache | while read t s; do echo $s; done`"
+				else
+					status="`globus task show --jq 'status' $globus_task`"
+					echo $globus_task $status >> $globus_status_cache
+				fi
 			fi
 			case $status in
-			*SUCCEEDED*) [ $delete == yes ] && echo rm -f $f ;;
-			*FAILED*) echo $f $orig $dest $delete >> $t
+			*SUCCEEDED*)
+				[ $delete == yes ] && rm ${orig#*:}
+				rm -f $f
+				;;
+			*FAILED*)
+				echo $f $orig $dest $delete >> $t
+				rm -f $f
 			esac
 		done
 	done
 done
-rm -f $sq $ok $fail
+rm -f $sq $ok $fail $globus_status_cache
 
 # Transfer files back
 if [ -s $t ] ; then

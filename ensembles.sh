@@ -6,8 +6,8 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="nop"
-	run_gprops="yes"
-	run_baryons="nop"
+	run_gprops="nop"
+	run_baryons="yes"
 	run_mesons="nop"
 	run_redstar="nop"
 
@@ -17,7 +17,7 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	confs="`seq 11000 10 13990`"
-	confs="`seq 11000 10 11200`"
+	confs="`seq 11000 10 12000`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -26,7 +26,7 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=96  # colorvecs to use
+	nvec=64  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
@@ -65,7 +65,7 @@ ensemble0() {
 		fi
 	}
 	gprop_transfer_back="yes"
-	gprop_delete_after_transfer_back="nop"
+	gprop_delete_after_transfer_back="yes"
 
 	# Meson options
 	meson_zphases="0.00 2.00"
@@ -78,7 +78,7 @@ ensemble0() {
 	}
 
 	# Baryon options
-	baryon_zphases="0.00 2.00"
+	baryon_zphases="0.00"
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			echo "${confspath}/${confsprefix}/baryon_db/${confsname}.n${nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
@@ -86,6 +86,8 @@ ensemble0() {
 			echo "${confspath}/${confsprefix}/baryon_db/${confsname}.n${nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
 		fi
 	}
+	baryon_transfer_back="yes"
+	baryon_delete_after_transfer_back="nop"
 }
 
 confspath="$SCRATCH/b6p3"
@@ -100,7 +102,10 @@ slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A hadron_g
 #SBATCH -C gpu
 #SBATCH -q regular
-#SBATCH --gpu-bind=none"
+#SBATCH --gpu-bind=none
+#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH --ntasks-per-node=4 # number of tasks per node
+#SBATCH --gpus-per-task=1"
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -110,11 +115,9 @@ export OMP_NUM_THREADS=32
 export SLURM_CPU_BIND=\"cores\"
 "
 
-max_jobs=20 # should be 100
-max_hours=20 # should be 24
+max_jobs=20 # maximum jobs to be launched
+max_hours=5 # maximum hours for a single job
 
 PYTHON=python3
 this_ep="6bdc7956-fc0f-4ad2-989c-7aa5ee643a79:${SCRATCH}/b6p3/"  # perlmutter
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/" # jlab#gw2
-
-

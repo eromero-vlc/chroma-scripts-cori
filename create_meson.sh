@@ -10,7 +10,7 @@ for ens in $ensembles; do
 	[ $run_mesons != yes ] && continue
 
 	for cfg in $confs; do
-		lime_file_name="`lime_file_name`"
+		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
 		[ -f $lime_file ] || continue
 

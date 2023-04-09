@@ -45,33 +45,46 @@ done | while read jobtag minutes_per_job num_nodes_per_job jobs; do
 		done
 	done
 	
+	# total jobs to run
 	num_jobs="`echo $jobs | wc -w`"
+	# total SLURM jobs to launch
 	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
+	# maximum number of jobs running on a single SLURM job
 	max_jobs_in_bundle="$(( (num_jobs+num_bundle_jobs-1)/num_bundle_jobs ))"
+	# maximum number of parallel jobs inside a SLURM job
 	bundle_size="$(( (max_jobs_in_bundle*minutes_per_job + max_hours*60-1)/(max_hours*60) ))"
+	# maximum number of jobs executed one after another in a SLURM job
 	max_jobs_in_seq="$(( (max_jobs_in_bundle + bundle_size-1) / bundle_size ))"
 	cat << EOF > $runpath/run_${jobtag}_script.sh
 `
 	jobs_in_bundle=0
 	bundle_id=0
-	for i in $jobs; do
-		echo -n "$i "
-		jobs_in_bundle="$(( jobs_in_bundle+1 ))"
-		if [ $jobs_in_bundle -ge $max_jobs_in_bundle ]; then
-			jobs_in_bundle=0
-			echo
+	for i in $jobs "lastjob"; do
+		if [ $i == lastjob ]; then
+			[ $jobs_in_bundle -gt 0 ] && echo
+		else
+			echo -n "$i "
+			jobs_in_bundle="$(( jobs_in_bundle+1 ))"
+			if [ $jobs_in_bundle -ge $max_jobs_in_bundle ]; then
+				jobs_in_bundle=0
+				echo
+			fi
 		fi
 	done | while read bjs; do
 		echo "if [ $bundle_id == \\\$SLURM_ARRAY_TASK_ID ] ; then"
 		bundle_id="$((bundle_id + 1))"
 		j="0"
 		j_seq=0
-		for i in $bjs; do
-			echo -n "$i "
-			j="$(( j+1 ))"
-			if [ $j -ge $max_jobs_in_seq ]; then
-				echo
-				j=0;
+		for i in $bjs lastjob; do
+			if [ $i == lastjob ]; then
+				[ $j -gt 0 ] && echo
+			else
+				echo -n "$i "
+				j="$(( j+1 ))"
+				if [ $j -ge $max_jobs_in_seq ]; then
+					echo
+					j=0;
+				fi
 			fi
 		done | while read js; do
 			echo "("
@@ -91,11 +104,8 @@ EOF
 	cat << EOF > $runpath/run_${jobtag}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
-#SBATCH -t $(( (minutes_per_job*max_jobs_in_seq+3599)/3600 )):00:00
+#SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
-#SBATCH --gpus-per-task=1
-#SBATCH --ntasks-per-node=4 # number of tasks per node
-#SBATCH --cpus-per-task=32 # number of cores per task
 #SBATCH -J batch-${tag}
 #SBATCH --array=0-$((num_bundle_jobs-1))%100
 `

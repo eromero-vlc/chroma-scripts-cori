@@ -10,7 +10,7 @@ for ens in $ensembles; do
 	[ $run_baryons != yes ] && continue
 
 	for cfg in $confs; do
-		lime_file_name="`lime_file_name`"
+		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
 		[ -f $lime_file ] || continue
 
@@ -38,35 +38,24 @@ for ens in $ensembles; do
         <version>2</version>
         <max_tslices_in_contraction>1</max_tslices_in_contraction>
         <max_moms_in_contraction>1</max_moms_in_contraction>
-        <max_vecs>1</max_vecs>
+        <max_vecs>0</max_vecs>
         
         <use_derivP>true</use_derivP>
         <t_source>0</t_source>
         <Nt_forward>$t_size</Nt_forward>
         <mom_list>
                 <elem>0 0 0</elem>
-                <elem>1 0 0</elem>
-                <elem>-1 0 0</elem>
-                <elem>0 1 0</elem>
-                <elem>0 -1 0</elem>
                 <elem>0 0 1</elem>
                 <elem>0 0 -1</elem>
-                <elem>2 0 0</elem>
-                <elem>-2 0 0</elem>
-                <elem>0 2 0</elem>
-                <elem>0 -2 0</elem>
                 <elem>0 0 2</elem>
                 <elem>0 0 -2</elem>
-                <elem>3 0 0</elem>
-                <elem>-3 0 0</elem>
-                <elem>0 3 0</elem>
-                <elem>0 -3 0</elem>
                 <elem>0 0 3</elem>
                 <elem>0 0 -3</elem>
         </mom_list>
         <num_vecs>$nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
+        <phase>0.00 0.00 $zphase</phase>
 
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -91,7 +80,6 @@ for ens in $ensembles; do
           <elem><left>0</left><middle>3</middle><right>3</right></elem>
         </displacement_list>
     
-        <Should the smearing be the same as the colorvec? 
         <LinkSmearing>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
           <link_smear_fact>$eigs_smear_rho</link_smear_fact>
@@ -130,7 +118,7 @@ EOF
 			cat << EOF > $runpath/baryon_${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/baryon_${zphase}.out0
-#SBATCH -t 0:40:00
+#SBATCH -t 1:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
 #SBATCH -J bar-${cfg}-${zphase}
@@ -157,10 +145,12 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo b 600 1
+	echo b 60 1
 }
 
-globus() {}
+globus() {
+	[ $baryon_transfer_back == yes ] && echo ${baryon_file}.globus ${this_ep}${baryon_file#${confspath}} ${jlab_ep}${baryon_file#${confspath}} ${baryon_delete_after_transfer_back}
+}
 
 eval "\${1:-run}"
 
