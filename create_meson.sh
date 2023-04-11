@@ -63,7 +63,7 @@ for ens in $ensembles; do
                 <elem>0 0 3</elem>
                 <elem>0 0 -3</elem>
         </mom_list>
-        <num_vecs>$nvec</num_vecs>
+        <num_vecs>$meson_nvec</num_vecs>
         <phase>0 0 $zphase</phase>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>

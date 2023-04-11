@@ -52,7 +52,7 @@ for ens in $ensembles; do
                 <elem>0 0 3</elem>
                 <elem>0 0 -3</elem>
         </mom_list>
-        <num_vecs>$nvec</num_vecs>
+        <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
         <phase>0.00 0.00 $zphase</phase>

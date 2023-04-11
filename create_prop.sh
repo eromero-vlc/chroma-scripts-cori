@@ -57,7 +57,7 @@ for ens in $ensembles; do
       <Param>
         <Contractions>
           <mass_label>${prop_mass_label}</mass_label>
-          <num_vecs>$nvec</num_vecs>
+          <num_vecs>$prop_nvec</num_vecs>
           <t_sources>$t_offset</t_sources>
           <Nt_forward>$prop_t_fwd</Nt_forward>
           <Nt_backward>$prop_t_back</Nt_backward>
@@ -90,7 +90,7 @@ for ens in $ensembles; do
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
                 <Mass>${prop_mass}</Mass>
-                <clovCoeff>${prop_clover}</clovCoeff>
+                <clovCoeff>${prop_clov}</clovCoeff>
                 <AnisoParam>
                   <anisoP>false</anisoP>
                   <t_dir>3</t_dir>
