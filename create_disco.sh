@@ -29,10 +29,19 @@ for ens in $ensembles; do
 <chroma>
  <Param>
   <InlineMeasurements>
+   <elem>
     <Name>DISCO_PROBING_DEFLATION_SUPERB</Name>
       <Param>
         <max_path_length>${disco_max_z_displacement}</max_path_length>
-        <p2_max>4</p2_max>
+        <mom_list>
+           <elem>0 0 0</elem>
+           <elem>0 0 1</elem>
+           <elem>0 0 -1</elem>
+           <elem>0 0 2</elem>
+           <elem>0 0 -2</elem>
+           <elem>0 0 3</elem>
+           <elem>0 0 -3</elem>
+        </mom_list>
         <mass_label>${prop_mass_label}</mass_label>
         <probing_distance>${disco_probing_displacement}</probing_distance>
         <probing_power>${disco_probing_power}</probing_power>
@@ -157,8 +166,8 @@ for ens in $ensembles; do
 EOF
 
 		output="$runpath/disco.out"
-		mins=600
-		nodes=4
+		mins="$(( 3*60 ))" # three hours
+		nodes=8
 		cat << EOF > $runpath/disco.sh
 $slurm_sbatch_prologue_cpu
 #SBATCH -o $runpath/disco.out0
@@ -167,11 +176,11 @@ $slurm_sbatch_prologue_cpu
 #SBATCH -J disco-${cfg}
 
 run() {
-	$slurm_script_prologue
+	$slurm_script_prologue_cpu
 	
 	cd $runpath
 	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*nodes )) -N $nodes $chroma_cpu -i $runpath/disco.xml -geom 1 1 2 2 $chroma_extra_args_cpu &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*nodes )) -N $nodes $chroma_cpu -i $runpath/disco.xml -geom 1 2 4 4 $chroma_extra_args_cpu &> $output
 }
 
 check() {

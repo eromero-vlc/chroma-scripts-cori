@@ -9,7 +9,7 @@ ensemble0() {
 	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
-	run_discos="nop"
+	run_discos="yes"
 	run_redstar="nop"
 
 	# Ensemble properties
@@ -102,7 +102,7 @@ ensemble0() {
 
 	# Disco options
 	disco_max_z_displacement=8
-	disco_probing_displacement=6
+	disco_probing_displacement=5
 	disco_probing_power=8
 	disco_noise_vectors=1
 	disco_file_name() {
@@ -146,8 +146,8 @@ export SLURM_CPU_BIND=\"cores\"
 # SLURM configuration for disco
 #
 
-chromaform_cpu="$HOME/hadron/chromaform-perlmutter-cpu"
-chroma="$chromaform_cpu/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-cuda/bin/chroma"
+chromaform_cpu="$SCRATCH/chromaform-perlmutter-cpu-sp"
+chroma_cpu="$chromaform_cpu/install/chroma-sp-mgproto-qphix-qdpxx-double-nd4-avx2-superbblas-cpu-next/bin/chroma"
 chroma_extra_args_cpu="-by 4 -bz 4 -pxy 0 -pxyz 0 -c 32 -sy 1 -sz 1 -minct 1 -poolsize 1"
 
 slurm_procs_per_node_cpu=4
