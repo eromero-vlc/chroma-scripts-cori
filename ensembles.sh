@@ -18,7 +18,6 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	confs="`seq 11000 10 13990`"
-	confs="`seq 11000 10 12000`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -102,8 +101,8 @@ ensemble0() {
 
 	# Disco options
 	disco_max_z_displacement=8
-	disco_probing_displacement=5
-	disco_probing_power=8
+	disco_probing_displacement=6
+	disco_probing_power=10
 	disco_noise_vectors=1
 	disco_file_name() {
 		echo "${confspath}/${confsprefix}/disco/${confsname}.disco.sdb${cfg}"
@@ -147,23 +146,19 @@ export SLURM_CPU_BIND=\"cores\"
 #
 
 chromaform_cpu="$SCRATCH/chromaform-perlmutter-cpu-sp"
-chroma_cpu="$chromaform_cpu/install/chroma-sp-mgproto-qphix-qdpxx-double-nd4-avx2-superbblas-cpu-next/bin/chroma"
-chroma_extra_args_cpu="-by 4 -bz 4 -pxy 0 -pxyz 0 -c 32 -sy 1 -sz 1 -minct 1 -poolsize 1"
+chroma_cpu="$chromaform_cpu/install/chroma-sp-mgproto-qphix-qdpxx-double-nd4-avx512-superbblas-cpu-next/bin/chroma"
+slurm_threads_per_proc_cpu=10
+chroma_extra_args_cpu="-by 4 -bz 4 -pxy 0 -pxyz 0 -c $slurm_threads_per_proc_cpu -sy 1 -sz 1 -minct 1 -poolsize 1"
 
 slurm_procs_per_node_cpu=4
 slurm_sbatch_prologue_cpu="#!/bin/bash
-#SBATCH -A hadron
-#SBATCH -C cpu
-#SBATCH -q regular
-#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH --account=qjs@cpu
 #SBATCH --ntasks-per-node=$slurm_procs_per_node_cpu # number of tasks per node"
 
 slurm_script_prologue_cpu="
 . $chromaform_cpu/env.sh
-. $chromaform_cpu/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=32
-export SLURM_CPU_BIND=\"cores\"
+export OMP_NUM_THREADS=$slurm_threads_per_proc_cpu
 "
 
 #

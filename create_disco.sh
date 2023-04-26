@@ -125,11 +125,11 @@ for ens in $ensembles; do
               </Blocking>
               <NullVecs>24 32</NullVecs>
               <NullSolverMaxIters>800 800</NullSolverMaxIters>
-              <NullSolverRsdTarget>-0.006 -0.0006</NullSolverRsdTarget>
+              <NullSolverRsdTarget>-0.002 -0.0002</NullSolverRsdTarget>
               <NullSolverVerboseP>0 0</NullSolverVerboseP>
               <EigenSolverBlockSize>1</EigenSolverBlockSize>
               <EigenSolverMaxRestartSize>32</EigenSolverMaxRestartSize>
-              <EigenSolverMaxRank>3200</EigenSolverMaxRank>
+              <EigenSolverMaxRank>1600</EigenSolverMaxRank>
               <EigenSolverRsdTarget>1.0e-3</EigenSolverRsdTarget>
               <EigenSolverMaxIters>0</EigenSolverMaxIters>
               <EigenSolverVerboseP>true</EigenSolverVerboseP>
@@ -154,7 +154,7 @@ for ens in $ensembles; do
       <elem>2551</elem>
       <elem>3189</elem>
       <elem>2855</elem>
-      <elem>707</elem>
+      <elem>$cfg</elem>
     </Seed>
   </RNG>
   <Cfg>
@@ -166,8 +166,8 @@ for ens in $ensembles; do
 EOF
 
 		output="$runpath/disco.out"
-		mins="$(( 3*60 ))" # three hours
-		nodes=8
+		mins="$(( 20*60 ))" # 20 hours
+		nodes=16
 		cat << EOF > $runpath/disco.sh
 $slurm_sbatch_prologue_cpu
 #SBATCH -o $runpath/disco.out0
@@ -180,7 +180,7 @@ run() {
 	
 	cd $runpath
 	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*nodes )) -N $nodes $chroma_cpu -i $runpath/disco.xml -geom 1 2 4 4 $chroma_extra_args_cpu &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*nodes )) -N $nodes $chroma_cpu -i $runpath/disco.xml -geom 2 2 4 4 $chroma_extra_args_cpu &> $output
 }
 
 check() {
