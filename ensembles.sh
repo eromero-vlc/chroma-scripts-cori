@@ -32,6 +32,9 @@ ensemble0() {
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
+	eigs_slurm_nodes=2
+	eigs_chroma_geometry="1 2 2 4"
+	eigs_chroma_minutes=600
 	eigs_transfer_back="yes"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="nop"
@@ -45,6 +48,9 @@ ensemble0() {
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U-0.2350"
+	prop_slurm_nodes=2
+	prop_chroma_geometry="1 2 2 4"
+	prop_chroma_minutes=600
 	# propagator filename
 	prop_file_name() {
 		if [ ${zphase} == 0.00 ]; then
@@ -62,6 +68,9 @@ ensemble0() {
 	gprop_t_seps="4 6 8 10 12 14"
 	gprop_zphases="0.00 2.00"
 	gprop_nvec=$nvec
+	gprop_slurm_nodes=2
+	gprop_chroma_geometry="1 2 2 4"
+	gprop_chroma_minutes=600
 	gprop_file_name() {
 		if [ $zphase == 0.00 ]; then
 			echo "${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
@@ -76,6 +85,9 @@ ensemble0() {
 	# Meson options
 	meson_nvec=$nvec
 	meson_zphases="0.00 2.00"
+	meson_slurm_nodes=2
+	meson_chroma_geometry="1 2 2 4"
+	meson_chroma_minutes=600
 	meson_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			echo "${confspath}/${confsprefix}/meson_db/${confsname}.n${meson_nvec}.m2_0_0.meson.colorvec.t_0_$((t_size-1)).sdb${cfg}"
@@ -88,6 +100,9 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="0.00"
+	baryon_slurm_nodes=2
+	baryon_chroma_geometry="1 2 2 4"
+	baryon_chroma_minutes=600
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			echo "${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
@@ -104,6 +119,9 @@ ensemble0() {
 	disco_probing_displacement=6
 	disco_probing_power=10
 	disco_noise_vectors=1
+	disco_slurm_nodes=2
+	disco_chroma_geometry="1 2 2 4"
+	disco_chroma_minutes=600
 	disco_file_name() {
 		echo "${confspath}/${confsprefix}/disco/${confsname}.disco.sdb${cfg}"
 	}

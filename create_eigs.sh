@@ -9,9 +9,6 @@ for ens in $ensembles; do
 	# Check for running eigs
 	[ $run_eigs != yes ] && continue
 
-	# Create the directory to store the eigenvectors
-	mkdir -p ${confspath}/${confsprefix}/eig
-
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -19,6 +16,9 @@ for ens in $ensembles; do
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
 		mkdir -p $runpath
+
+		# Create the directory to store the eigenvectors
+		mkdir -p `dirname ${colorvec_file}`
 		
 		#
 		# Basis creation
@@ -71,11 +71,8 @@ EOF
 		cat << EOF > $runpath/eigs.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/eigs.out0
-#SBATCH -t 10:00:00
-#SBATCH --nodes=1
-#SBATCH --gpus-per-task=1
-#SBATCH --ntasks-per-node=4 # number of tasks per node
-#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH -t $eigs_chroma_minutes
+#SBATCH --nodes=$eigs_slurm_nodes
 #SBATCH -J eig-${cfg}
 
 run() {
@@ -83,7 +80,7 @@ run() {
 	
 	cd $runpath
 	rm -f $colorvec_file
-	srun \$MY_ARGS -n 4 -N 1 $chroma -i $runpath/eigs.xml -geom 1 1 2 2 $chroma_extra_args &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*eigs_slurm_nodes )) -N $eigs_slurm_nodes $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -101,7 +98,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo a 600 1
+	echo a $eigs_chroma_minutes $eigs_slurm_nodes
 }
 
 globus() {

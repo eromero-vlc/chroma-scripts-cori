@@ -111,23 +111,18 @@ EOF
 			$PYTHON $chroma_python/unsmeared_hadron_node.py  -c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} -v fcolorvec -t ${t_offset} -k ${t_seps_commas} -p fgprop -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 --genprop5 --genprop4-format | sed "s@flime_1000.lime@${lime_file}@; s@fcolorvec.mod1000@${colorvec_file}@; s@fgprop.sdb1000@${gprop_file}@" > $gprop_xml
 
 			output="$runpath/gprop_t${t_source}_z${zphase}.out"
-			mins="25"
-			nodes=4
 			cat << EOF > $runpath/gprop_t${t_source}_z${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/gprop_t${t_source}_z${zphase}.out0
-#SBATCH -t $mins
-#SBATCH --nodes=$nodes
-#SBATCH --gpus-per-task=1
-#SBATCH --ntasks-per-node=4 # number of tasks per node
-#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH -t $gprop_chroma_minutes
+#SBATCH --nodes=$gprop_slurm_nodes
 #SBATCH -J gprop-${cfg}-${t_source}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f ${gprop_file}*
-	srun -N4 -n $((nodes*4)) \$MY_ARGS $chroma -i ${gprop_xml} -geom 1 2 2 4 $chroma_extra_args &> $output
+	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -145,7 +140,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo b $mins $nodes
+	echo b $gprop_chroma_minutes $nodes
 }
 
 globus() {

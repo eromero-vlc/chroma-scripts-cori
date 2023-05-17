@@ -40,8 +40,6 @@ for ens in $ensembles; do
         <use_derivP>true</use_derivP>
         <t_source>0</t_source>
         <Nt_forward>$t_size</Nt_forward>
-        <mom2_min>1</mom2_min>
-        <mom2_max>2</mom2_max>
         <mom_list>
                 <elem>0 0 0</elem>
                 <elem>1 0 0</elem>
@@ -97,7 +95,7 @@ for ens in $ensembles; do
       <NamedObject>
         <gauge_id>default_gauge_field</gauge_id>
         <colorvec_files><elem>${colorvec_file}</elem></colorvec_files>
-        <baryon_op_file>${baryon_file}</baryon_op_file>
+        <meson_op_file>${meson_file}</baryon_op_file>
       </NamedObject>
     </elem>
   </InlineMeasurements>
@@ -125,16 +123,15 @@ EOF
 			cat << EOF > $runpath/meson_${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/meson_${zphase}.out0
-#SBATCH -t 0:40:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
+#SBATCH -t $meson_chroma_minutes
+#SBATCH --nodes=$meson_slurm_nodes
 #SBATCH -J meson-${cfg}-${zphase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $meson_file
-	srun \$MY_ARGS -n 4 -N 1 $chroma -i ${meson_xml} -geom 1 1 2 2 $chroma_extra_args &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*meson_slurm_nodes )) -N $meson_slurm_nodes $chroma -i ${meson_xml} -geom $meson_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -152,7 +149,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo b 600 1
+	echo b $meson_chroma_minutes $meson_slurm_nodes
 }
 
 globus() {}

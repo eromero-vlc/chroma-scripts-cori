@@ -118,16 +118,15 @@ EOF
 			cat << EOF > $runpath/baryon_${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/baryon_${zphase}.out0
-#SBATCH -t 1:00:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
+#SBATCH -t $baryon_chroma_minutes
+#SBATCH --nodes=$baryon_slurm_nodes
 #SBATCH -J bar-${cfg}-${zphase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $baryon_file
-	srun \$MY_ARGS -n 4 -N 1 $chroma -i ${baryon_xml} -geom 1 1 2 2 $chroma_extra_args &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -145,7 +144,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo b 60 1
+	echo b $baryon_chroma_minutes $baryon_slurm_nodes
 }
 
 globus() {

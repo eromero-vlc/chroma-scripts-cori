@@ -192,18 +192,15 @@ EOF
 			cat << EOF > $runpath/prop_t${t_source}_z${zphase}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
-#SBATCH -t 0:30:00
-#SBATCH --nodes=1
-#SBATCH --gpus-per-task=1
-#SBATCH --ntasks-per-node=4 # number of tasks per node
-#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH -t $prop_chroma_minutes
+#SBATCH --nodes=$prop_slurm_nodes
 #SBATCH -J prop-${cfg}-${t_source}-${zphase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $prop_file
-	srun \$MY_ARGS -n 4 -N 1 $chroma -i ${prop_xml} -geom 1 1 2 2 $chroma_extra_args &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*prop_slurm_nodes )) -N $prop_slurm_nodes $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -221,7 +218,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo b 600 1
+	echo b $prop_chroma_minutes $prop_slurm_nodes
 }
 
 globus() {

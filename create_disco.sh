@@ -166,13 +166,11 @@ for ens in $ensembles; do
 EOF
 
 		output="$runpath/disco.out"
-		mins="$(( 20*60 ))" # 20 hours
-		nodes=16
 		cat << EOF > $runpath/disco.sh
 $slurm_sbatch_prologue_cpu
 #SBATCH -o $runpath/disco.out0
-#SBATCH -t $mins
-#SBATCH --nodes=$nodes
+#SBATCH -t $disco_chroma_minutes
+#SBATCH --nodes=$disco_slurm_nodes
 #SBATCH -J disco-${cfg}
 
 run() {
@@ -180,7 +178,7 @@ run() {
 	
 	cd $runpath
 	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*nodes )) -N $nodes $chroma_cpu -i $runpath/disco.xml -geom 2 2 4 4 $chroma_extra_args_cpu &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma_cpu -i $runpath/disco.xml -geom $disco_chroma_geometry $chroma_extra_args_cpu &> $output
 }
 
 check() {
@@ -198,7 +196,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo a $mins $nodes
+	echo a $disco_chroma_minutes $disco_slurm_nodes
 }
 
 globus() {
