@@ -35,7 +35,7 @@ for ens in $ensembles; do
       <Param>
         <num_vecs>$max_nvec</num_vecs>
         <decay_dir>3</decay_dir>
-        <write_fingerprint>false</write_fingerprint>
+        <write_fingerprint>true</write_fingerprint>
         <LinkSmearing>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
           <link_smear_fact>${eigs_smear_rho}</link_smear_fact>
@@ -84,7 +84,7 @@ run() {
 }
 
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} && exit 0
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
 }
 

@@ -47,6 +47,7 @@ done | while read jobtag minutes_per_job num_nodes_per_job jobs; do
 	
 	# total jobs to run
 	num_jobs="`echo $jobs | wc -w`"
+	[ $num_jobs == 0 ] && continue
 	# total SLURM jobs to launch
 	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
 	# maximum number of jobs running on a single SLURM job

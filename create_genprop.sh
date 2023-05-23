@@ -126,7 +126,7 @@ run() {
 }
 
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} && exit 0
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
 }
 
@@ -140,7 +140,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes
-	echo b $gprop_chroma_minutes $nodes
+	echo b $gprop_chroma_minutes $gprop_slurm_nodes
 }
 
 globus() {
