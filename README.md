@@ -1,11 +1,15 @@
-# chroma-scripts-cori
+# chroma-scripts
 
-Scripts to manage the chroma's workflow on [NERSC's cori](https://docs.nersc.gov/systems/cori/).
+Scripts to manage the chroma's workflow on SLURM
 
 ```           
-  lime --->  *laplace_eigs*  --> eigs.mod ---> *harom* ---> baryon.mod -\
-                                     \                                   )-> *redstar*
-                                      \------> *chroma* ---> prop.mod --/
+  lime --> *chroma* --> eigs.mod --> *chroma* +-> meson.mod   -+-> *redstar*
+                                              |                |
+                                              +-> baryon.mod  -+
+                                              |                |
+                                              +-> prop.mod    -+
+                                              |                |
+                                              +-> genprop.mod -+
 ```
 ## Basic characteristics
 
@@ -13,19 +17,16 @@ Scripts to manage the chroma's workflow on [NERSC's cori](https://docs.nersc.gov
 
 - Group similar tasks into a single SLURM job
 
-- Mark dependencies between SLURM jobs
-  
 ## Basic script usage
 
-1. Modify the variables at the beginning of each script
-   (*FIXME* factorize out the common configuration into a single file)
+1. Modify `ensembles.sh`, which centralizes most of the options
 
-2. Run `create_eigs.sh`, `create_props.sh` ... to create jobs
+2. If using globus, check credentials with `globus_chech.sh`
 
-3. Run `create_eigs_launch.sh`, `create_props_launch.sh` ...
-   to submit jobs that haven't been submitted already
+3. Run `create.sh` to create jobs
 
-4. Run `create_eigs_check.sh`, `create_props_check.sh` ...
-   to remove the submitted mark on unsuccessfully finished jobs
+4. Run `launch.sh` to submit jobs that haven't been submitted yet
+   or failed
 
-
+5. Run `check.sh` to start globus transfers to jlab from
+   successful jobs and mark failed jobs to relaunch

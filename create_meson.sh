@@ -6,8 +6,8 @@ for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
-	# Check for running baryons
-	[ $run_baryons != yes ] && continue
+	# Check for running mesons
+	[ $run_mesons != yes ] && continue
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
@@ -16,39 +16,39 @@ for ens in $ensembles; do
 
 		runpath="$PWD/${tag}/conf_${cfg}"
 
-		for zphase in $baryon_zphases; do
+		for zphase in $meson_zphases; do
 
-			baryon_file="`baryon_file_name`"
-			mkdir -p `dirname ${baryon_file}`
+			meson_file="`meson_file_name`"
+			mkdir -p `dirname ${meson_file}`
 
 			#
-			# Baryon creation
+			# Meson creation
 			#
 
-			baryon_xml="$runpath/baryon_${zphase}.xml"
-			cat << EOF > $baryon_xml
+			meson_xml="$runpath/meson_${zphase}.xml"
+			cat << EOF > $meson_xml
 <?xml version="1.0"?>
 <chroma>
 <Param>
   <InlineMeasurements>
     <elem>
-      <Name>BARYON_MATELEM_COLORVEC_SUPERB</Name>
+      <Name>MESON_MATELEM_COLORVEC_SUPERB</Name>
       <Frequency>1</Frequency>
+      
       <Param>
-        <version>2</version>
-        <max_tslices_in_contraction>${baryon_chroma_max_tslices_in_contraction}</max_tslices_in_contraction>
-        <max_moms_in_contraction>${baryon_chroma_max_moms_in_contraction}</max_moms_in_contraction>
-        <max_vecs>0</max_vecs>
-        
+        <version>4</version>
         <use_derivP>true</use_derivP>
         <t_source>0</t_source>
         <Nt_forward>$t_size</Nt_forward>
-        <num_vecs>$baryon_nvec</num_vecs>
+        <num_vecs>$meson_nvec</num_vecs>
+        <mom2_min>0</mom2_min>
+        <mom2_max>0</mom2_max>
+        <phase>0 0 $zphase</phase>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
-        <phase>0.00 0.00 $zphase</phase>
+        <max_tslices_in_contraction>$meson_chroma_max_tslices_in_contraction</max_tslices_in_contraction>
 
-        $baryon_extra_xml
+        $meson_extra_xml
 
         <LinkSmearing>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
@@ -60,7 +60,7 @@ for ens in $ensembles; do
       <NamedObject>
         <gauge_id>default_gauge_field</gauge_id>
         <colorvec_files><elem>${colorvec_file}</elem></colorvec_files>
-        <baryon_op_file>${baryon_file}</baryon_op_file>
+        <meson_op_file>${meson_file}</meson_op_file>
       </NamedObject>
     </elem>
   </InlineMeasurements>
@@ -84,19 +84,19 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-			output="$runpath/baryon_${zphase}.out"
-			cat << EOF > $runpath/baryon_${zphase}.sh
+			output="$runpath/meson_${zphase}.out"
+			cat << EOF > $runpath/meson_${zphase}.sh
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/baryon_${zphase}.out0
-#SBATCH -t $baryon_chroma_minutes
-#SBATCH --nodes=$baryon_slurm_nodes
-#SBATCH -J bar-${cfg}-${zphase}
+#SBATCH -o $runpath/meson_${zphase}.out0
+#SBATCH -t $meson_chroma_minutes
+#SBATCH --nodes=$meson_slurm_nodes
+#SBATCH -J meson-${cfg}-${zphase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	rm -f $baryon_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
+	rm -f $meson_file
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*meson_slurm_nodes )) -N $meson_slurm_nodes $chroma -i ${meson_xml} -geom $meson_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -109,20 +109,17 @@ deps() {
 }
 
 outs() {
-	echo $baryon_file
+	echo $meson_file
 }
 
 class() {
 	# class max_minutes nodes
-	echo b $baryon_chroma_minutes $baryon_slurm_nodes
+	echo b $meson_chroma_minutes $meson_slurm_nodes
 }
 
-globus() {
-	[ $baryon_transfer_back == yes ] && echo ${baryon_file}.globus ${this_ep}${baryon_file#${confspath}} ${jlab_ep}${baryon_file#${confspath}} ${baryon_delete_after_transfer_back}
-}
+globus() { echo -n; }
 
 eval "\${1:-run}"
-
 EOF
 		done # zphase
 	done # cfg

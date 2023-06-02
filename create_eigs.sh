@@ -1,83 +1,55 @@
 #!/bin/bash
 
-confs="`seq 4510 10 10000`"
-confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
-confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+source ensembles.sh
 
-s_size=32 # lattice spatial size
-t_size=64 # lattice temporal size
-nvec=128  # number of eigenvectors
+for ens in $ensembles; do
+	# Load the variables from the function
+	eval "$ens"
 
-confspath="/global/project/projectdirs/hadron/b6p3"
-chroma="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/chroma/bin/chroma"
-laplace_eigs="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/laplace_eigs/laplace_eigs"
-vecs_combine_3d="/global/project/projectdirs/hadron/qcd_software/nersc/cori/parscalar/install/laplace_eigs/vecs_combine_3d"
+	# Check for running eigs
+	[ $run_eigs != yes ] && continue
 
+	for cfg in $confs; do
+		lime_file="`lime_file_name`"
+		colorvec_file="`colorvec_file_name`"
+		[ -f $lime_file ] || continue
+		
+		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p $runpath
 
-mkdir -p ${confspath}/${confsprefix}/stout_mod
-mkdir -p ${confspath}/${confsprefix}/cfgs_mod
-mkdir -p ${confspath}/${confsprefix}/eigs_mod
-
-for cfg in $confs; do
-
-lime_file="${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"
-gauge_file="${confspath}/${confsprefix}/cfgs_mod/${confsname}.3d.gauge.n${nvec}.mod${cfg}"
-colorvec_file="${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${nvec}.mod${cfg}"
-
-echo $lime_file
-[ -f $lime_file ] || continue
-
-runpath="$PWD/${tag}/run_eigs_$cfg"
-mkdir -p $runpath
-
-mkdir -p $SCRATCH/tmp
-localrunpath="$SCRATCH/tmp/run_${tag}_${cfg}"
-stout_file="${localrunpath}/${confsname}.3d.stdout.n${nvec}.mod${cfg}"
-local_gauge_file="${localrunpath}/${confsname}.3d.gauge.n${nvec}.mod${cfg}"
-local_colorvec_file="${localrunpath}/${confsname}.3d.eigs.n${nvec}.mod${cfg}"
-
-#
-# Basis creation
-#
-
-cat << EOF > $runpath/stdout_creation.xml
+		# Create the directory to store the eigenvectors
+		mkdir -p `dirname ${colorvec_file}`
+		
+		#
+		# Basis creation
+		#
+		
+		cat << EOF > $runpath/eigs.xml
 <?xml version="1.0"?>
 <chroma>
-  <Param>
-    <InlineMeasurements>
-      <elem>
-        <Name>LINK_SMEAR</Name>
-        <Frequency>1</Frequency>
-        <Param>
+ <Param>
+  <InlineMeasurements>
+    <elem>
+      <Name>CREATE_COLORVECS_SUPERB</Name>
+      <Frequency>1</Frequency>
+      <Param>
+        <num_vecs>$max_nvec</num_vecs>
+        <decay_dir>3</decay_dir>
+        <write_fingerprint>true</write_fingerprint>
+        <LinkSmearing>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
-          <link_smear_fact>0.1</link_smear_fact>
-          <link_smear_num>10</link_smear_num>
+          <link_smear_fact>${eigs_smear_rho}</link_smear_fact>
+          <link_smear_num>${eigs_smear_steps}</link_smear_num>
           <no_smear_dir>3</no_smear_dir>
-        </Param>
-        <NamedObject>
-          <gauge_id>default_gauge_field</gauge_id>
-          <linksmear_id>stout_gauge_field</linksmear_id>
-        </NamedObject>
-      </elem>
-      <elem>
-        <Name>WRITE_TIMESLICE_MAP_OBJECT_DISK</Name>
-        <NamedObject>
-          <object_type>ArrayLatticeColorMatrix</object_type>
-          <input_id>default_gauge_field</input_id>
-          <output_file>$local_gauge_file</output_file>
-        </NamedObject>
-      </elem>
-      <elem>
-        <Name>WRITE_TIMESLICE_MAP_OBJECT_DISK</Name>
-        <NamedObject>
-          <object_type>ArrayLatticeColorMatrix</object_type>
-          <input_id>stout_gauge_field</input_id>
-          <output_file>$stout_file</output_file>
-        </NamedObject>
-      </elem>
-    </InlineMeasurements>
-    <nrow>$s_size $s_size $s_size $t_size</nrow>
+        </LinkSmearing>
+      </Param>
+      <NamedObject>
+        <gauge_id>default_gauge_field</gauge_id>
+        <colorvec_out>${colorvec_file}</colorvec_out>
+      </NamedObject>
+    </elem>
+  </InlineMeasurements>
+  <nrow>$s_size $s_size $s_size $t_size</nrow>
   </Param>
   <RNG>
     <Seed>
@@ -95,86 +67,45 @@ cat << EOF > $runpath/stdout_creation.xml
 </chroma>
 EOF
 
-cat << EOFout > $runpath/run.bash
-#!/bin/bash
-#SBATCH -o $runpath/eig_create_run.out
-#SBATCH -t 0:40:00
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=32
-#SBATCH --constraint=haswell
-#SBATCH -A hadron
-#SBATCH --qos=regular
-#SBATCH -J eigs-$cfg
-#DW jobdw capacity=8GB access_mode=striped type=scratch
+		output="$runpath/eigs.out"
+		cat << EOF > $runpath/eigs.sh
+$slurm_sbatch_prologue
+#SBATCH -o $runpath/eigs.out0
+#SBATCH -t $eigs_chroma_minutes
+#SBATCH --nodes=$eigs_slurm_nodes
+#SBATCH -J eig-${cfg}
 
-. /opt/modules/default/init/bash
-module unload PrgEnv-cray
-module unload PrgEnv-intel
-module unload PrgEnv-pgi
-module unload PrgEnv-gnu
-module unload darshan
-module load PrgEnv-intel
-module load craype-haswell
-module load python3
+run() {
+	$slurm_script_prologue
+	
+	cd $runpath
+	rm -f $colorvec_file
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*eigs_slurm_nodes )) -N $eigs_slurm_nodes $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args &> $output
+}
 
-cd $runpath
-export MKL_NUM_THREADS=1
-export OMP_NUM_THREADS=64
-export OMP_PLACES=threads
-export OMP_PROC_BIND=true
+check() {
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
+	exit 1
+}
 
-srun -N1 -n1 \$MY_OFFSET rm -rf $localrunpath
-srun -N1 -n1 \$MY_OFFSET ln -s \$DW_JOB_STRIPED $localrunpath
-#srun -N1 -n1 \$MY_OFFSET  mkdir -p $localrunpath
+deps() {
+	echo $lime_file
+}
 
-srun -N1 -n1 \$MY_OFFSET rm -f $gauge_file ${stout_file}* ${colorvec_file}
-echo RUNNING chroma
-srun -N1 -n32 \$MY_OFFSET $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 1 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/stdout_creation.xml -geom 2 2 2 4
-srun -N1 -n1 \$MY_OFFSET cp $local_gauge_file $gauge_file &
+outs() {
+	echo $colorvec_file
+}
 
-for t_slice in \`seq 0 $((t_size - 1))\` ; do
+class() {
+	# class max_minutes nodes
+	echo a $eigs_chroma_minutes $eigs_slurm_nodes
+}
 
-cat << EOF > $runpath/laplace_eigs.xml
-<?xml version="1.0"?>
-<LaplaceEigs>
-  <Param>
-    <version>2</version>
-    <Layout>$s_size $s_size $s_size</Layout>
-    <LinearOperator>Laplacian</LinearOperator>
-    <t_slice>\$t_slice</t_slice>
-    <gauge_file>$stout_file</gauge_file>
-    <vec_file>${stout_file}_t_\${t_slice}</vec_file>
-  </Param>
-  <EigenInfo>
-    <Nev>$nvec</Nev>
-    <PrintLevel>3</PrintLevel>
-    <LambdaC>0.5</LambdaC>
-    <LambdaMax>15</LambdaMax>
-    <NCheb>8</NCheb>
-    <Tol>1e-06</Tol>
-  </EigenInfo>
-</LaplaceEigs>
+globus() {
+	[ $eigs_transfer_back == yes ] && echo ${colorvec_file}.globus ${this_ep}${colorvec_file#${confspath}} ${jlab_ep}${colorvec_file#${confspath}} ${eigs_delete_after_transfer_back}
+}
+
+eval "\${1:-run}"
 EOF
-echo RUNNING laplace_eigs for slice \$t_slice
-srun -N1 -n32 \$MY_OFFSET $laplace_eigs $runpath/laplace_eigs.xml $runpath/out_t_\$t_slice
-done #t_slice
-
-cat << EOF > $runpath/vecs_combine_3d.xml
-<VecsCombine>
-  <version>1</version>
-  <Layout>$s_size $s_size $s_size $t_size</Layout>
-  <InputFiles>
-  `for i in $( seq 0 $((t_size -1 )) ); do echo "<elem>${stout_file}_t_${i}</elem>" ; done`
-  </InputFiles>
-  <OutFile>$local_colorvec_file</OutFile>
-</VecsCombine>
-EOF
-echo RUNNING vecs_combine_3d
-srun -N1 -n1 \$MY_OFFSET $vecs_combine_3d $runpath/vecs_combine_3d.xml vecs_combine.out
-srun -N1 -n1 \$MY_OFFSET cp $local_colorvec_file $colorvec_file
-srun -N1 -n1 \$MY_OFFSET rm -f ${stout_file}*
-wait
-echo FINISHED
-EOFout
-
-done # cfg
+	done # cfg
+done # ens

@@ -1,50 +1,52 @@
 #!/bin/bash
 
-confs="`seq 1000 10 5160`"
-confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
-confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+source ensembles.sh
 
-s_size=32 # lattice spatial size
-t_size=64 # lattice temporal size
+for ens in $ensembles; do
+	# Load the variables from the function
+	eval "$ens"
 
-confspath="/cache/isoClover"
-chroma="/home/eromero/qcd_software/jlab/knl/install/chroma2-double/bin/chroma"
-probing_file="/work/JLabLQCD/eromero/run_disco/d32_32_32_64k0_0_5_0p8c256.txt"
+	# Check for running disco
+	[ $run_discos != yes ] && continue
 
+	# Create the directory to store the results
+	mkdir -p ${confspath}/${confsprefix}/disco
 
-mkdir -p ${confspath}/${confsprefix}/disco
-
-for cfg in $confs; do
-
-lime_file="${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"
-disco_file="${confspath}/${confsprefix}/disco/${confsname}.disco.sdb${cfg}"
-
-echo $lime_file
-[ -f $lime_file ] || continue
-
-runpath="$PWD/${tag}/run_disco_$cfg"
-mkdir -p $runpath
-
-#
-# Disco creation
-#
-
-cat << EOF > $runpath/disco.xml
+	for cfg in $confs; do
+		lime_file="`lime_file_name`"
+		disco_file="`disco_file_name`"
+		[ -f $lime_file ] || continue
+		
+		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p $runpath
+		
+		#
+		# Basis creation
+		#
+		
+		cat << EOF > $runpath/disco.xml
 <?xml version="1.0"?>
 <chroma>
-<Param>
+ <Param>
   <InlineMeasurements>
-    <elem>
-      <Name>DISCO_PROBING_DEFLATION</Name>
+   <elem>
+    <Name>DISCO_PROBING_DEFLATION_SUPERB</Name>
       <Param>
-        <max_path_length>8</max_path_length>
-        <p2_max>0</p2_max>
-        <mass_label>U-0.2350</mass_label>
-        <probing_distance>1</probing_distance>
-	<probing_file>$probing_file</probing_file>
-        <noise_vectors>1</noise_vectors>
-	<max_rhs>4</max_rhs>
+        <max_path_length>${disco_max_z_displacement}</max_path_length>
+        <mom_list>
+           <elem>0 0 0</elem>
+           <elem>0 0 1</elem>
+           <elem>0 0 -1</elem>
+           <elem>0 0 2</elem>
+           <elem>0 0 -2</elem>
+           <elem>0 0 3</elem>
+           <elem>0 0 -3</elem>
+        </mom_list>
+        <mass_label>${prop_mass_label}</mass_label>
+        <probing_distance>${disco_probing_displacement}</probing_distance>
+        <probing_power>${disco_probing_power}</probing_power>
+        <noise_vectors>${disco_noise_vectors}</noise_vectors>
+        <max_rhs>1</max_rhs>
         <Propagator>
           <version>10</version>
           <quarkSpinType>FULL</quarkSpinType>
@@ -52,8 +54,8 @@ cat << EOF > $runpath/disco.xml
           <numRetries>1</numRetries>
           <FermionAction>
             <FermAct>CLOVER</FermAct>
-            <Mass>-0.2350</Mass>
-            <clovCoeff>1.20536588031793</clovCoeff>
+                <Mass>${prop_mass}</Mass>
+                <clovCoeff>${prop_clov}</clovCoeff>
             <FermState>
               <Name>STOUT_FERM_STATE</Name>
               <rho>0.125</rho>
@@ -68,8 +70,8 @@ cat << EOF > $runpath/disco.xml
             <InvertParam>
               <invType>MG_PROTO_QPHIX_EO_CLOVER_INVERTER</invType>
               <CloverParams>
-                <Mass>-0.2350</Mass>
-                <clovCoeff>1.20536588031793</clovCoeff>
+                <Mass>${prop_mass}</Mass>
+                <clovCoeff>${prop_clov}</clovCoeff>
               </CloverParams>
               <AntiPeriodicT>true</AntiPeriodicT>
               <MGLevels>3</MGLevels>
@@ -106,8 +108,8 @@ cat << EOF > $runpath/disco.xml
         <Projector>
               <projectorType>MG_PROTO_QPHIX_CLOVER_PROJECTOR</projectorType>
               <CloverParams>
-                <Mass>-0.2350</Mass>
-                <clovCoeff>1.20536588031793</clovCoeff>
+                <Mass>${prop_mass}</Mass>
+                <clovCoeff>${prop_clov}</clovCoeff>
                 <AnisoParam>
                   <anisoP>false</anisoP>
                   <t_dir>3</t_dir>
@@ -123,11 +125,11 @@ cat << EOF > $runpath/disco.xml
               </Blocking>
               <NullVecs>24 32</NullVecs>
               <NullSolverMaxIters>800 800</NullSolverMaxIters>
-              <NullSolverRsdTarget>-0.006 -0.0006</NullSolverRsdTarget>
+              <NullSolverRsdTarget>-0.002 -0.0002</NullSolverRsdTarget>
               <NullSolverVerboseP>0 0</NullSolverVerboseP>
               <EigenSolverBlockSize>1</EigenSolverBlockSize>
               <EigenSolverMaxRestartSize>32</EigenSolverMaxRestartSize>
-              <EigenSolverMaxRank>800</EigenSolverMaxRank>
+              <EigenSolverMaxRank>1600</EigenSolverMaxRank>
               <EigenSolverRsdTarget>1.0e-3</EigenSolverRsdTarget>
               <EigenSolverMaxIters>0</EigenSolverMaxIters>
               <EigenSolverVerboseP>true</EigenSolverVerboseP>
@@ -141,22 +143,20 @@ cat << EOF > $runpath/disco.xml
       </Param>
       <NamedObject>
         <gauge_id>default_gauge_field</gauge_id>
-        <sdb_file>$disco_file</sdb_file>
+        <sdb_file>${disco_file}</sdb_file>
       </NamedObject>
     </elem>
   </InlineMeasurements>
   <nrow>$s_size $s_size $s_size $t_size</nrow>
-</Param>
-
-<RNG>
-  <Seed>
-    <elem>11</elem>
-    <elem>11</elem>
-    <elem>11</elem>
-    <elem>0</elem>
-  </Seed>
-</RNG>
-
+  </Param>
+  <RNG>
+    <Seed>
+      <elem>2551</elem>
+      <elem>3189</elem>
+      <elem>2855</elem>
+      <elem>$cfg</elem>
+    </Seed>
+  </RNG>
   <Cfg>
     <cfg_type>SCIDAC</cfg_type>
     <cfg_file>${lime_file}</cfg_file>
@@ -165,33 +165,45 @@ cat << EOF > $runpath/disco.xml
 </chroma>
 EOF
 
-cat << EOF > $runpath/disco_create.sh
-#!/bin/bash
-#SBATCH -o $runpath/disco_create.out.0
-#SBATCH -t 10:30:00
-#SBATCH --nodes=4
+		output="$runpath/disco.out"
+		cat << EOF > $runpath/disco.sh
+$slurm_sbatch_prologue_cpu
+#SBATCH -o $runpath/disco.out0
+#SBATCH -t $disco_chroma_minutes
+#SBATCH --nodes=$disco_slurm_nodes
 #SBATCH -J disco-${cfg}
-#SBATCH -A delta
-#SBATCH -p phi
-#SBATCH -C cache,quad,18p
 
+run() {
+	$slurm_script_prologue_cpu
+	
+	cd $runpath
+	rm -f $colorvec_file
+	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma_cpu -i $runpath/disco.xml -geom $disco_chroma_geometry $chroma_extra_args_cpu &> $output
+}
 
-COMPILER_SUITE=/dist/intel/parallel_studio_2019/parallel_studio_xe_2019
-source  \${COMPILER_SUITE}/psxevars.sh intel64
+check() {
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
+	exit 1
+}
 
+deps() {
+	echo $lime_file
+}
 
-cd $runpath
-export MKL_NUM_THREADS=1
-export OMP_NUM_THREADS=64
-export OMP_PLACES=threads
-export OMP_PROC_BIND=spread
+outs() {
+	echo $disco_file
+}
 
-rm -f $disco_file
+class() {
+	# class max_minutes nodes
+	echo a $disco_chroma_minutes $disco_slurm_nodes
+}
 
-export nodefile="\`mktemp\`"
-scontrol show hostnames \$SLURM_JOB_NODELIST > \$nodefile
+globus() {
+	[ $disco_transfer_back == yes ] && echo ${disco_file}.globus ${this_ep}${disco_file#${confspath}} ${jlab_ep}${disco_file#${confspath}} ${disco_delete_after_transfer_back}
+}
 
-mpirun -rsh rsh -genvall -np 16 -hostfile \$nodefile -ppn 4 $chroma -by 4 -bz 4 -pxy 0 -pxyz 0 -c 64 -sy 1 -sz 1 -minct 1 -poolsize 1 -i $runpath/disco.xml  -geom 2 2 2 2 &> $runpath/disco_create.out
+eval "\${1:-run}"
 EOF
-
-done # cfg
+	done # cfg
+done # ens
