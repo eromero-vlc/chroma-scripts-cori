@@ -78,7 +78,7 @@ if [ -s $t ] ; then
 			success=1
 			cat $tt | while read f orig dest delete ; do
 				echo ${orig#*:} ${dest#*:}
-			done | globus transfer --batch ${origep} ${destep} > ${tt}_tsk || success=0
+			done | globus transfer --batch - ${origep} ${destep} > ${tt}_tsk || success=0
 			if [ $success == 0 ]; then
 				cat ${tt}_tsk
 				exit 1
