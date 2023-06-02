@@ -36,50 +36,20 @@ for ens in $ensembles; do
       <Frequency>1</Frequency>
       <Param>
         <version>2</version>
-        <max_tslices_in_contraction>1</max_tslices_in_contraction>
-        <max_moms_in_contraction>1</max_moms_in_contraction>
+        <max_tslices_in_contraction>${baryon_chroma_max_tslices_in_contraction}</max_tslices_in_contraction>
+        <max_moms_in_contraction>${baryon_chroma_max_moms_in_contraction}</max_moms_in_contraction>
         <max_vecs>0</max_vecs>
         
         <use_derivP>true</use_derivP>
         <t_source>0</t_source>
         <Nt_forward>$t_size</Nt_forward>
-        <mom_list>
-                <elem>0 0 0</elem>
-                <elem>0 0 1</elem>
-                <elem>0 0 -1</elem>
-                <elem>0 0 2</elem>
-                <elem>0 0 -2</elem>
-                <elem>0 0 3</elem>
-                <elem>0 0 -3</elem>
-        </mom_list>
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
         <phase>0.00 0.00 $zphase</phase>
 
-        <!-- List of displacement arrays -->
-        <displacement_list>
-          <elem><left>0</left><middle>0</middle><right>0</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>
-          <elem><left>0</left><middle>1</middle><right>1</right></elem>
-          <elem><left>0</left><middle>1</middle><right>2</right></elem>
-          <elem><left>0</left><middle>1</middle><right>3</right></elem>
-          <elem><left>0</left><middle>2</middle><right>2</right></elem>
-          <elem><left>0</left><middle>2</middle><right>3</right></elem>
-          <elem><left>0</left><middle>3</middle><right>3</right></elem>
-        </displacement_list>
-    
+        $baryon_extra_xml
+
         <LinkSmearing>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
           <link_smear_fact>$eigs_smear_rho</link_smear_fact>

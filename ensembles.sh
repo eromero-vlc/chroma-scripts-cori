@@ -86,6 +86,7 @@ ensemble0() {
 	meson_nvec=$nvec
 	meson_zphases="0.00 2.00"
 	meson_slurm_nodes=2
+	meson_chroma_max_tslices_in_contraction="$t_size" # as large as possible
 	meson_chroma_geometry="1 2 2 4"
 	meson_chroma_minutes=600
 	meson_file_name() {
@@ -96,10 +97,51 @@ ensemble0() {
 		fi
 	}
 	meson_transfer_from_jlab="nop"
+	meson_extra_xml="
+        <mom_list>
+                <elem>0 0 0</elem>
+                <elem>1 0 0</elem>
+                <elem>-1 0 0</elem>
+                <elem>0 1 0</elem>
+                <elem>0 -1 0</elem>
+                <elem>0 0 1</elem>
+                <elem>0 0 -1</elem>
+                <elem>2 0 0</elem>
+                <elem>-2 0 0</elem>
+                <elem>0 2 0</elem>
+                <elem>0 -2 0</elem>
+                <elem>0 0 2</elem>
+                <elem>0 0 -2</elem>
+                <elem>3 0 0</elem>
+                <elem>-3 0 0</elem>
+                <elem>0 3 0</elem>
+                <elem>0 -3 0</elem>
+                <elem>0 0 3</elem>
+                <elem>0 0 -3</elem>
+        </mom_list>
+        <!-- List of displacement arrays -->
+        <displacement_list>
+          <elem></elem>
+          <elem>1</elem>
+          <elem>2</elem>
+          <elem>3</elem>
+          <elem>1 1</elem>
+          <elem>2 2</elem>
+          <elem>3 3</elem>
+          <elem>1 2</elem>
+          <elem>1 3</elem>
+          <elem>2 1</elem>
+          <elem>2 3</elem>
+          <elem>3 1</elem>
+          <elem>3 2</elem>
+        </displacement_list>
+"
 
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="0.00"
+	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
+	baryon_chroma_max_moms_in_contraction=0 # as large as possible (zero means do all momenta at once)
 	baryon_slurm_nodes=2
 	baryon_chroma_geometry="1 2 2 4"
 	baryon_chroma_minutes=600
@@ -113,6 +155,39 @@ ensemble0() {
 	baryon_transfer_back="yes"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
+	baryon_extra_xml="
+	<mom_list>
+                <elem>0 0 0</elem>
+                <elem>0 0 1</elem>
+                <elem>0 0 -1</elem>
+                <elem>0 0 2</elem>
+                <elem>0 0 -2</elem>
+                <elem>0 0 3</elem>
+                <elem>0 0 -3</elem>
+        </mom_list>
+        <!-- List of displacement arrays -->
+        <displacement_list>
+          <elem><left>0</left><middle>0</middle><right>0</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>
+          <elem><left>0</left><middle>1</middle><right>1</right></elem>
+          <elem><left>0</left><middle>1</middle><right>2</right></elem>
+          <elem><left>0</left><middle>1</middle><right>3</right></elem>
+          <elem><left>0</left><middle>2</middle><right>2</right></elem>
+          <elem><left>0</left><middle>2</middle><right>3</right></elem>
+          <elem><left>0</left><middle>3</middle><right>3</right></elem>
+        </displacement_list>
+"
 
 	# Disco options
 	disco_max_z_displacement=8
