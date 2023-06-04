@@ -5,14 +5,14 @@
 # NOTE: currently is just doing one job per SLURM job 
 #
 
-nodes_per_job=4
+nodes_per_job=16
 max_jobs=1      # maximum jobs running at the same time from a user
 max_nodes=4    # maximum nodes running at the same time from a user
 
 runpath="$PWD/cl21_32_64_b6p3_m0p2350_m0p2050"
 
 h_list="`mktemp`"
-for i in `ls $runpath/run_disco_*/disco_create.sh`; do
+for i in `ls $runpath/run_disco_*/disco_create_*.sh`; do
 	[ -f ${i}.launched ] || echo $i
 done > $h_list
 
@@ -21,6 +21,7 @@ batch_size="$(( (num_jobs + max_jobs - 1) / max_jobs ))"
 if [ $(( batch_size * nodes_per_job )) -gt $max_nodes ]; then
 	batch_size="$((max_nodes / nodes_per_job ))"
 fi
+batch_size=1
 
 tag="0"
 runpath_discos=""
@@ -51,12 +52,11 @@ jobi="0"
 	cat << EOF > $runpath/run_${jobi}.sh
 #!/bin/bash
 #SBATCH -o $runpath/run_${jobi}.out
-#SBATCH -t 10:30:00
+#SBATCH -t 20:00:00
 #SBATCH -N $(( batch_jobs_size * nodes_per_job ))
-#SBATCH -A delta
-#SBATCH -J disco-batch-${tag}-${jobi}
-#SBATCH -p phi
-#SBATCH -C cache,quad,18p
+#SBATCH --account=qjs@cpu
+#SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=10
 
 `
 	cat $batch_jobs | awk '
