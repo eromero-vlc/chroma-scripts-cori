@@ -18,15 +18,24 @@ for ens in $ensembles; do
 
 		for zphase in $meson_zphases; do
 
-			meson_file="`meson_file_name`"
-			mkdir -p `dirname ${meson_file}`
+			meson_files="`meson_file_name`"
+			meson_file_index=0
+			meson_file_num="`echo $meson_files | wc -w`"
+			for meson_file in $meson_files; do
+				mkdir -p `dirname ${meson_file}`
 
-			#
-			# Meson creation
-			#
+				#
+				# Meson creation
+				#
 
-			meson_xml="$runpath/meson_${zphase}.xml"
-			cat << EOF > $meson_xml
+				t_source="$(( t_size/meson_file_num*meson_file_index ))"
+				if [ $meson_file_index != $(( meson_file_num-1 )) ]; then
+					Nt_forward="$(( t_size/meson_file_num ))"
+				else
+					Nt_forward="$(( t_size - t_source ))"
+				fi
+				meson_xml="$runpath/meson_${zphase}_${meson_file_index}.xml"
+				cat << EOF > $meson_xml
 <?xml version="1.0"?>
 <chroma>
 <Param>
@@ -38,8 +47,8 @@ for ens in $ensembles; do
       <Param>
         <version>4</version>
         <use_derivP>true</use_derivP>
-        <t_source>0</t_source>
-        <Nt_forward>$t_size</Nt_forward>
+        <t_source>$t_source</t_source>
+        <Nt_forward>$Nt_forward</Nt_forward>
         <num_vecs>$meson_nvec</num_vecs>
         <mom2_min>0</mom2_min>
         <mom2_max>0</mom2_max>
@@ -84,13 +93,13 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-			output="$runpath/meson_${zphase}.out"
-			cat << EOF > $runpath/meson_${zphase}.sh
+				output="$runpath/meson_${zphase}_${meson_file_index}.out"
+				cat << EOF > $runpath/meson_${zphase}_${meson_file_index}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/meson_${zphase}.out0
 #SBATCH -t $meson_chroma_minutes
 #SBATCH --nodes=$meson_slurm_nodes
-#SBATCH -J meson-${cfg}-${zphase}
+#SBATCH -J meson-${cfg}-${zphase}-${meson_file_index}
 
 run() {
 	$slurm_script_prologue
@@ -121,6 +130,8 @@ globus() { echo -n; }
 
 eval "\${1:-run}"
 EOF
+				meson_file_index="$(( meson_file_index+1 ))"
+			done # meson_file
 		done # zphase
 	done # cfg
 done # ens

@@ -86,14 +86,22 @@ ensemble0() {
 	meson_nvec=$nvec
 	meson_zphases="0.00 2.00"
 	meson_slurm_nodes=2
-	meson_chroma_max_tslices_in_contraction="$t_size" # as large as possible
+	meson_chroma_max_tslices_in_contraction="1" # as large as possible
 	meson_chroma_geometry="1 2 2 4"
 	meson_chroma_minutes=600
+	meson_chroma_parts=4 # split the time slices into this many different files
 	meson_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/meson_db/${confsname}.n${meson_nvec}.m2_0_0.meson.colorvec.t_0_$((t_size-1)).sdb${cfg}"
+			n="${confspath}/${confsprefix}/meson_db/${confsname}.n${meson_nvec}.m2_0_0.meson.colorvec.t_0_$((t_size-1)).sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/meson_db/${confsname}.n${meson_nvec}.m2_0_0.meson.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
+			n="${confspath}/${confsprefix}/meson_db/${confsname}.n${meson_nvec}.m2_0_0.meson.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
+		fi
+		if [ $meson_chroma_parts == 1 ]; then
+			echo $n
+		else
+			for i in `seq 1 $meson_chroma_parts`; do
+				echo $n.part_$i
+			done
 		fi
 	}
 	meson_transfer_from_jlab="nop"
@@ -140,16 +148,24 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="0.00"
-	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
-	baryon_chroma_max_moms_in_contraction=0 # as large as possible (zero means do all momenta at once)
+	baryon_chroma_max_tslices_in_contraction=2 # as large as possible
+	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
 	baryon_slurm_nodes=2
 	baryon_chroma_geometry="1 2 2 4"
 	baryon_chroma_minutes=600
+	baryon_chroma_parts=8 # split the time slices into this many different files
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
+			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
+			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
+		fi
+		if [ $baryon_chroma_parts == 1 ]; then
+			echo $n
+		else
+			for i in `seq 1 $baryon_chroma_parts`; do
+				echo $n.part_$i
+			done
 		fi
 	}
 	baryon_transfer_back="yes"
