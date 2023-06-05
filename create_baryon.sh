@@ -18,15 +18,24 @@ for ens in $ensembles; do
 
 		for zphase in $baryon_zphases; do
 
-			baryon_file="`baryon_file_name`"
-			mkdir -p `dirname ${baryon_file}`
+			baryon_files="`baryon_file_name`"
+			baryon_file_index=0
+			baryon_file_num="`echo $baryon_files | wc -w`"
+			for baryon_file in $baryon_files; do
+				mkdir -p `dirname ${baryon_file}`
 
-			#
-			# Baryon creation
-			#
+				#
+				# Baryon creation
+				#
 
-			baryon_xml="$runpath/baryon_${zphase}.xml"
-			cat << EOF > $baryon_xml
+				t_source="$(( t_size/baryon_file_num*baryon_file_index ))"
+				if [ $baryon_file_index != $(( baryon_file_num-1 )) ]; then
+					Nt_forward="$(( t_size/baryon_file_num ))"
+				else
+					Nt_forward="$(( t_size - t_source ))"
+				fi
+				baryon_xml="$runpath/baryon_${zphase}_${baryon_file_index}.xml"
+				cat << EOF > $baryon_xml
 <?xml version="1.0"?>
 <chroma>
 <Param>
@@ -41,8 +50,8 @@ for ens in $ensembles; do
         <max_vecs>0</max_vecs>
         
         <use_derivP>true</use_derivP>
-        <t_source>0</t_source>
-        <Nt_forward>$t_size</Nt_forward>
+        <t_source>$t_source</t_source>
+        <Nt_forward>$Nt_forward</Nt_forward>
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
@@ -84,13 +93,13 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-			output="$runpath/baryon_${zphase}.out"
-			cat << EOF > $runpath/baryon_${zphase}.sh
+				output="$runpath/baryon_${zphase}_${baryon_file_index}.out"
+				cat << EOF > $runpath/baryon_${zphase}_${baryon_file_index}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/baryon_${zphase}.out0
 #SBATCH -t $baryon_chroma_minutes
 #SBATCH --nodes=$baryon_slurm_nodes
-#SBATCH -J bar-${cfg}-${zphase}
+#SBATCH -J bar-${cfg}-${zphase}-${baryon_file_index}
 
 run() {
 	$slurm_script_prologue
@@ -124,6 +133,8 @@ globus() {
 eval "\${1:-run}"
 
 EOF
+				baryon_file_index="$(( baryon_file_index+1 ))"
+			done # baryon_file
 		done # zphase
 	done # cfg
 done # ens
