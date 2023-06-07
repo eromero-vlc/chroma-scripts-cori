@@ -29,6 +29,7 @@ for ens in $ensembles; do
 		else
 			echo >> $fail
 			rm -f `bash ${f%.launched} outs` $f
+			echo fail $f
 		fi
 	done
 	echo OK: `wc -l < $ok`  Failed: `wc -l < $fail`

@@ -122,8 +122,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes
-	echo b $baryon_chroma_minutes $baryon_slurm_nodes
+	# class max_minutes nodes jobs_per_node
+	echo b $baryon_chroma_minutes $baryon_slurm_nodes 1
 }
 
 globus() {
