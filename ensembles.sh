@@ -220,6 +220,32 @@ ensemble0() {
 	disco_transfer_back="yes"
 	disco_delete_after_transfer_back="nop"
 	disco_transfer_from_jlab="nop"
+
+	# Redstar options
+	redstar_fwd=21
+	redstar_back=21
+	redstar_t_sink=-2
+	redstar_t_corr=16 # Number of time slices
+	redstar_nvec=$nvec
+	redstar_tag="test"
+	redstar_2pt="yes"
+	redstar_3pt="nop"
+	redstar_use_disco="nop"
+	redstar_irmom_momtype="\
+0 0 0  0 0 0
+0 0 1  1 0 0
+0 0 2  2 0 0
+0 0 3  3 0 0"
+	redstar_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
+	redstar_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
+	corr_file_name() {
+		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}.${redstar_tag}.mom_${mom// /_}.sdb${cfg}"
+	}
+	redstar_minutes=120
+	redstar_jobs_per_node=8
+	redstar_transfer_back="nop"
+	redstar_delete_after_transfer_back="nop"
+	redstar_transfer_from_jlab="nop"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -235,6 +261,8 @@ chromaform="$HOME/chromaform_frontier_rocm4.5"
 chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+redstar_corr_graph="$chromaform/install/redstar-hip/bin/redstar_corr_graph"
+redstar_npt="$chromaform/install/redstar-hip/bin/redstar_npt"
 
 slurm_procs_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
@@ -272,6 +300,19 @@ slurm_script_prologue_cpu="
 . $chromaform_cpu/env.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$slurm_threads_per_proc_cpu
+"
+
+#
+# SLURM configuration for redstar
+#
+
+slurm_script_prologue_redstar="
+. $chromaform/env.sh
+. $chromaform/env_extra.sh
+export OPENBLAS_NUM_THREADS=1
+export OMP_NUM_THREADS=7
+export SLURM_CPU_BIND=\"cores\"
+export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
 "
 
 #
