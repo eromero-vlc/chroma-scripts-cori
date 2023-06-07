@@ -10,7 +10,7 @@ ensemble0() {
 	run_baryons="yes"
 	run_mesons="yes"
 	run_discos="nop"
-	run_redstar="nop"
+	run_redstar="yes"
 
 	# Ensemble properties
 	confsprefix="cl21_64_128_b6p3_m0p2416_m0p2050" # ensemble path after $confspath
@@ -18,7 +18,6 @@ ensemble0() {
 	confsname="cl21_64_128_b6p3_m0p2416_m0p2050" # ensemble name prefixing files
 	tag="cl21_64_128_b6p3_m0p2416_m0p2050" # directory name for storing jobs and xmls
 	confs="`seq 1000 10 1200`"   # configuration numbers to work with
-	confs=1000
 	s_size=64 # lattice spatial size
 	t_size=128 # lattice temporal size
 
@@ -279,7 +278,7 @@ slurm_script_prologue="
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 export SLURM_CPU_BIND=\"cores\"
-export SB_MPI_GPU=1
+#export SB_MPI_GPU=1
 "
 
 #
