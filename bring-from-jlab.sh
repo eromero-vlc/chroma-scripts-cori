@@ -107,7 +107,7 @@ for ens in $ensembles; do
 			echo ${jlab_local}/$f >> $srmget_q
 		else
 			mkdir -p `dirname ${confspath}/$f`
-			echo ${confspath}/$f.globus ${jlab_ep}${f} ${this_ep}${f} nop > ${confspath}/$f.globus
+			echo pending ${jlab_ep}${f} ${this_ep}${f} nop > ${confspath}/$f.globus
 			echo jlab-tape > ${confspath}/$f.launched 
 		fi
 	done
