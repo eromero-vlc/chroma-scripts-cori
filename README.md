@@ -15,7 +15,7 @@ Scripts to manage the chroma's workflow on SLURM
 ```
 ## Basic characteristics
 
-- Idempotent: it is safe to call twice the same script
+- Idempotent: it is safe to call twice `create.sh`, `launch.sh`, and `check.sh`
 
 - Group similar tasks into a single SLURM job
 
@@ -26,8 +26,9 @@ Scripts to manage the chroma's workflow on SLURM
 2. If using globus, check credentials with `globus_check.sh`
 
 3. If bringing files from jlab, set `lime_transfer_from_jlab` to `yes` 
-   (or `eigs_` or `prop_` or `gprop_` ...)  and run `bring-from-jlab.sh`
-   to annotate the transfers and run `check.sh` to execute them
+   (or `eigs_` or `prop_` or `gprop_` ...) in `ensemble.sh`  and run
+   `bring-from-jlab.sh` to annotate the transfers and run `check.sh`
+   to execute them
 
 4. Run `create.sh` to create jobs
 
