@@ -154,7 +154,7 @@ EOF
 	ji="0"
 	for j in $actual_jobs; do
 		for f in $j $( bash $j outs ); do
-			echo ${sbatch_job_id}_$((ji/max_jobs_in_bundle)) > ${f}.launched
+			echo ${sbatch_job_id}_$((ji/(max_jobs_in_bundle*num_jobs_per_node))) > ${f}.launched
 		done
 		ji="$(( ji+1 ))"
 	done
