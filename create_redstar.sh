@@ -203,9 +203,11 @@ for ens in $ensembles; do
       </twoquark_discoblock_dbs>
       <smeared_baryon_dbs>
 `
-	for i in $( baryon_file_name ); do
-		echo "<elem>$i</elem>"
-	done
+	if [ $redstar_use_baryon == yes ]; then
+		for i in $( baryon_file_name ); do
+			echo "<elem>$i</elem>"
+		done
+	fi
 `
       </smeared_baryon_dbs>
       <unsmeared_meson_dbs>
@@ -216,6 +218,13 @@ for ens in $ensembles; do
 `
       </unsmeared_meson_dbs>
       <smeared_meson_dbs>
+`
+	if [ $redstar_use_meson == yes ]; then
+		for i in $( meson_file_name ); do
+			echo "<elem>$i</elem>"
+		done
+	fi
+`
       </smeared_meson_dbs>
       <fsq_discoblock_dbs>
       </fsq_discoblock_dbs>

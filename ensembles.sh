@@ -229,6 +229,8 @@ ensemble0() {
 	redstar_tag="test"
 	redstar_2pt="yes"
 	redstar_3pt="nop"
+	redstar_use_meson="nop"
+	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
 	redstar_irmom_momtype="\
 0 0 0  0 0 0
