@@ -47,7 +47,7 @@ ensemble0() {
 	prop_zphases="0.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
-	prop_mass_label="U-0.2350"
+	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=2
 	prop_chroma_geometry="1 2 2 4"
 	prop_chroma_minutes=600
