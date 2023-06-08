@@ -140,7 +140,7 @@ $slurm_sbatch_prologue
 			for f in $( bash $j deps ); do
 				[ -f ${f}.launched ] && cat ${f}.launched
 			done
-		done | sort -u | paste -sd ":"
+		done | sort -u | awk '\$0 !~ /jlab-tape/ {print}' | paste -sd ":"
 	)"
 	[ x$dep_jobs != x ] && echo "#SBATCH -d after:$dep_jobs"
 `
