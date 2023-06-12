@@ -152,7 +152,7 @@ ensemble0() {
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
 	baryon_slurm_nodes=2
 	baryon_chroma_geometry="1 2 2 4"
-	baryon_chroma_minutes=60
+	baryon_chroma_minutes=120
 	baryon_chroma_parts=8 # split the time slices into this many different files
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
