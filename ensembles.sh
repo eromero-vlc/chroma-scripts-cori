@@ -245,7 +245,7 @@ meta_ensemble() {
 	redstar_t_sink=-2
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
-	redstar_tag="test"
+	redstar_tag="${experiment}"
 	redstar_2pt="yes"
 	redstar_3pt="nop"
 	redstar_use_meson="nop"
