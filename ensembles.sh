@@ -6,24 +6,24 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="nop"
-	run_gprops="nop"
-	run_baryons="yes"
+	run_gprops="yes"
+	run_baryons="nop"
 	run_mesons="nop"
-	run_discos="yes"
+	run_discos="nop"
 	run_redstar="nop"
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-	tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
-	confs="`seq 11000 10 13990`"
+	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confs="`seq 1000 10 4500`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
-	lime_transfer_from_jlab="nop"
+	lime_transfer_from_jlab="yes"
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
@@ -31,17 +31,17 @@ ensemble0() {
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
-	eigs_transfer_back="yes"
+	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="nop"
 
 	# Props options
-	prop_t_sources="`seq 0 63`"
-	prop_t_fwd=64
+	prop_t_sources="3 5 7 9 11 13"
+	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=96
 	prop_zphases="0.00"
@@ -59,17 +59,17 @@ ensemble0() {
 			echo "${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		fi
 	}
-	prop_transfer_back="yes"
-	prop_delete_after_transfer_back="yes"
+	prop_transfer_back="nop"
+	prop_delete_after_transfer_back="nop"
 	prop_transfer_from_jlab="yes"
 
 	# Genprops options
 	gprop_t_sources="0 16 32 48"
-	gprop_t_seps="4 6 8 10 12 14"
-	gprop_zphases="0.00 2.00"
+	gprop_t_seps="3 5 7 9 11 13"
+	gprop_zphases="0.00"
 	gprop_nvec=$nvec
-	gprop_slurm_nodes=2
-	gprop_chroma_geometry="1 2 2 4"
+	gprop_slurm_nodes=1
+	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=600
 	gprop_file_name() {
 		if [ $zphase == 0.00 ]; then
@@ -79,7 +79,7 @@ ensemble0() {
 		fi
 	}
 	gprop_transfer_back="yes"
-	gprop_delete_after_transfer_back="yes"
+	gprop_delete_after_transfer_back="nop"
 	gprop_transfer_from_jlab="nop"
 
 	# Meson options
@@ -249,26 +249,28 @@ ensemble0() {
 	redstar_transfer_from_jlab="nop"
 }
 
-chroma_python="$HOME/hadron/runs-eloy/chroma_python"
+chroma_python="$PWD/chroma_python"
 PYTHON=python3
 
 #
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/hadron/chromaform-perlmutter"
-chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-cuda/bin/chroma"
+chromaform="$HOME/chromaform_frontier_rocm5.4"
+chromaform="$HOME/chromaform_frontier_rocm4.5"
+#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
+chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 redstar_corr_graph="$chromaform/install/redstar-hip/bin/redstar_corr_graph"
 redstar_npt="$chromaform/install/redstar-hip/bin/redstar_npt"
 
-slurm_procs_per_node=4
+slurm_procs_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A hadron_g
-#SBATCH -C gpu
-#SBATCH -q regular
+#SBATCH -A NPH122
+#SBATCH -p batch
 #SBATCH --gpu-bind=none
-#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH --threads-per-core=1 --cpus-per-task=7 # number of cores per task
 #SBATCH --ntasks-per-node=$slurm_procs_per_node # number of tasks per node
 #SBATCH --gpus-per-task=1"
 
@@ -276,8 +278,9 @@ slurm_script_prologue="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=32
+export OMP_NUM_THREADS=7
 export SLURM_CPU_BIND=\"cores\"
+#export SB_MPI_GPU=1
 "
 
 #
@@ -318,16 +321,16 @@ export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
 #
 
 max_jobs=20 # maximum jobs to be launched
-max_hours=5 # maximum hours for a single job
+max_hours=2 # maximum hours for a single job
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$SCRATCH/b6p3"
-this_ep="6bdc7956-fc0f-4ad2-989c-7aa5ee643a79:${SCRATCH}/b6p3/"  # perlmutter
-jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/" # jlab#gw2
+confspath="$HOME/scratch"
+this_ep="ef1a9560-7ca1-11e5-992c-22000b96db58:scratch/"  # frontier
+jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover"
 jlab_tape_registry="/mss/lattice/isoClover"
 jlab_user="$USER"
