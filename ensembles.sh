@@ -1,6 +1,6 @@
 # This shell script is executed at the beginning of create_*.sh, launch.sh, cancel.sh and check.sh
 
-ensembles="ensemble0 ensemble1 ensemble2 ensemble3"
+ensembles="ensemble0 ensemble1 ensemble2 ensemble3 ensemble4 ensemble5 ensemble6 ensemble7 ensemble8 ensemble9 ensemble10 ensemble11"
 
 ensemble0() {
 	meta_ensemble 0.04 40
@@ -16,6 +16,38 @@ ensemble2() {
 
 ensemble3() {
 	meta_ensemble 0.16 10
+}
+
+ensemble4() {
+	meta_ensemble 0.04 30
+}
+
+ensemble5() {
+	meta_ensemble 0.08 15
+}
+
+ensemble6() {
+	meta_ensemble 0.12 10
+}
+
+ensemble7() {
+	meta_ensemble 0.16 7
+}
+
+ensemble8() {
+	meta_ensemble 0.04 50
+}
+
+ensemble9() {
+	meta_ensemble 0.08 25
+}
+
+ensemble10() {
+	meta_ensemble 0.12 16
+}
+
+ensemble11() {
+	meta_ensemble 0.16 12
 }
 
 
@@ -193,12 +225,6 @@ meta_ensemble() {
 	baryon_extra_xml="
 	<mom_list>
                 <elem>0 0 0</elem>
-                <elem>0 0 1</elem>
-                <elem>0 0 -1</elem>
-                <elem>0 0 2</elem>
-                <elem>0 0 -2</elem>
-                <elem>0 0 3</elem>
-                <elem>0 0 -3</elem>
         </mom_list>
         <!-- List of displacement arrays -->
         <displacement_list>
