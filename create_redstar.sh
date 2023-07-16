@@ -2,12 +2,250 @@
 
 source ensembles.sh
 
+momtype() {
+	for i in "$@"; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
+}
+
+num_zeros_mom() {
+	local n=0
+	for i in $@; do
+		[ "$i" == 0 ] && n="$(( n+1 ))"
+	done
+	echo $n
+}
+
+mom_letters() {
+	if [ $# != 3 ]; then
+		echo "mom_letters should get three args"  >&2
+		exit 1
+	fi
+	echo "`momtype $@`" | while read momx momy momz; do
+		if [ $momx == 0 -a $momy == 0 -a $momz == 0 ]; then
+			echo 000
+		elif [ $momx != 0 -a $momy == 0 -a $momz == 0 ]; then
+			echo n00
+		elif [ $momx == $momy -a $momz == 0 ]; then
+			echo nn0
+		elif [ $momx != $momy -a $momz == 0 ]; then
+			echo nm0
+		elif [ $momx == $momy -a $momx == $momz ]; then
+			echo nnn
+		elif [ $momx == $momy -a $momx != $momz ]; then
+			echo nnm
+		else
+			echo nmk
+		fi
+	done
+}
+
+insertion_mom() {
+	echo "$@" | while read momix momiy momiz momjx momjy momjz; do
+		echo "$(( momjx - momix )) $(( momjy - momiy )) $(( momjz - momiz ))"
+	done
+}
+
+get_ops() {
+	varname="redstar_`mom_letters $@`"
+	echo "${!varname}"
+}
+
+npoint_2pt() {
+	local mom="$1"
+	local operators="$2"
+	for operatori in $operators; do
+		for operatorj in $operators; do
+			echo "
+        <elem>
+           <NPoint>
+             <annotation>Sink</annotation>
+             <elem>
+               <t_slice>-2</t_slice>
+               <Irrep>
+                 <smearedP>true</smearedP>
+                 <creation_op>false</creation_op>
+                 <flavor>
+                   <twoI>1</twoI>
+                   <threeY>3</threeY>
+                   <twoI_z>1</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <mom>$mom</mom>
+                   <row>1</row>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>$operatori</name>
+                       <mom_type>$( momtype $mom )</mom_type>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+
+             <annotation>Source</annotation>
+             <elem>
+               <t_slice>0</t_slice>
+               <Irrep>
+                 <smearedP>true</smearedP>
+                 <creation_op>true</creation_op>
+                 <flavor>
+                   <twoI>1</twoI>
+                   <threeY>3</threeY>
+                   <twoI_z>1</twoI_z>
+                 </flavor>
+                  <irmom>
+                   <row>1</row>
+                   <mom>$mom</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>$operatorj</name>
+                       <mom_type>$( momtype $mom )</mom_type>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+           </NPoint>
+         </elem>"
+		done #operatorj
+	done #operatori
+}
+
+npoint_3pt() {
+	local momi="$1"
+	local operatorsi="$2"
+	local momj="$3"
+	local operatorsj="$4"
+	local momk="$5"
+	local operatorsk="$6"
+	local t_seps="$7"
+	local disps="$8"
+	for operatori in $operatorsi; do
+		for operatorj in $operatorsj; do
+			for operatork in $operatorsk; do
+				for t_sep in $t_seps; do
+					echo "$disps" | while read disp_prefix dips_list; do
+	echo "
+         <elem>
+           <NPoint>
+             <annotation>Sink</annotation>
+             <elem>
+               <t_slice>$t_sep</t_slice>
+               <Irrep>
+                 <creation_op>false</creation_op>
+                 <smearedP>true</smearedP>
+                 <flavor>
+                   <twoI>1</twoI>
+                   <threeY>3</threeY>
+                   <twoI_z>1</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <row>2</row>
+                   <mom>$momi</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>$operatori</name>
+                       <mom_type>$( momtype $momi )</mom_type>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+
+             <annotation>Insertion</annotation>
+             <elem>
+               <t_slice>-3</t_slice>
+               <Irrep>
+                 <creation_op>true</creation_op>
+                 <smearedP>false</smearedP>
+                 <flavor>
+                   <twoI>2</twoI>
+                   <threeY>0</threeY>
+                   <twoI_z>0</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <row>1</row>
+                   <mom>$momk</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>${operatork}</name>
+                       <mom_type>$( momtype $momk )</mom_type>
+                       <disp_list>$disp_list</disp_list>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+
+             <annotation>Source</annotation>
+             <elem>
+               <t_slice>0</t_slice>
+               <Irrep>
+                 <creation_op>true</creation_op>
+                 <smearedP>true</smearedP>
+                 <flavor>
+                   <twoI>1</twoI>
+                   <threeY>3</threeY>
+                   <twoI_z>1</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <row>2</row>
+                   <mom>$momj</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>$operatorj</name>
+                       <mom_type>$( momtype $momj )</mom_type>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+           </NPoint>
+         </elem>"
+					done #disp_prefix, disp_list
+				done #t_sep
+			done #operatork
+		done #operatorj
+	done #operatori
+}
+
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
+
+	all_moms_2pt=""
+	all_moms_3pt=""
+	[ $redstar_2pt == yes ] && all_moms_2pt="$redstar_2pt_moms"
+	if [ $redstar_3pt == yes ]; then
+		all_moms_3pt="`
+			echo "$redstar_3pt_srcmom_snkmom" | while read momx momy momz rest; do
+				echo "$momx $momy $momz"
+			done
+		`"
+	fi
+	all_moms="`echo "$all_moms_2pt $all_moms_3pt" | sort -u`"
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
@@ -16,11 +254,6 @@ for ens in $ensembles; do
 		runpath="$PWD/${tag}/conf_${cfg}"
 
 		for t_source in $prop_t_sources; do
-		for zphase in $prop_zphases; do
-		echo "$redstar_irmom_momtype" | while read irmomx irmomy irmomz momx momy momz; do
-
-			irmom="$irmomx $irmomy $irmomz"
-			mom="$momx $momy $momz"
 
 			# Find t_origin
 			perl -e " 
@@ -38,20 +271,21 @@ for ens in $ensembles; do
 			t_origin="`cat h | while read a b; do echo \$a; done`"
 			t_offset="`cat h | while read a b; do echo \$b; done`"
 
-			corr_file="`corr_file_name`"
-			mkdir -p `dirname ${corr_file}`
+			for zphase in $prop_zphases; do
+			echo "$all_moms" | while read mom; do
 
-			operators="$redstar_zeromom_operators"
-			[ ${mom// /_} != 0_0_0 ] && operators="$redstar_nonzeromom_operators"
+				corr_file="`corr_file_name`"
+				mkdir -p `dirname ${corr_file}`
 
-			#
-			# Correlation creation
-			#
+				#
+				# Correlation creation
+				#
 
-			prefix="t${t_source}_m${mom// /_}_z${zphase}"
-			redstar_xml="$runpath/redstar_${prefix}.xml"
-			mkdir -p `dirname ${redstar_xml}`
-			cat << EOF > $redstar_xml
+				prefix="t${t_source}_m${mom// /_}_z${zphase}"
+				redstar_xml_sh="$runpath/redstar_${prefix}.sh_xml"
+				mkdir -p `dirname ${redstar_xml_sh}`
+ 				cat << EOF > $redstar_xml_sh
+cat << eofEOF
 <?xml version="1.0"?>
 <RedstarNPt>
   <Param>
@@ -64,7 +298,7 @@ for ens in $ensembles; do
     <convertUDtoS>false</convertUDtoS>
     <average_1pt_diagrams>true</average_1pt_diagrams>
     <zeroUnsmearedGraphsP>false</zeroUnsmearedGraphsP>
-    <t_origin>$t_origin</t_origin>
+    <t_origin>$(( (t_origin+t_source)%t_size ))</t_origin>
     <bc_spec>-1</bc_spec>
     <Layout>
       <lattSize>$s_size $s_size $s_size $t_size</lattSize>
@@ -73,72 +307,32 @@ for ens in $ensembles; do
     <ensemble>${confsname}</ensemble>
 
     <NPointList>
+\`
 `
-	for operatori in $operators; do
-		for operatorj in $operators; do
-			echo "
-        <elem>
-           <NPoint>
-             <annotation>Sink</annotation>
-             <elem>
-               <t_slice>$redstar_t_sink</t_slice>
-               <Irrep>
-                 <smearedP>true</smearedP>
-                 <creation_op>false</creation_op>
-                 <flavor>
-                   <twoI>1</twoI>
-                   <threeY>3</threeY>
-                   <twoI_z>1</twoI_z>
-                 </flavor>
-                 <irmom>
-                   <mom>$irmom</mom>
-                   <row>1</row>
-                 </irmom>
-                 <Op>
-                   <Operators>
-                     <elem>
-                       <name>$operatori</name>
-                       <mom_type>$mom</mom_type>
-                     </elem>
-                   </Operators>
-                   <CGs>
-                   </CGs>
-                 </Op>
-               </Irrep>
-             </elem>
+	declare -f momtype
+	if [ ${redstar_2pt} == yes ]; then
+		declare -f npoint_2pt
+		echo "$redstar_2pt_moms" | while read momi; do
+			[ "$mom" != "$momi" ] && continue
+			operators="$redstar_zeromom_operators"
+			[ ${mom// /_} != 0_0_0 ] && operators="$redstar_nonzeromom_operators"
 
-             <annotation>Source</annotation>
-             <elem>
-               <t_slice>$t_source</t_slice>
-               <Irrep>
-                 <smearedP>true</smearedP>
-                 <creation_op>true</creation_op>
-                 <flavor>
-                   <twoI>1</twoI>
-                   <threeY>3</threeY>
-                   <twoI_z>1</twoI_z>
-                 </flavor>
-                  <irmom>
-                   <row>1</row>
-                   <mom>$irmom</mom>
-                 </irmom>
-                 <Op>
-                   <Operators>
-                     <elem>
-                       <name>$operatorj</name>
-                       <mom_type>$mom</mom_type>
-                     </elem>
-                   </Operators>
-                   <CGs>
-                   </CGs>
-                 </Op>
-               </Irrep>
-             </elem>
-           </NPoint>
-         </elem>"
-		done #operatorj
-	done #operatori
+			echo npoint_2pt \"$mom\" \"$operators\"
+		done #momi
+	fi
+	if [ ${redstar_3pt} == yes ]; then
+		declare -f npoint_3pt
+		momi="$mom"
+		operatorsi="$( get_ops $momi )"
+		echo "$redstar_3pt_srcmom_snkmom" | while read momix momiy momiz momj; do
+			[ "$mom" != "$momix $momiy $momiz" ] && continue
+			operatorsj="$( get_ops $momj )"
+			momk="$( insertion_mom $momi $momj )"
+			echo npoint_3pt \"$momi\" \"$operatorsi\" \"$momj\" \"$operatorsj\" \"$momk\" \"$redstar_insertion_operators\" \"$gprop_t_seps\" \"$redstar_insertion_disps\"
+		done #mom
+	fi
 `
+\`
     </NPointList>
   </Param> 
   <DBFiles>
@@ -155,7 +349,7 @@ for ens in $ensembles; do
       <version>1</version>
       <num_vecs>${redstar_nvec}</num_vecs>
       <use_derivP>false</use_derivP>
-      <use_genprop4>false</use_genprop4>
+      <use_genprop4>true</use_genprop4>
       <use_FSq>false</use_FSq>
       <fake_data_modeP>false</fake_data_modeP>
       <ensemble>${confsname}</ensemble>
@@ -211,11 +405,6 @@ for ens in $ensembles; do
 `
       </smeared_baryon_dbs>
       <unsmeared_meson_dbs>
-`
-	if [ $redstar_3pt == yes ]; then
-        	echo "<elem>$( gprop_file_name )</elem>"
-	fi
-`
       </unsmeared_meson_dbs>
       <smeared_meson_dbs>
 `
@@ -233,10 +422,16 @@ for ens in $ensembles; do
       <hadron2pt_discoblock_dbs>
       </hadron2pt_discoblock_dbs>
       <unsmeared_genprop4_dbs>
+`
+	if [ $redstar_3pt == yes ]; then
+        	echo "<elem>$( gprop_file_name )</elem>"
+	fi
+`
       </unsmeared_genprop4_dbs>
     </DBFiles>
   </ColorVec>
 </RedstarNPt>
+eofEOF
 EOF
 
 			output="$runpath/redstar_${prefix}.out"
@@ -252,8 +447,12 @@ run() {
 	$slurm_script_prologue_redstar
 	cd $runpath
 	rm -f ${runpath}/corr_graph_${prefix}.xml ${runpath}/corr_graph_${prefix}.bin ${runpath}/noneval_graph_${prefix}.xml ${runpath}/vertex_coeff_xml_${prefix}.xml ${corr_file} ${runpath}/eval_graph_${prefix}.xml ${output_xml}
-	$redstar_corr_graph ${redstar_xml} ${output_xml} &> $output
-	$redstar_npt ${redstar_xml} ${output_xml} &>> $output
+	redstar_xml="\${TMPDIR:-/tmp}/${redstar_xml_sh//\//_}.xml"
+	bash ${redstar_xml_sh} > \$redstar_xml
+	echo Starting $redstar_corr_graph \$redstar_xml ${output_xml} > $output
+	$redstar_corr_graph \$redstar_xml ${output_xml} &>> $output || exit 1
+	echo Starting $redstar_npt \$redstar_xml ${output_xml} &>> $output
+	$redstar_npt \$redstar_xml ${output_xml} &>> $output
 }
 
 check() {
