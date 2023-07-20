@@ -106,7 +106,7 @@ ensemble0() {
 2 1 1  
 2 1 -2   
 2 1 2    "
-	gprop_max_mom_in_contraction=1
+	gprop_max_mom_in_contraction=2
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
@@ -278,6 +278,7 @@ ensemble0() {
 0 0 2
 0 0 -2"
 	redstar_3pt="yes"
+	redstar_max_moms_per_file=10
 	redstar_3pt_srcmom_snkmom="\
 0 0 -1  0 0 0   
 0 0 -2  0 0 0   
@@ -469,8 +470,7 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
-	redstar_3pt_srcmom_snkmom="\
-0 0 -1  0 0 0   "
+	#redstar_3pt_srcmom_snkmom="0 0 -1  0 0 0"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J0M_J1o2_H1o2D2E NucleonMG1g1MxD2J1A_J1o2_H1o2D2E NucleonMHg1SxD2J2M_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J0M_J3o2_H1o2D2E NucleonMG1g1MxD2J2S_J5o2_H1o2D2E NucleonMG1g1MxD1J1M_J1o2_H1o2D2E NucleonMHg1SxD1J1M_J1o2_H1o2D2E NucleonMG1g1MxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J5o2_H1o2D2E NucleonMG1g1MxD2J2S_J3o2_H1o2D2E NucleonMHg1SxD2J2M_J3o2_H1o2D2E NucleonMG1g1MxD2J2M_J3o2_H1o2D2E"
@@ -479,17 +479,16 @@ ensemble0() {
 	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J0M_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1A_J1o2_H1o2C4nnmE NucleonMHg1SxD2J2M_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J0M_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J2S_J5o2_H1o2C4nnmE NucleonMG1g1MxD1J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J1o2_H1o2C4nnmE NucleonMG1g1MxD1J1M_J3o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J3o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J5o2_H1o2C4nnmE NucleonMG1g1MxD2J2S_J3o2_H1o2C4nnmE NucleonMHg1SxD2J2M_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J2M_J3o2_H1o2C4nnmE"
 	redstar_insertion_operators="\
 pion_pionxDX__J0_A1
-hl_b1xDX__J1_T1
-hl_b0xDX__J0_A1
+pion_pion_2xDX__J0_A1
 rho_rhoxDX__J1_T1
+rho_rho_2xDX__J1_T1
 b_b1xDX__J1_T1
 b_b0xDX__J0_A1
 a_a1xDX__J1_T1
 a_a0xDX__J0_A1
+
 " # use for 3pt correlation functions
-	redstar_insertion_operators="\
-pion_pionxDX__J0_A1
-"
+	#redstar_insertion_operators="rho_rhoxDX__J1_T1"
 	redstar_insertion_disps="\
 z0 
 z1 3
@@ -513,7 +512,7 @@ z0"
 	corr_file_name() {
 		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
-	redstar_minutes=10
+	redstar_minutes=120
 	redstar_jobs_per_node=8
 	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
@@ -534,8 +533,8 @@ chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-ne
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 #chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf"
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -588,7 +587,7 @@ slurm_script_prologue_redstar="
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 export SLURM_CPU_BIND=\"cores\"
-export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
+export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "
 
 #
