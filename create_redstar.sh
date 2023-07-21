@@ -346,7 +346,7 @@ for ens in $ensembles; do
   </Param> 
   <DBFiles>
     <proj_op_xmls></proj_op_xmls>
-    <corr_graph_bin>${runpath}/corr_graph_${prefix}.bin</corr_graph_bin>
+    <corr_graph_bin>corr_graph_${prefix}.bin</corr_graph_bin>
     <output_db>${corr_file}</output_db>
   </DBFiles> 
   <ColorVec>
@@ -438,7 +438,7 @@ for ens in $ensembles; do
 </RedstarNPt>
 EOF
 
-			output_xml="${redstar_xml}.out"
+			output_xml="redstar_xml_out_${prefix}.out"
 			output="$runpath/redstar_${prefix}.out"
 			cat << EOF > $runpath/redstar_${prefix}.sh
 $slurm_sbatch_prologue
@@ -449,13 +449,15 @@ $slurm_sbatch_prologue
 
 run() {
 	$slurm_script_prologue_redstar
-	cd $runpath
-	rm -f ${runpath}/corr_graph_${prefix}.bin ${corr_file}
+	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}"
+	mkdir -p \$tmp_runpath
+	cd \$tmp_runpath
+	rm -f corr_graph_${prefix}.bin ${corr_file}
 	echo Starting $redstar_corr_graph $redstar_xml $output_xml > $output
 	$redstar_corr_graph $redstar_xml $output_xml &>> $output || exit 1
 	echo Starting $redstar_npt $redstar_xml $output_xml &>> $output
 	$redstar_npt $redstar_xml $output_xml &>> $output
-	rm -f $output_xml
+	rm -f $output_xml corr_graph_${prefix}.bin
 }
 
 check() {
