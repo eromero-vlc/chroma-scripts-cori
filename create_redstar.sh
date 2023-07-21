@@ -142,20 +142,13 @@ npoint_3pt() {
 	local momtypei="$( momtype $momi )"
 	local momtypej="$( momtype $momj )"
 	local momtypek="$( momtype $momk )"
-	for operatori in $operatorsi; do
-	for rowi in 1 2; do
-		for operatorj in $operatorsj; do
-		for rowj in 1 2; do
-			for operatork in $operatorsk; do
-				for rowk in $( operator_rows $operatork ); do
-					for t_sep in $t_seps; do
-						echo "$disps" | while read disp_prefix dips_list; do
-	echo "
+	for operatork in $operatorsk; do
+		echo "
          <elem>
            <NPoint>
              <annotation>Sink</annotation>
              <elem>
-               <t_slice>$t_sep</t_slice>
+               <t_slice> $( for t_sep in $t_seps; do echo -n "<alt>$t_sep</alt>"; done ) </t_slice>
                <Irrep>
                  <creation_op>false</creation_op>
                  <smearedP>true</smearedP>
@@ -165,13 +158,13 @@ npoint_3pt() {
                    <twoI_z>1</twoI_z>
                  </flavor>
                  <irmom>
-                   <row>$rowi</row>
+                   <row> $( for rowi in 1 2; do echo -n "<alt>$rowi</alt>"; done ) </row>
                    <mom>$momi</mom>
                  </irmom>
                  <Op>
                    <Operators>
                      <elem>
-                       <name>$operatori</name>
+                       <name> $( for operatori in $operatorsi; do echo "<alt>$operatori</alt>"; done ) </name>
                        <mom_type>$momtypei</mom_type>
                      </elem>
                    </Operators>
@@ -193,7 +186,7 @@ npoint_3pt() {
                    <twoI_z>0</twoI_z>
                  </flavor>
                  <irmom>
-                   <row>$rowk</row>
+                   <row> $( for rowk in $( operator_rows $operatork ); do echo -n "<alt>$rowk</alt>"; done ) </row>
                    <mom>$momk</mom>
                  </irmom>
                  <Op>
@@ -201,7 +194,7 @@ npoint_3pt() {
                      <elem>
                        <name>${operatork}</name>
                        <mom_type>$momtypek</mom_type>
-                       <disp_list>$disp_list</disp_list>
+                       <disp_list>$( echo "$disps" | while read disp_prefix disp_list; do [ x${disp_prefix}x != xx ] && echo "<alt>$disp_list</alt>"; done ) </disp_list>
                      </elem>
                    </Operators>
                    <CGs>
@@ -222,13 +215,13 @@ npoint_3pt() {
                    <twoI_z>1</twoI_z>
                  </flavor>
                  <irmom>
-                   <row>$rowj</row>
+                   <row> $( for rowj in 1 2; do echo -n "<alt>$rowj</alt>"; done ) </row>
                    <mom>$momj</mom>
                  </irmom>
                  <Op>
                    <Operators>
                      <elem>
-                       <name>$operatorj</name>
+                       <name> $( for operatorj in $operatorsj; do echo "<alt>$operatorj</alt>"; done ) </name>
                        <mom_type>$momtypej</mom_type>
                      </elem>
                    </Operators>
@@ -239,14 +232,7 @@ npoint_3pt() {
              </elem>
            </NPoint>
          </elem>"
-						done #disp_prefix, disp_list
-					done #t_sep
-				done #rowk
-			done #operatork
-		done #rowj
-		done #operatorj
-	done #rowi
-	done #operatori
+	done #operatork
 }
 
 for ens in $ensembles; do
@@ -279,6 +265,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p ${runpath}
 
 		for t_source in $prop_t_sources; do
 
@@ -300,6 +287,9 @@ for ens in $ensembles; do
 
 			for zphase in $prop_zphases; do
 			echo "$all_moms" | while read momw; do
+			for insertion_op in "_2pt_" $redstar_insertion_operators; do
+				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+
 				mom="${momw//_/ }"
 				corr_file="`corr_file_name`"
 				mkdir -p `dirname ${corr_file}`
@@ -308,11 +298,9 @@ for ens in $ensembles; do
 				# Correlation creation
 				#
 
-				prefix="t${t_source}_m${momw}_z${zphase}"
-				redstar_xml_sh="$runpath/redstar_${prefix}.sh_xml"
-				mkdir -p `dirname ${redstar_xml_sh}`
- 				cat << EOF > $redstar_xml_sh
-cat << eofEOF
+				prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}"
+				redstar_xml="$runpath/redstar_${prefix}.xml"
+ 				cat << EOF > $redstar_xml
 <?xml version="1.0"?>
 <RedstarNPt>
   <Param>
@@ -334,43 +322,32 @@ cat << eofEOF
     <ensemble>${confsname}</ensemble>
 
     <NPointList>
-eofEOF
 `
-	declare -f momtype
-	if [ ${redstar_2pt} == yes ]; then
-		declare -f npoint_2pt
+	if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
 		echo "$redstar_2pt_moms" | while read momi; do
 			[ "$momw" != "$( mom_word $momi )" ] && continue
 			operators="$redstar_zeromom_operators"
-			[ $momw != 0_0_0__ ] && operators="$redstar_nonzeromom_operators"
-
-			echo npoint_2pt \"$momi\" \"$operators\"
+			[ $momw != 0_0_0___ ] && operators="$redstar_nonzeromom_operators"
+			npoint_2pt "$momi" "$operators"
 		done #momi
 	fi
-	if [ ${redstar_3pt} == yes ]; then
-		declare -f operator_rows
-		declare -f npoint_3pt
+	if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
 		echo "$redstar_3pt_srcmom_snkmom" | while read momix momiy momiz momj; do
 			momi="$momix $momiy $momiz"
 			[ "$momw" != "$( mom_word $momi $momj )" ] && continue
 			operatorsi="$( get_ops $momi )"
 			operatorsj="$( get_ops $momj )"
 			momk="$( insertion_mom $momi $momj )"
-			echo npoint_3pt \"$momi\" \"$operatorsi\" \"$momj\" \"$operatorsj\" \"$momk\" \"$redstar_insertion_operators\" \"$gprop_t_seps\" \""$redstar_insertion_disps"\"
+			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
 		done #mom
 	fi
 `
-cat << eofEOF
     </NPointList>
   </Param> 
   <DBFiles>
-    <corr_graph_xml>${runpath}/corr_graph_${prefix}.xml</corr_graph_xml>
     <proj_op_xmls></proj_op_xmls>
     <corr_graph_bin>${runpath}/corr_graph_${prefix}.bin</corr_graph_bin>
-    <noneval_graph_xml>${runpath}/noneval_graph_${prefix}.xml</noneval_graph_xml>
-    <vertex_coeff_xml>${runpath}/vertex_coeff_xml_${prefix}.xml</vertex_coeff_xml>
     <output_db>${corr_file}</output_db>
-    <eval_graph_xml>${runpath}/eval_graph_${prefix}.xml</eval_graph_xml>
   </DBFiles> 
   <ColorVec>
     <Param>
@@ -459,9 +436,9 @@ cat << eofEOF
     </DBFiles>
   </ColorVec>
 </RedstarNPt>
-eofEOF
 EOF
 
+			output_xml="${redstar_xml}.out"
 			output="$runpath/redstar_${prefix}.out"
 			cat << EOF > $runpath/redstar_${prefix}.sh
 $slurm_sbatch_prologue
@@ -473,15 +450,12 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue_redstar
 	cd $runpath
-	rm -f ${runpath}/corr_graph_${prefix}.xml ${runpath}/corr_graph_${prefix}.bin ${runpath}/noneval_graph_${prefix}.xml ${runpath}/vertex_coeff_xml_${prefix}.xml ${corr_file} ${runpath}/eval_graph_${prefix}.xml
-	redstar_xml="\${TMPDIR:-/tmp}/${redstar_xml_sh//\//_}.xml"
-	bash ${redstar_xml_sh} > \$redstar_xml
-	output_xml="\${redstar_xml}.out"
-	echo Starting $redstar_corr_graph \$redstar_xml \$output_xml > $output
-	$redstar_corr_graph \$redstar_xml \$output_xml &>> $output || exit 1
-	echo Starting $redstar_npt \$redstar_xml \$output_xml &>> $output
-	$redstar_npt \$redstar_xml \$output_xml &>> $output
-	rm -f \$output_xml
+	rm -f ${runpath}/corr_graph_${prefix}.bin ${corr_file}
+	echo Starting $redstar_corr_graph $redstar_xml $output_xml > $output
+	$redstar_corr_graph $redstar_xml $output_xml &>> $output || exit 1
+	echo Starting $redstar_npt $redstar_xml $output_xml &>> $output
+	$redstar_npt $redstar_xml $output_xml &>> $output
+	rm -f $output_xml
 }
 
 check() {
@@ -513,6 +487,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
+		done # insertion_op
 		done # mom
 		done # zphase
 		done # t_source
