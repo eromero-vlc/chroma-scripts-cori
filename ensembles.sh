@@ -1,6 +1,6 @@
 # This shell script is executed at the beginning of create_*.sh, launch.sh, cancel.sh and check.sh
 
-ensembles="ensemble_basic ensemble_bj_2"
+ensembles="ensemble_basic ensemble_bj_2 ensemble_bj_4 ensemble_bj_8 ensemble_rb_2 ensemble_rb_4 ensemble_rb_4a ensemble_rb_4b ensemble_rb_8 ensemble_rb_2_s1 ensemble_si_2 ensemble_si_2_l6 ensemble_si_4_l6 ensemble_peram_si_5rb ensemble_peram_si_6rb ensemble_peram_si_7rb"
 
 ensemble_basic() {
 	name="basic"
@@ -38,6 +38,378 @@ ensemble_bj_2() {
             </prec>
 "
 	ensemble_gen "$name" "$invert" "1 1 1 2" 2
+}
+
+ensemble_bj_4() {
+	name="bj4"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+              <type>dd</type>
+              <solver>
+                 <type>gcr</type>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>2000</max_its>
+                 <tol>1e-10</tol>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>dd</prefix>
+              </solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 2 2" 4
+}
+
+ensemble_bj_8() {
+	name="bj8"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+              <type>dd</type>
+              <solver>
+                 <type>gcr</type>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>2000</max_its>
+                 <tol>1e-10</tol>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>dd</prefix>
+              </solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 2 4" 8
+}
+
+ensemble_rb_2() {
+	name="rb2"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 0 2</divisions>
+               <land>0 0 0 4</land>
+               <use_red_black>true</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 2 2" 4
+}
+
+ensemble_rb_4() {
+	name="rb4"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 2 2</divisions>
+               <land>0 0 1 4</land>
+               <use_red_black>true</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_rb_4a() {
+	name="rb4a"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 0 4</divisions>
+               <land>0 0 0 2</land>
+               <use_red_black>true</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_rb_4b() {
+	name="rb4b"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 1 4</divisions>
+               <land>0 0 2 2</land>
+               <use_red_black>true</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_rb_8() {
+	name="rb8"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 0 8</divisions>
+               <land>0 0 0 1</land>
+               <use_red_black>true</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_rb_2_s1() {
+	name="rb2s1"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 0 2</divisions>
+               <land>0 0 0 4</land>
+               <use_red_black>true</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+               <schur_solver>
+                 <type>mr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>10</max_its>
+                 <error_if_not_converged>false</error_if_not_converged>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>schur</prefix>
+               </schur_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+
+ensemble_si_2() {
+	name="si2"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 0 2</divisions>
+               <land>0 0 0 4</land>
+               <use_red_black>false</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_si_2_l6() {
+	name="si2l6"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 1 2</divisions>
+               <land>0 0 3 6</land>
+               <use_red_black>false</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_si_4_l6() {
+	name="si4l3"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+               <type>hie</type>
+               <divisions>0 0 1 4</divisions>
+               <land>0 0 3 3</land>
+               <use_red_black>false</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_peram_si_5rb() {
+	name="p5rb"
+	invert="
+            <invType>MGPROTON</invType>
+               <type>hie</type>
+               <divisions>0 0 0 2</divisions>
+               <land>0 0 0 5</land>
+               <use_red_black>false</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_peram_si_6rb() {
+	name="p6rb"
+	invert="
+            <invType>MGPROTON</invType>
+               <type>hie</type>
+               <divisions>0 0 0 2</divisions>
+               <land>0 0 0 6</land>
+               <use_red_black>false</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_peram_si_7rb() {
+	name="p7rb"
+	invert="
+            <invType>MGPROTON</invType>
+               <type>hie</type>
+               <divisions>0 0 0 2</divisions>
+               <land>0 0 0 7</land>
+               <use_red_black>false</use_red_black>
+               <sea_land_solver>
+                 <type>gcr</type>
+                 <tol>1e-10</tol>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>20000</max_its>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>l1</prefix>
+               </sea_land_solver>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
 }
 
 ensemble_gen() {
