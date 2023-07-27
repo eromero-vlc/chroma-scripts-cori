@@ -1,25 +1,69 @@
 # This shell script is executed at the beginning of create_*.sh, launch.sh, cancel.sh and check.sh
 
-ensembles="ensemble0"
+ensembles="ensemble_basic ensemble_bj_2"
 
-ensemble0() {
+ensemble_basic() {
+	name="basic"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+}
+
+ensemble_bj_2() {
+	name="bj2"
+	invert="
+            <invType>MGPROTON</invType>
+            <type>gcr</type>
+            <tol>1e-10</tol>
+            <max_basis_size>3</max_basis_size>
+            <max_its>20000</max_its>
+            <verbosity>Detailed</verbosity>
+            <prefix>l0</prefix>
+            <prec>
+              <type>dd</type>
+              <solver>
+                 <type>gcr</type>
+                 <max_basis_size>3</max_basis_size>
+                 <max_its>2000</max_its>
+                 <tol>1e-10</tol>
+                 <verbosity>Detailed</verbosity>
+                 <prefix>dd</prefix>
+              </solver>
+            </prec>
+"
+	ensemble_gen "$name" "$invert" "1 1 1 2" 2
+}
+
+ensemble_gen() {
+	exp_name="$1"
+	prop_invert_extra="$2"
+	prop_chroma_geometry="$3"
+	prop_slurm_nodes="$4"
+	
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
+	[ $name == basic ] && run_eigs="yes"
+	run_props="yes"
 	run_gprops="nop"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
-	run_discos="yes"
+	run_discos="nop"
 	run_redstar="nop"
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
-	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-	tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
-	confs="`seq 11000 10 13990`"
-	s_size=32 # lattice spatial size
-	t_size=64 # lattice temporal size
+	confsprefix="4_16_weak"
+	ensemble="4_16_weak"
+	confsname="4_16_weak"
+	tag="4_16_weak-${name}"
+	confs="1000"
+	s_size=4 # lattice spatial size
+	t_size=16 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
@@ -35,33 +79,31 @@ ensemble0() {
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
-	eigs_transfer_back="yes"
+	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="nop"
 
 	# Props options
-	prop_t_sources="`seq 0 63`"
-	prop_t_fwd=64
+	prop_t_sources="0"
+	prop_t_fwd=16
 	prop_t_back=0
-	prop_nvec=96
+	prop_nvec=4
 	prop_zphases="0.00"
-	prop_mass="-0.2350"
+	prop_mass="-0.1"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=2
-	prop_chroma_geometry="1 2 2 4"
 	prop_chroma_minutes=600
 	# propagator filename
 	prop_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}_${exp_name}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		fi
 	}
-	prop_transfer_back="yes"
-	prop_delete_after_transfer_back="yes"
-	prop_transfer_from_jlab="yes"
+	prop_transfer_back="nop"
+	prop_delete_after_transfer_back="nop"
+	prop_transfer_from_jlab="nop"
 
 	# Genprops options
 	gprop_t_sources="0 16 32 48"
@@ -256,9 +298,9 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/hadron/chromaform-perlmutter"
-chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-cuda/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+chromaform="$HOME/PHY/src/chromaform"
+chroma="$chromaform/build-dg/chroma-sp-qdpxx-double-nd4-superbblas-cpu-next/mainprogs/main/chroma"
+chroma_extra_args=""
 redstar_corr_graph="$chromaform/install/redstar-hip/bin/redstar_corr_graph"
 redstar_npt="$chromaform/install/redstar-hip/bin/redstar_npt"
 
@@ -273,11 +315,9 @@ slurm_sbatch_prologue="#!/bin/bash
 #SBATCH --gpus-per-task=1"
 
 slurm_script_prologue="
-. $chromaform/env.sh
-. $chromaform/env_extra.sh
+#. $chromaform/env.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=32
-export SLURM_CPU_BIND=\"cores\"
+export OMP_NUM_THREADS=1
 "
 
 #
@@ -325,7 +365,7 @@ max_hours=5 # maximum hours for a single job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$SCRATCH/b6p3"
+confspath="$PWD/weak"
 this_ep="6bdc7956-fc0f-4ad2-989c-7aa5ee643a79:${SCRATCH}/b6p3/"  # perlmutter
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/" # jlab#gw2
 jlab_local="/cache/isoClover"

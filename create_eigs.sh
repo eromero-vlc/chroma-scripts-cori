@@ -10,9 +10,7 @@ for ens in $ensembles; do
 	[ $run_eigs != yes ] && continue
 
 	for cfg in $confs; do
-		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
-		[ -f $lime_file ] || continue
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
 		mkdir -p $runpath
@@ -53,16 +51,15 @@ for ens in $ensembles; do
   </Param>
   <RNG>
     <Seed>
-      <elem>2551</elem>
+      <elem>$cfg</elem>
       <elem>3189</elem>
       <elem>2855</elem>
       <elem>707</elem>
     </Seed>
   </RNG>
   <Cfg>
-    <cfg_type>SCIDAC</cfg_type>
-    <cfg_file>${lime_file}</cfg_file>
-    <parallel_io>true</parallel_io>
+    <cfg_type>DISORDERED</cfg_type>
+    <cfg_file>caca</cfg_file>
   </Cfg>
 </chroma>
 EOF
@@ -80,7 +77,7 @@ run() {
 	
 	cd $runpath
 	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*eigs_slurm_nodes )) -N $eigs_slurm_nodes $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args &> $output
+	$chroma -i $runpath/eigs.xml $chroma_extra_args &> $output
 }
 
 check() {
