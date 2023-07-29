@@ -64,7 +64,7 @@ for ens in $ensembles; do
     <convertUDtoS>false</convertUDtoS>
     <average_1pt_diagrams>true</average_1pt_diagrams>
     <zeroUnsmearedGraphsP>false</zeroUnsmearedGraphsP>
-    <t_origin>$t_origin</t_origin>
+    <t_origin>$(( (t_origin+t_source)%t_size ))</t_origin>
     <bc_spec>-1</bc_spec>
     <Layout>
       <lattSize>$s_size $s_size $s_size $t_size</lattSize>
@@ -74,14 +74,15 @@ for ens in $ensembles; do
 
     <NPointList>
 `
-	for operatori in $operators; do
-		for operatorj in $operators; do
-			echo "
+	if [ ${redstar_2pt} == yes ]; then
+		for operatori in $operators; do
+			for operatorj in $operators; do
+				 echo "
         <elem>
            <NPoint>
              <annotation>Sink</annotation>
              <elem>
-               <t_slice>$redstar_t_sink</t_slice>
+               <t_slice>-2</t_slice>
                <Irrep>
                  <smearedP>true</smearedP>
                  <creation_op>false</creation_op>
@@ -109,7 +110,7 @@ for ens in $ensembles; do
 
              <annotation>Source</annotation>
              <elem>
-               <t_slice>$t_source</t_slice>
+               <t_slice>0</t_slice>
                <Irrep>
                  <smearedP>true</smearedP>
                  <creation_op>true</creation_op>
@@ -136,8 +137,108 @@ for ens in $ensembles; do
              </elem>
            </NPoint>
          </elem>"
-		done #operatorj
-	done #operatori
+			done #operatorj
+		done #operatori
+	fi
+	if [ ${redstar_3pt} == yes ]; then
+		for operatori in $operators; do
+			for operatorj in $operators; do
+				for operatork in $redstar_insertion_operators; do
+					for t_sep in $gprop_t_seps; do
+						echo "
+         <elem>
+           <NPoint>
+             <annotation>Sink</annotation>
+             <elem>
+               <t_slice>$t_sep</t_slice>
+               <Irrep>
+                 <creation_op>false</creation_op>
+                 <smearedP>true</smearedP>
+                 <flavor>
+                   <twoI>1</twoI>
+                   <threeY>3</threeY>
+                   <twoI_z>1</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <row>1</row>
+                   <mom>$irmom</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>$operatori</name>
+                       <mom_type>$mom</mom_type>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+
+             <annotation>Insertion</annotation>
+             <elem>
+               <t_slice>-3</t_slice>
+               <Irrep>
+                 <creation_op>true</creation_op>
+                 <smearedP>false</smearedP>
+                 <flavor>
+                   <twoI>2</twoI>
+                   <threeY>0</threeY>
+                   <twoI_z>0</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <row>1</row>
+                   <mom>0 0 0</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>${operatork}</name>
+                       <mom_type>0 0 0</mom_type>
+                       <disp_list></disp_list>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+
+             <annotation>Source</annotation>
+             <elem>
+               <t_slice>0</t_slice>
+               <Irrep>
+                 <creation_op>true</creation_op>
+                 <smearedP>true</smearedP>
+                 <flavor>
+                   <twoI>1</twoI>
+                   <threeY>3</threeY>
+                   <twoI_z>1</twoI_z>
+                 </flavor>
+                 <irmom>
+                   <row>1</row>
+                   <mom>$irmom</mom>
+                 </irmom>
+                 <Op>
+                   <Operators>
+                     <elem>
+                       <name>$operatorj</name>
+                       <mom_type>$mom</mom_type>
+                     </elem>
+                   </Operators>
+                   <CGs>
+                   </CGs>
+                 </Op>
+               </Irrep>
+             </elem>
+           </NPoint>
+         </elem>"
+					done #t_sep
+				done #operatork
+			done #operatorj
+		done #operatori
+	fi
 `
     </NPointList>
   </Param> 
@@ -155,7 +256,7 @@ for ens in $ensembles; do
       <version>1</version>
       <num_vecs>${redstar_nvec}</num_vecs>
       <use_derivP>false</use_derivP>
-      <use_genprop4>false</use_genprop4>
+      <use_genprop4>true</use_genprop4>
       <use_FSq>false</use_FSq>
       <fake_data_modeP>false</fake_data_modeP>
       <ensemble>${confsname}</ensemble>
@@ -211,11 +312,6 @@ for ens in $ensembles; do
 `
       </smeared_baryon_dbs>
       <unsmeared_meson_dbs>
-`
-	if [ $redstar_3pt == yes ]; then
-        	echo "<elem>$( gprop_file_name )</elem>"
-	fi
-`
       </unsmeared_meson_dbs>
       <smeared_meson_dbs>
 `
@@ -233,6 +329,11 @@ for ens in $ensembles; do
       <hadron2pt_discoblock_dbs>
       </hadron2pt_discoblock_dbs>
       <unsmeared_genprop4_dbs>
+`
+	if [ $redstar_3pt == yes ]; then
+        	echo "<elem>$( gprop_file_name )</elem>"
+	fi
+`
       </unsmeared_genprop4_dbs>
     </DBFiles>
   </ColorVec>

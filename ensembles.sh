@@ -64,14 +64,15 @@ ensemble0() {
 	prop_transfer_from_jlab="yes"
 
 	# Genprops options
-	gprop_t_sources="0 16 32 48"
+	gprop_t_sources="${prop_t_sources}"
 	gprop_t_seps="4 6 8 10 12 14"
-	gprop_zphases="0.00 2.00"
+	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$nvec
 	gprop_slurm_nodes=2
 	gprop_chroma_geometry="1 2 2 4"
 	gprop_chroma_minutes=600
 	gprop_file_name() {
+		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		if [ $zphase == 0.00 ]; then
 			echo "${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		else
@@ -221,26 +222,22 @@ ensemble0() {
 	disco_transfer_from_jlab="nop"
 
 	# Redstar options
-	redstar_fwd=21
-	redstar_back=21
-	redstar_t_sink=-2
-	redstar_t_corr=16 # Number of time slices
+	redstar_t_corr=14 # Number of time slices
 	redstar_nvec=$nvec
-	redstar_tag="test"
+	redstar_tag="."
 	redstar_2pt="yes"
 	redstar_3pt="nop"
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
 	redstar_irmom_momtype="\
-0 0 0  0 0 0
-0 0 1  1 0 0
-0 0 2  2 0 0
-0 0 3  3 0 0"
+0 0 0  0 0 0"
 	redstar_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
+	redstar_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
+	redstar_insertion_operators="b_b0xDX__J0_A1" # use for 3pt correlation functions
 	corr_file_name() {
-		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}.${redstar_tag}.mom_${mom// /_}.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
 	redstar_minutes=120
 	redstar_jobs_per_node=8
@@ -259,8 +256,8 @@ PYTHON=python3
 chromaform="$HOME/hadron/chromaform-perlmutter"
 chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-cuda/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
-redstar_corr_graph="$chromaform/install/redstar-hip/bin/redstar_corr_graph"
-redstar_npt="$chromaform/install/redstar-hip/bin/redstar_npt"
+redstar_corr_graph="$chromaform/install/redstar-colorvec-hadron-hip-adat/bin/redstar_corr_graph"
+redstar_npt="$chromaform/install/redstar-colorvec-hadron-hip-adat/bin/redstar_npt"
 
 slurm_procs_per_node=4
 slurm_sbatch_prologue="#!/bin/bash
