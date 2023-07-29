@@ -108,7 +108,7 @@ EOF
 			N_COLOR_FILES=1
 			gprop_xml="$runpath/gprop_t${t_source}_z${zphase}.xml"
 			mkdir -p `dirname ${gprop_xml}`
-			$PYTHON $chroma_python/unsmeared_hadron_node.py  -c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} -v fcolorvec -t ${t_offset} -k ${t_seps_commas} -p fgprop -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 --genprop5 --genprop4-format | sed "s@flime_1000.lime@${lime_file}@; s@fcolorvec.mod1000@${colorvec_file}@; s@fgprop.sdb1000@${gprop_file}@" > $gprop_xml
+			$PYTHON $chroma_python/unsmeared_hadron_node.py  -c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} -v fcolorvec -t ${t_offset} -k ${t_seps_commas} -p fgprop -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 --genprop5 --genprop5-format | sed "s@flime_1000.lime@${lime_file}@; s@fcolorvec.mod1000@${colorvec_file}@; s@fgprop.sdb1000@${gprop_file}@" > $gprop_xml
 
 			output="$runpath/gprop_t${t_source}_z${zphase}.out"
 			cat << EOF > $runpath/gprop_t${t_source}_z${zphase}.sh
