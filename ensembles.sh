@@ -19,7 +19,7 @@ ensemble0() {
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
 	confs="${confs//1920/}"
-	confs=1000
+	confs="`seq 1000 10 1100`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -106,6 +106,7 @@ ensemble0() {
 2 1 1  
 2 1 -2   
 2 1 2    "
+	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
 	gprop_max_mom_in_contraction=2
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
@@ -213,13 +214,7 @@ ensemble0() {
 	baryon_transfer_from_jlab="nop"
 	baryon_extra_xml="
 	<mom_list>
-                <elem>0 0 0</elem>
-                <elem>0 0 1</elem>
-                <elem>0 0 -1</elem>
-                <elem>0 0 2</elem>
-                <elem>0 0 -2</elem>
-                <elem>0 0 3</elem>
-                <elem>0 0 -3</elem>
+		`echo "$gprop_moms" | while read mom; do echo "<elem>$mom</elem>"; done`
         </mom_list>
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -470,7 +465,7 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
-	#redstar_3pt_srcmom_snkmom="0 0 -1  0 0 -2"
+	redstar_3pt_srcmom_snkmom="0 0 1  1 1 2"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J0M_J1o2_H1o2D2E NucleonMG1g1MxD2J1A_J1o2_H1o2D2E NucleonMHg1SxD2J2M_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J0M_J3o2_H1o2D2E NucleonMG1g1MxD2J2S_J5o2_H1o2D2E NucleonMG1g1MxD1J1M_J1o2_H1o2D2E NucleonMHg1SxD1J1M_J1o2_H1o2D2E NucleonMG1g1MxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J5o2_H1o2D2E NucleonMG1g1MxD2J2S_J3o2_H1o2D2E NucleonMHg1SxD2J2M_J3o2_H1o2D2E NucleonMG1g1MxD2J2M_J3o2_H1o2D2E"

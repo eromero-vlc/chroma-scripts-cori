@@ -79,7 +79,7 @@ done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node job
 srun \$MY_ARGS -n 1 -N 1 bash -l $wrapup_job_aux
 EOF
 
-			cat << EOF > $wrapup_job
+			cat << EOF > $wrapup_job_aux
 #!/bin/bash
 `
 			j="0"

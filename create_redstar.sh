@@ -3,7 +3,7 @@
 source ensembles.sh
 
 momtype() {
-	for i in "$@"; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
+	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
 }
 
 num_zeros_mom() {
@@ -30,7 +30,7 @@ mom_letters() {
 			echo nm0
 		elif [ $momx == $momy -a $momx == $momz ]; then
 			echo nnn
-		elif [ $momx == $momy -a $momx != $momz ]; then
+		elif [ $momx == $momy -o $momy == $momz ]; then
 			echo nnm
 		else
 			echo nmk
@@ -258,7 +258,6 @@ for ens in $ensembles; do
 			done
 		`"
 	fi
-	all_moms="`echo "$all_moms_2pt $all_moms_3pt" | sort -u`"
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
@@ -285,10 +284,13 @@ for ens in $ensembles; do
 			t_origin="`cat h | while read a b; do echo \$a; done`"
 			t_offset="`cat h | while read a b; do echo \$b; done`"
 
-			for zphase in $prop_zphases; do
-			echo "$all_moms" | while read momw; do
 			for insertion_op in "_2pt_" $redstar_insertion_operators; do
 				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+				all_moms="$all_moms_2pt"
+				[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+
+			for zphase in $prop_zphases; do
+			echo "$all_moms" | while read momw; do
 
 				mom="${momw//_/ }"
 				corr_file="`corr_file_name`"
@@ -299,9 +301,8 @@ for ens in $ensembles; do
 				#
 
 				prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}"
-				redstar_xml="$runpath/redstar_${prefix}.xml"
- 				cat << EOF > $redstar_xml
-<?xml version="1.0"?>
+				redstar_xml="redstar_${prefix}.xml"
+ 				redstar_xml_content="<?xml version=\"1.0\"?>
 <RedstarNPt>
   <Param>
     <version>12</version>
@@ -324,22 +325,18 @@ for ens in $ensembles; do
     <NPointList>
 `
 	if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
-		echo "$redstar_2pt_moms" | while read momi; do
-			[ "$momw" != "$( mom_word $momi )" ] && continue
-			operators="$redstar_zeromom_operators"
-			[ $momw != 0_0_0___ ] && operators="$redstar_nonzeromom_operators"
-			npoint_2pt "$momi" "$operators"
-		done #momi
+		operators="$redstar_zeromom_operators"
+		[ "$mom" != "0 0 0" ] && operators="$redstar_nonzeromom_operators"
+		npoint_2pt "$mom" "$operators"
 	fi
 	if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
-		echo "$redstar_3pt_srcmom_snkmom" | while read momix momiy momiz momj; do
-			momi="$momix $momiy $momiz"
-			[ "$momw" != "$( mom_word $momi $momj )" ] && continue
-			operatorsi="$( get_ops $momi )"
-			operatorsj="$( get_ops $momj )"
-			momk="$( insertion_mom $momi $momj )"
-			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
-		done #mom
+		momarray=( $mom )
+		momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
+		momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
+		operatorsi="$( get_ops $momi )"
+		operatorsj="$( get_ops $momj )"
+		momk="$( insertion_mom $momi $momj )"
+		npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
 	fi
 `
     </NPointList>
@@ -436,7 +433,7 @@ for ens in $ensembles; do
     </DBFiles>
   </ColorVec>
 </RedstarNPt>
-EOF
+"
 
 			output_xml="redstar_xml_out_${prefix}.out"
 			output="$runpath/redstar_${prefix}.out"
@@ -453,6 +450,9 @@ run() {
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
 	rm -f corr_graph_${prefix}.bin ${corr_file}
+	cat << EOFeof > $redstar_xml
+$redstar_xml_content
+EOFeof
 	echo Starting $redstar_corr_graph $redstar_xml $output_xml > $output
 	$redstar_corr_graph $redstar_xml $output_xml &>> $output || exit 1
 	echo Starting $redstar_npt $redstar_xml $output_xml &>> $output
