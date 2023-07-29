@@ -5,21 +5,22 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="yes"
-	run_props="yes"
+	run_props="nop"
 	run_gprops="yes"
-	run_baryons="yes"
-	run_mesons="yes"
+	run_baryons="nop"
+	run_mesons="nop"
 	run_discos="nop"
-	run_redstar="yes"
+	run_redstar="nop"
 
 	# Ensemble properties
-	confsprefix="cl21_64_128_b6p3_m0p2416_m0p2050" # ensemble path after $confspath
-	ensemble="cl21_64_128_b6p3_m0p2416_m0p2050" # ensemble name for chroma_python
-	confsname="cl21_64_128_b6p3_m0p2416_m0p2050" # ensemble name prefixing files
-	tag="cl21_64_128_b6p3_m0p2416_m0p2050" # directory name for storing jobs and xmls
+	confsprefix="cl21_72_192_b6p5_m0p2070_m0p1750" # ensemble path after $confspath
+	ensemble="cl21_72_192_b6p5_m0p2070_m0p1750" # ensemble name for chroma_python
+	confsname="cl21_72_192_b6p5_m0p2070_m0p1750" # ensemble name prefixing files
+	tag="cl21_72_192_b6p5_m0p2070_m0p1750" # directory name for storing jobs and xmls
 	confs="`seq 1000 10 1200`"   # configuration numbers to work with
-	s_size=64 # lattice spatial size
-	t_size=128 # lattice temporal size
+	confs="680"   # configuration numbers to work with
+	s_size=72 # lattice spatial size
+	t_size=192 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
@@ -32,10 +33,10 @@ ensemble0() {
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
-	eigs_slurm_nodes=1
-	eigs_chroma_geometry="1 1 1 8"
+	eigs_slurm_nodes=2
+	eigs_chroma_geometry="1 1 1 16"
 	eigs_chroma_minutes=120
-	eigs_transfer_back="yes"
+	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="nop"
 
@@ -45,9 +46,9 @@ ensemble0() {
 	prop_t_back=16
 	prop_nvec=128
 	prop_zphases="0.00"
-	prop_mass="-0.2416"
-	prop_clov="1.20536588031793"
-	prop_mass_label="U-0.2416"
+	prop_mass="-0.2070"
+	prop_clov="1.170082389372972"
+	prop_mass_label="U-0.2070"
 	prop_slurm_nodes=4
 	prop_chroma_geometry="1 2 4 4"
 	prop_chroma_minutes=120
@@ -64,13 +65,13 @@ ensemble0() {
 	prop_transfer_from_jlab="nop"
 
 	# Genprops options
-	gprop_t_sources="0 32 64 96"
+	gprop_t_sources="0"
 	gprop_t_seps="4 6 8 10 12 14"
-	gprop_zphases="0.00 2.00"
+	gprop_zphases="0.00"
 	gprop_nvec=$nvec
-	gprop_slurm_nodes=8
-	gprop_chroma_geometry="1 4 4 4"
-	gprop_chroma_minutes=120
+	gprop_slurm_nodes=18
+	gprop_chroma_geometry="2 4 3 6"
+	gprop_chroma_minutes=60
 	gprop_file_name() {
 		if [ $zphase == 0.00 ]; then
 			echo "${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
@@ -78,7 +79,7 @@ ensemble0() {
 			echo "${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
 	}
-	gprop_transfer_back="yes"
+	gprop_transfer_back="nop"
 	gprop_delete_after_transfer_back="nop"
 	gprop_transfer_from_jlab="nop"
 

@@ -35,7 +35,7 @@ EOF
 RsdTarget                 1.0e-7
 AntiPeriodicT             True
 SolverType                GCR
-Blocking		  4,4,4,4:2,2,2,2
+Blocking		  3,3,4,4:2,2,3,3
 NullVectors		  24:32
 SmootherType		  CA_GCR:CA_GCR:CA_GCR
 SmootherTol               0.25:0.25:0.25
