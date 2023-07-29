@@ -1,18 +1,99 @@
 # This shell script is executed at the beginning of create_*.sh, launch.sh, cancel.sh and check.sh
 
 ensembles="ensemble_basic ensemble_bj_2 ensemble_bj_4 ensemble_bj_8 ensemble_rb_2 ensemble_rb_4 ensemble_rb_4a ensemble_rb_4b ensemble_rb_8 ensemble_rb_2_s1 ensemble_si_2 ensemble_si_2_l6 ensemble_si_4_l6 ensemble_peram_si_5rb ensemble_peram_si_6rb ensemble_peram_si_7rb"
+ensembles="ensemble_basic ensemble_bj_2 ensemble_bj_4 ensemble_bj_8 ensemble_rb_2 ensemble_rb_4a ensemble_rb_8"
+ensembles="ensemble_basic ensemble_peram_si_16rb ensemble_peram_si_21rb ensemble_peram_si_26rb"
 
+mgproton_mg="
+            <type>eo</type>
+            <solver>
+              <type>gcr</type>
+              <tol>1e-7</tol>
+              <max_basis_size>3</max_basis_size>
+              <max_its>20000</max_its>
+              <prefix>eo</prefix>
+              <verbosity>Detailed</verbosity>
+            </solver>
+            <prec_ee>
+              <type>mg</type>
+              <num_null_vecs>24</num_null_vecs>
+              <blocking>4 4 4 4</blocking>
+              <coarse_layout_blocking>1 1 1 1</coarse_layout_blocking>
+              <spin_splitting>chirality_splitting</spin_splitting>
+              <solver_null_vecs>
+                <type>eo</type>
+                <solver>
+                  <type>gcr</type>
+                  <max_basis_size>3</max_basis_size>
+                  <tol>1e-3</tol>
+                  <max_its>20</max_its>
+                  <error_if_not_converged>false</error_if_not_converged>
+                  <prefix>nv0</prefix>
+                  <verbosity>VeryDetailed</verbosity>
+                  <prec>
+                     <type>dd</type>
+                     <solver>
+                        <type>mr</type>
+                        <max_its>3</max_its>
+                        <tol>1e-1</tol>
+                        <error_if_not_converged>false</error_if_not_converged>
+                        <verbosity>Detailed</verbosity>
+                        <prefix>nv0_dd</prefix>
+                     </solver>
+                  </prec>
+                </solver>
+              </solver_null_vecs>
+              <solver_coarse>
+                <type>eo</type>
+                <solver>
+                  <type>gcr</type>
+                  <tol>1e-1</tol>
+                  <verbosity>Detailed</verbosity>
+                  <prefix>c0</prefix>
+                  <prec>
+                     <type>dd</type>
+                     <solver>
+                        <type>mr</type>
+                        <max_its>4</max_its>
+                        <tol>1e-1</tol>
+                        <error_if_not_converged>false</error_if_not_converged>
+                        <verbosity>Detailed</verbosity>
+                        <prefix>c0_dd</prefix>
+                     </solver>
+                  </prec>
+                </solver>
+              </solver_coarse>
+              <solver_smoother>
+                <type>eo</type>
+                <solver>
+                  <type>mr</type>
+                  <tol>1e-1</tol>
+                  <max_its>5</max_its>
+                  <error_if_not_converged>false</error_if_not_converged>
+                  <verbosity>Detailed</verbosity>
+                  <prefix>s0</prefix>
+                  <prec>
+                     <type>dd</type>
+                     <solver>
+                        <type>mr</type>
+                        <max_its>4</max_its>
+                        <tol>1e-1</tol>
+                        <error_if_not_converged>false</error_if_not_converged>
+                        <verbosity>Detailed</verbosity>
+                        <prefix>s0_dd</prefix>
+                     </solver>
+                  </prec>
+                </solver>
+              </solver_smoother>
+            </prec_ee>
+"
 ensemble_basic() {
 	name="basic"
 	invert="
             <invType>MGPROTON</invType>
-            <type>gcr</type>
-            <tol>1e-10</tol>
-            <max_basis_size>3</max_basis_size>
-            <max_its>20000</max_its>
-            <verbosity>Detailed</verbosity>
+            ${mgproton_mg}
 "
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
 ensemble_bj_2() {
@@ -103,7 +184,7 @@ ensemble_rb_2() {
             <prec>
                <type>hie</type>
                <divisions>0 0 0 2</divisions>
-               <land>0 0 0 4</land>
+               <land>0 0 0 16</land>
                <use_red_black>true</use_red_black>
                <sea_land_solver>
                  <type>gcr</type>
@@ -115,35 +196,7 @@ ensemble_rb_2() {
                </sea_land_solver>
             </prec>
 "
-	ensemble_gen "$name" "$invert" "1 1 2 2" 4
-}
-
-ensemble_rb_4() {
-	name="rb4"
-	invert="
-            <invType>MGPROTON</invType>
-            <type>gcr</type>
-            <tol>1e-10</tol>
-            <max_basis_size>3</max_basis_size>
-            <max_its>20000</max_its>
-            <verbosity>Detailed</verbosity>
-            <prefix>l0</prefix>
-            <prec>
-               <type>hie</type>
-               <divisions>0 0 2 2</divisions>
-               <land>0 0 1 4</land>
-               <use_red_black>true</use_red_black>
-               <sea_land_solver>
-                 <type>gcr</type>
-                 <tol>1e-10</tol>
-                 <max_basis_size>3</max_basis_size>
-                 <max_its>20000</max_its>
-                 <verbosity>Detailed</verbosity>
-                 <prefix>l1</prefix>
-               </sea_land_solver>
-            </prec>
-"
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
 ensemble_rb_4a() {
@@ -159,7 +212,7 @@ ensemble_rb_4a() {
             <prec>
                <type>hie</type>
                <divisions>0 0 0 4</divisions>
-               <land>0 0 0 2</land>
+               <land>0 0 0 8</land>
                <use_red_black>true</use_red_black>
                <sea_land_solver>
                  <type>gcr</type>
@@ -171,35 +224,7 @@ ensemble_rb_4a() {
                </sea_land_solver>
             </prec>
 "
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
-}
-
-ensemble_rb_4b() {
-	name="rb4b"
-	invert="
-            <invType>MGPROTON</invType>
-            <type>gcr</type>
-            <tol>1e-10</tol>
-            <max_basis_size>3</max_basis_size>
-            <max_its>20000</max_its>
-            <verbosity>Detailed</verbosity>
-            <prefix>l0</prefix>
-            <prec>
-               <type>hie</type>
-               <divisions>0 0 1 4</divisions>
-               <land>0 0 2 2</land>
-               <use_red_black>true</use_red_black>
-               <sea_land_solver>
-                 <type>gcr</type>
-                 <tol>1e-10</tol>
-                 <max_basis_size>3</max_basis_size>
-                 <max_its>20000</max_its>
-                 <verbosity>Detailed</verbosity>
-                 <prefix>l1</prefix>
-               </sea_land_solver>
-            </prec>
-"
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
 ensemble_rb_8() {
@@ -215,7 +240,7 @@ ensemble_rb_8() {
             <prec>
                <type>hie</type>
                <divisions>0 0 0 8</divisions>
-               <land>0 0 0 1</land>
+               <land>0 0 0 4</land>
                <use_red_black>true</use_red_black>
                <sea_land_solver>
                  <type>gcr</type>
@@ -227,7 +252,7 @@ ensemble_rb_8() {
                </sea_land_solver>
             </prec>
 "
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
 ensemble_rb_2_s1() {
@@ -352,64 +377,49 @@ ensemble_si_4_l6() {
 	ensemble_gen "$name" "$invert" "1 1 1 1" 1
 }
 
-ensemble_peram_si_5rb() {
-	name="p5rb"
+ensemble_peram_si_16rb() {
+	name="p16rb"
 	invert="
             <invType>MGPROTON</invType>
                <type>hie</type>
                <divisions>0 0 0 2</divisions>
-               <land>0 0 0 5</land>
+               <land>0 0 0 16</land>
                <use_red_black>false</use_red_black>
                <sea_land_solver>
-                 <type>gcr</type>
-                 <tol>1e-10</tol>
-                 <max_basis_size>3</max_basis_size>
-                 <max_its>20000</max_its>
-                 <verbosity>Detailed</verbosity>
-                 <prefix>l1</prefix>
+                 ${mgproton_mg}
                </sea_land_solver>
 "
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
-ensemble_peram_si_6rb() {
-	name="p6rb"
+ensemble_peram_si_21rb() {
+	name="p21rb"
 	invert="
             <invType>MGPROTON</invType>
                <type>hie</type>
                <divisions>0 0 0 2</divisions>
-               <land>0 0 0 6</land>
+               <land>0 0 0 21</land>
                <use_red_black>false</use_red_black>
                <sea_land_solver>
-                 <type>gcr</type>
-                 <tol>1e-10</tol>
-                 <max_basis_size>3</max_basis_size>
-                 <max_its>20000</max_its>
-                 <verbosity>Detailed</verbosity>
-                 <prefix>l1</prefix>
+                 ${mgproton_mg}
                </sea_land_solver>
 "
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
-ensemble_peram_si_7rb() {
-	name="p7rb"
+ensemble_peram_si_26rb() {
+	name="p26rb"
 	invert="
             <invType>MGPROTON</invType>
                <type>hie</type>
                <divisions>0 0 0 2</divisions>
-               <land>0 0 0 7</land>
+               <land>0 0 0 26</land>
                <use_red_black>false</use_red_black>
                <sea_land_solver>
-                 <type>gcr</type>
-                 <tol>1e-10</tol>
-                 <max_basis_size>3</max_basis_size>
-                 <max_its>20000</max_its>
-                 <verbosity>Detailed</verbosity>
-                 <prefix>l1</prefix>
+                 ${mgproton_mg}
                </sea_land_solver>
 "
-	ensemble_gen "$name" "$invert" "1 1 1 1" 1
+	ensemble_gen "$name" "$invert" "1 2 2 2" 8
 }
 
 ensemble_gen() {
@@ -420,7 +430,6 @@ ensemble_gen() {
 	
 	# Tasks to run
 	run_eigs="nop"
-	[ $name == basic ] && run_eigs="yes"
 	run_props="yes"
 	run_gprops="nop"
 	run_baryons="nop"
@@ -429,13 +438,13 @@ ensemble_gen() {
 	run_redstar="nop"
 
 	# Ensemble properties
-	confsprefix="4_16_weak"
-	ensemble="4_16_weak"
-	confsname="4_16_weak"
-	tag="4_16_weak-${name}"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
+	tag="exp-${name}"
 	confs="1000"
-	s_size=4 # lattice spatial size
-	t_size=16 # lattice temporal size
+	s_size=32 # lattice spatial size
+	t_size=64 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
@@ -447,7 +456,7 @@ ensemble_gen() {
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
@@ -459,12 +468,12 @@ ensemble_gen() {
 	prop_t_sources="0"
 	prop_t_fwd=16
 	prop_t_back=0
-	prop_nvec=4
+	prop_nvec=64
 	prop_zphases="0.00"
-	prop_mass="-0.1"
+	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
-	prop_chroma_minutes=600
+	prop_chroma_minutes=120
 	# propagator filename
 	prop_file_name() {
 		if [ ${zphase} == 0.00 ]; then
@@ -663,33 +672,42 @@ ensemble_gen() {
 	redstar_transfer_from_jlab="nop"
 }
 
-chroma_python="$HOME/hadron/runs-eloy/chroma_python"
+chroma_python="$PWD/chroma_python"
 PYTHON=python3
 
 #
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/PHY/src/chromaform"
-chroma="$chromaform/build-dg/chroma-sp-qdpxx-double-nd4-superbblas-cpu-next/mainprogs/main/chroma"
-chroma_extra_args=""
-redstar_corr_graph="$chromaform/install/redstar-hip/bin/redstar_corr_graph"
-redstar_npt="$chromaform/install/redstar-hip/bin/redstar_npt"
+chromaform="$HOME/chromaform_frontier_rocm5.4"
+chromaform="$HOME/chromaform_frontier_rocm4.5"
+#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
+chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas"
+redstar_corr_graph="$redstar/bin/redstar_corr_graph"
+redstar_npt="$redstar/bin/redstar_npt"
 
-slurm_procs_per_node=4
+slurm_procs_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A hadron_g
-#SBATCH -C gpu
-#SBATCH -q regular
+#SBATCH -A NPH122
+#SBATCH -p batch
 #SBATCH --gpu-bind=none
-#SBATCH --cpus-per-task=32 # number of cores per task
+#SBATCH --threads-per-core=1 --cpus-per-task=7 # number of cores per task
 #SBATCH --ntasks-per-node=$slurm_procs_per_node # number of tasks per node
 #SBATCH --gpus-per-task=1"
 
 slurm_script_prologue="
-#. $chromaform/env.sh
+. $chromaform/env.sh
+. $chromaform/env_extra.sh
+. $chromaform/env_extra_0.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=7
+export SLURM_CPU_BIND=\"cores\"
+#export SB_MPI_GPU=1
 "
 
 #
@@ -722,7 +740,7 @@ slurm_script_prologue_redstar="
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 export SLURM_CPU_BIND=\"cores\"
-export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
+export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "
 
 #
@@ -730,17 +748,17 @@ export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
 #
 
 max_jobs=20 # maximum jobs to be launched
-max_hours=5 # maximum hours for a single job
+max_hours=2 # maximum hours for a single job
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$PWD/weak"
-this_ep="6bdc7956-fc0f-4ad2-989c-7aa5ee643a79:${SCRATCH}/b6p3/"  # perlmutter
-jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/" # jlab#gw2
-jlab_local="/cache/isoClover"
-jlab_tape_registry="/mss/lattice/isoClover"
+confspath="$HOME/scratch"
+this_ep="ef1a9560-7ca1-11e5-992c-22000b96db58:scratch/"  # frontier
+jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
+jlab_local="/cache/isoClover/b6p3"
+jlab_tape_registry="/mss/lattice/isoClover/b6p3"
 jlab_user="$USER"
 jlab_ssh="ssh qcdi1402.jlab.org"

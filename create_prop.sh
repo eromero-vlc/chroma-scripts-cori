@@ -10,7 +10,9 @@ for ens in $ensembles; do
 	[ $run_props != yes ] && continue
 
 	for cfg in $confs; do
+		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
+		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
 
@@ -48,7 +50,7 @@ for ens in $ensembles; do
           <Nt_backward>$prop_t_back</Nt_backward>
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
-          <max_rhs>$prop_nvec</max_rhs>
+          <max_rhs>8</max_rhs>
           <phase>0.00 0.00 $zphase</phase>
         </Contractions>
         <Propagator>
@@ -90,16 +92,17 @@ for ens in $ensembles; do
 
  <RNG>
   <Seed>
-    <elem>$cfg</elem>
-    <elem>3189</elem>
-    <elem>2855</elem>
-    <elem>707</elem>
+    <elem>11</elem>
+    <elem>11</elem>
+    <elem>11</elem>
+    <elem>0</elem>
   </Seed>
 </RNG>
 
  <Cfg>
-    <cfg_type>DISORDERED</cfg_type>
-    <cfg_file>caca</cfg_file>
+    <cfg_type>SCIDAC</cfg_type>
+    <cfg_file>${lime_file}</cfg_file>
+    <parallel_io>true</parallel_io>
   </Cfg>
 </chroma>
 EOF
@@ -109,14 +112,14 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
 #SBATCH -t $prop_chroma_minutes
-#SBATCH --nodes=$prop_slurm_nodes
+#SBATCH --nodes=1
 #SBATCH -J prop-${cfg}-${t_source}-${zphase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $prop_file
-	mpirun -np $prop_slurm_nodes $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
+	srun \$MY_ARGS -n $prop_slurm_nodes -N 1 $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
@@ -125,7 +128,7 @@ check() {
 }
 
 deps() {
-	echo $colorvec_file
+	echo $lime_file $colorvec_file
 }
 
 outs() {
@@ -134,7 +137,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes jobs_per_node
-	echo b $prop_chroma_minutes $prop_slurm_nodes 1
+	echo b $prop_chroma_minutes 1 1
 }
 
 globus() {
