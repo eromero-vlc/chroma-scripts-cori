@@ -132,6 +132,7 @@ $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
+#SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(jobs_per_node == 0 ? slurm_procs_per_node : 1) )) # number of cores per task
 #SBATCH -J batch-${tag}
 #SBATCH --array=0-$((num_bundle_jobs-1))%100
 `

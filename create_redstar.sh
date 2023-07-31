@@ -235,74 +235,15 @@ npoint_3pt() {
 	done #operatork
 }
 
-for ens in $ensembles; do
-	# Load the variables from the function
-	eval "$ens"
+corr_graph_file() {
+	echo "$PWD/${tag}/redstar_corr_graph/corr_graph_insop${insertion_op}_m${momw}.bin"
+}
 
-	# Check for running redstar
-	[ $run_redstar != yes ] && continue
-
-	all_moms_2pt=""
-	all_moms_3pt=""
-	if [ $redstar_2pt == yes ]; then
-		all_moms_2pt="`
-			echo "$redstar_2pt_moms" | while read mom; do
-				mom_word $mom
-			done
-		`"
-	fi
-	if [ $redstar_3pt == yes ]; then
-		all_moms_3pt="`
-			echo "$redstar_3pt_srcmom_snkmom" | while read momij; do
-				mom_word $momij
-			done
-		`"
-	fi
-
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		[ -f $lime_file ] || continue
-
-		runpath="$PWD/${tag}/conf_${cfg}"
-		mkdir -p ${runpath}
-
-		for t_source in $prop_t_sources; do
-
-			# Find t_origin
-			perl -e " 
-  srand($cfg);
-
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\\n\"
-" > h
-			t_origin="`cat h | while read a b; do echo \$a; done`"
-			t_offset="`cat h | while read a b; do echo \$b; done`"
-
-			for insertion_op in "_2pt_" $redstar_insertion_operators; do
-				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
-				all_moms="$all_moms_2pt"
-				[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
-
-			for zphase in $prop_zphases; do
-			echo "$all_moms" | while read momw; do
-
-				mom="${momw//_/ }"
-				corr_file="`corr_file_name`"
-				mkdir -p `dirname ${corr_file}`
-
-				#
-				# Correlation creation
-				#
-
-				prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}"
-				redstar_xml="redstar_${prefix}.xml"
- 				redstar_xml_content="<?xml version=\"1.0\"?>
+corr_graph() {
+	local corr_file="$1"
+	local t_origin="$2"
+	local mom="${momw//_/ }"
+	echo "<?xml version=\"1.0\"?>
 <RedstarNPt>
   <Param>
     <version>12</version>
@@ -314,7 +255,7 @@ for ens in $ensembles; do
     <convertUDtoS>false</convertUDtoS>
     <average_1pt_diagrams>true</average_1pt_diagrams>
     <zeroUnsmearedGraphsP>false</zeroUnsmearedGraphsP>
-    <t_origin>$(( (t_origin+t_source)%t_size ))</t_origin>
+    <t_origin>$t_origin</t_origin>
     <bc_spec>-1</bc_spec>
     <Layout>
       <lattSize>$s_size $s_size $s_size $t_size</lattSize>
@@ -324,26 +265,28 @@ for ens in $ensembles; do
 
     <NPointList>
 `
-	if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
-		operators="$redstar_zeromom_operators"
-		[ "$mom" != "0 0 0" ] && operators="$redstar_nonzeromom_operators"
-		npoint_2pt "$mom" "$operators"
-	fi
-	if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
-		momarray=( $mom )
-		momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
-		momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
-		operatorsi="$( get_ops $momi )"
-		operatorsj="$( get_ops $momj )"
-		momk="$( insertion_mom $momi $momj )"
-		npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
+	if [ $t_origin == -1 ]; then
+		if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
+			operators="$redstar_zeromom_operators"
+			[ "$mom" != "0 0 0" ] && operators="$redstar_nonzeromom_operators"
+			npoint_2pt "$mom" "$operators"
+		fi
+		if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
+			momarray=( $mom )
+			momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
+			momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
+			operatorsi="$( get_ops $momi )"
+			operatorsj="$( get_ops $momj )"
+			momk="$( insertion_mom $momi $momj )"
+			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
+		fi
 	fi
 `
     </NPointList>
   </Param> 
   <DBFiles>
     <proj_op_xmls></proj_op_xmls>
-    <corr_graph_bin>corr_graph_${prefix}.bin</corr_graph_bin>
+    <corr_graph_bin>$( corr_graph_file )</corr_graph_bin>
     <output_db>${corr_file}</output_db>
   </DBFiles> 
   <ColorVec>
@@ -381,7 +324,9 @@ for ens in $ensembles; do
           <mass>U0.05</mass>
         </elem>
       </FlavorToMass>
-    </Param>
+    </Param>"
+	if [ $t_origin != -1 ]; then
+		echo "
     <DBFiles>
       <smeared_glue_dbs>
       </smeared_glue_dbs>
@@ -431,13 +376,140 @@ for ens in $ensembles; do
 `
       </unsmeared_genprop4_dbs>
     </DBFiles>
+"
+	fi
+	echo "
   </ColorVec>
 </RedstarNPt>
 "
+}
 
-			output_xml="redstar_xml_out_${prefix}.out"
-			output="$runpath/redstar_${prefix}.out"
-			cat << EOF > $runpath/redstar_${prefix}.sh
+for ens in $ensembles; do
+	# Load the variables from the function
+	eval "$ens"
+
+	# Check for running redstar
+	[ $run_redstar != yes ] && continue
+
+	all_moms_2pt=""
+	all_moms_3pt=""
+	if [ $redstar_2pt == yes ]; then
+		all_moms_2pt="`
+			echo "$redstar_2pt_moms" | while read mom; do
+				mom_word $mom
+			done
+		`"
+	fi
+	if [ $redstar_3pt == yes ]; then
+		all_moms_3pt="`
+			echo "$redstar_3pt_srcmom_snkmom" | while read momij; do
+				mom_word $momij
+			done
+		`"
+	fi
+
+	corr_runpath="$PWD/${tag}/redstar_corr_graph"
+	mkdir -p $corr_runpath
+	for insertion_op in "_2pt_" $redstar_insertion_operators; do
+		[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+		all_moms="$all_moms_2pt"
+		[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+
+		echo "$all_moms" | while read momw; do
+
+		corr_graph_bin="`corr_graph_file`"
+		output="${corr_graph_bin}.out"
+		cat << EOF > ${corr_graph_bin}.sh
+$slurm_sbatch_prologue
+#SBATCH -o ${output}0
+#SBATCH -t $redstar_minutes
+#SBATCH --nodes=1
+#SBATCH -J r-corr-graph
+
+run() {
+	$slurm_script_prologue_redstar
+	tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
+	mkdir -p \$tmp_runpath
+	cd \$tmp_runpath
+	rm -f ${corr_graph_bin}
+	cat << EOFeof > corr_graph.xml
+$( corr_graph "none" "-1" )
+EOFeof
+	echo Starting $redstar_corr_graph corr_graph.xml output_xml > $output
+	$redstar_corr_graph corr_graph.xml output_xml &>> $output
+	rm -r \$tmp_runpath
+}
+
+check() {
+	grep -q "REDSTAR_CORR_GRAPH: total time" 2>&1 ${output} > /dev/null && exit 0
+	exit 1
+}
+
+deps() { echo -n; }
+
+outs() {
+	echo $corr_graph_bin
+}
+
+class() {
+	# class max_minutes nodes jobs_per_node
+	echo c $redstar_minutes 1 $redstar_jobs_per_node
+}
+
+globus() { echo -n; }
+
+eval "\${1:-run}"
+EOF
+
+		done # momw
+	done # insertion_op
+
+	for cfg in $confs; do
+		lime_file="`lime_file_name`"
+		[ -f $lime_file ] || continue
+
+		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p ${runpath}
+
+		for t_source in $prop_t_sources; do
+
+			# Find t_origin
+			t_origin_offset=( $( perl -e " 
+  srand($cfg);
+
+  # Call a few to clear out junk                                                                                                          
+  foreach \$i (1 .. 20)
+  {
+    rand(1.0);
+  }
+  \$t_origin = int(rand($t_size));
+  \$t_offset = ($t_source + \$t_origin) % $t_size;
+  print \"\$t_origin \$t_offset\"
+") )
+			t_origin="${t_origin_offset[0]}"
+			t_offset="${t_origin_offset[1]}"
+
+			for insertion_op in "_2pt_" $redstar_insertion_operators; do
+				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+				all_moms="$all_moms_2pt"
+				[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+
+				for zphase in $prop_zphases; do
+				echo "$all_moms" | while read momw; do
+
+					mom="${momw//_/ }"
+					corr_file="`corr_file_name`"
+					mkdir -p `dirname ${corr_file}`
+
+					#
+					# Correlation creation
+					#
+
+					prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}"
+					redstar_xml="redstar_${prefix}.xml"
+					output_xml="redstar_xml_out_${prefix}.out"
+					output="$runpath/redstar_${prefix}.out"
+					cat << EOF > $runpath/redstar_${prefix}.sh
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -446,18 +518,16 @@ $slurm_sbatch_prologue
 
 run() {
 	$slurm_script_prologue_redstar
-	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}"
+	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
-	rm -f corr_graph_${prefix}.bin ${corr_file}
-	cat << EOFeof > $redstar_xml
-$redstar_xml_content
+	rm -f ${corr_file}
+	cat << EOFeof > redstar.xml
+$( corr_graph "$corr_file" "$(( (t_origin+t_source)%t_size ))" )
 EOFeof
-	echo Starting $redstar_corr_graph $redstar_xml $output_xml > $output
-	$redstar_corr_graph $redstar_xml $output_xml &>> $output || exit 1
-	echo Starting $redstar_npt $redstar_xml $output_xml &>> $output
-	$redstar_npt $redstar_xml $output_xml &>> $output
-	rm -f $output_xml corr_graph_${prefix}.bin
+	echo Starting $redstar_npt redstar.xml output.xml > $output
+	$redstar_npt redstar.xml output.xml &>> $output
+	rm -f \$tmp_runpath
 }
 
 check() {
@@ -466,6 +536,7 @@ check() {
 }
 
 deps() {
+	echo `corr_graph_file`
 	echo `prop_file_name | tr '\n' ' '` `meson_file_name | tr '\n' ' '` `baryon_file_name | tr '\n' ' '`
 `
 	[ $redstar_3pt == yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
@@ -479,7 +550,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes jobs_per_node
-	echo c $redstar_minutes 1 $redstar_jobs_per_node
+	echo d $redstar_minutes 1 $redstar_jobs_per_node
 }
 
 globus() {

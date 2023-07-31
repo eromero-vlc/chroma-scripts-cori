@@ -20,6 +20,7 @@ ensemble0() {
 	confs="`seq 1000 10 4500`"
 	confs="${confs//1920/}"
 	confs="`seq 1000 10 1100`"
+	confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -465,7 +466,7 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
-	redstar_3pt_srcmom_snkmom="0 0 1  1 1 2"
+	#redstar_3pt_srcmom_snkmom="0 0 1  1 1 2"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J0M_J1o2_H1o2D2E NucleonMG1g1MxD2J1A_J1o2_H1o2D2E NucleonMHg1SxD2J2M_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J0M_J3o2_H1o2D2E NucleonMG1g1MxD2J2S_J5o2_H1o2D2E NucleonMG1g1MxD1J1M_J1o2_H1o2D2E NucleonMHg1SxD1J1M_J1o2_H1o2D2E NucleonMG1g1MxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J5o2_H1o2D2E NucleonMG1g1MxD2J2S_J3o2_H1o2D2E NucleonMHg1SxD2J2M_J3o2_H1o2D2E NucleonMG1g1MxD2J2M_J3o2_H1o2D2E"
@@ -531,12 +532,11 @@ redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
 slurm_procs_per_node=8
+slurm_cores_per_node=56
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
 #SBATCH --gpu-bind=none
-#SBATCH --threads-per-core=1 --cpus-per-task=7 # number of cores per task
-#SBATCH --ntasks-per-node=$slurm_procs_per_node # number of tasks per node
 #SBATCH --gpus-per-task=1"
 
 slurm_script_prologue="
