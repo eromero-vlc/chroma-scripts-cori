@@ -137,8 +137,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo b $gprop_chroma_minutes $gprop_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo b $gprop_chroma_minutes $gprop_slurm_nodes 1 0
 }
 
 globus() {

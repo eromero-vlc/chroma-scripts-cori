@@ -97,8 +97,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo a $eigs_chroma_minutes $eigs_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo a $eigs_chroma_minutes $eigs_slurm_nodes 1 0
 }
 
 globus() {

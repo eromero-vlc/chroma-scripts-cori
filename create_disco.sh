@@ -195,8 +195,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo a $disco_chroma_minutes $disco_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo a $disco_chroma_minutes $disco_slurm_nodes 1 0
 }
 
 globus() {

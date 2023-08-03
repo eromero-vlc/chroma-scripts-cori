@@ -50,17 +50,17 @@ done
 
 last_c="_"
 tag="0"
-echo z 0 0 0 >> $jobsfile
-sort $jobsfile | while read class max_mins nodes jobs_per_node job; do
-	c="${class}_${max_mins}_${nodes}_${jobs_per_node}"
+echo z 0 0 0 0 >> $jobsfile
+sort $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jobs job; do
+	c="${class}_${max_mins}_${nodes}_${jobs_per_node}_${max_concurrent_jobs}"
 	if [ $c != $last_c ]; then
 		[ $last_c != _ ] && echo
-		echo -n $tag $max_mins $nodes $jobs_per_node
+		echo -n $tag $max_mins $nodes $jobs_per_node ${max_concurrent_jobs}
 		tag="$(( tag+1 ))"
 		last_c="$c"
 	fi
 	echo -n " $job"
-done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node jobs; do
+done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max_concurrent_jobs jobs; do
 	# Remove the tracking for all files that are going to be created
 	for j in $jobs; do
 		for f in `bash $j outs`; do
@@ -92,13 +92,20 @@ wait
 EOF
 		done
 		jobs="`k_split $num_jobs_per_node $actual_jobs | while read first_job jobs_in_a_node; do echo ${first_job%.sh}.sh_aux; done | tr '\n' ' '`"
+		max_concurrent_jobs="$(( max_concurrent_jobs / num_jobs_per_node ))"
 	fi
 	
 	# total jobs to run
 	num_jobs="`echo $jobs | wc -w`"
 	[ $num_jobs == 0 ] && continue
+	# Max sequential jobs in a SLURM job
+	max_jobs_in_seq="$(( max_hours*60 / minutes_per_job ))"
+	# minimum number of jobs to run
+	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
 	# total SLURM jobs to launch
 	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
+	num_bundle_jobs="$(( num_bundle_jobs < min_slurm_jobs ? min_slurm_jobs : num_bundle_jobs ))"
+	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? 100 : num_bundle_jobs / min_slurm_jobs ))"
 	# maximum number of jobs running on a single SLURM job
 	max_jobs_in_bundle="$(( (num_jobs+num_bundle_jobs-1)/num_bundle_jobs ))"
 	# maximum number of parallel jobs inside a SLURM job
@@ -134,7 +141,7 @@ $slurm_sbatch_prologue
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
 #SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(jobs_per_node == 0 ? slurm_procs_per_node : 1) )) # number of cores per task
 #SBATCH -J batch-${tag}
-#SBATCH --array=0-$((num_bundle_jobs-1))%100
+#SBATCH --array=0-$((num_bundle_jobs-1))%${max_concurrent_slurm_jobs}
 `
 	dep_jobs="$(
 		for j in $actual_jobs; do

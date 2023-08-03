@@ -549,8 +549,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo d $redstar_minutes 1 $redstar_jobs_per_node
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo d $redstar_minutes 1 $redstar_jobs_per_node $redstar_max_concurrent_jobs
 }
 
 globus() {

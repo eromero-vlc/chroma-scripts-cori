@@ -18,9 +18,8 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
-	confs="${confs//1920/}"
 	confs="`seq 1000 10 1100`"
-	confs=1000
+	confs="${confs//1920/}"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -507,6 +506,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	redstar_minutes=120
 	redstar_jobs_per_node=8
+	redstar_max_concurrent_jobs=1200
 	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
