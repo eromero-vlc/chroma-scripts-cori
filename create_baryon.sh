@@ -15,6 +15,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p $runpath
 
 		for zphase in $baryon_zphases; do
 
@@ -56,6 +57,7 @@ for ens in $ensembles; do
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
         <phase>0.00 0.00 $zphase</phase>
+        <use_superb_format>true</use_superb_format>
 
         $baryon_extra_xml
 

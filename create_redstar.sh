@@ -426,8 +426,11 @@ $slurm_sbatch_prologue
 #SBATCH --nodes=1
 #SBATCH -J r-corr-graph
 
-run() {
+environ() {
 	$slurm_script_prologue_redstar
+}
+
+run() {
 	tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
@@ -516,8 +519,11 @@ $slurm_sbatch_prologue
 #SBATCH --nodes=1
 #SBATCH -J redstar-${prefix}
 
-run() {
+environ() {
 	$slurm_script_prologue_redstar
+}
+
+run() {
 	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
@@ -526,7 +532,7 @@ run() {
 $( corr_graph "$corr_file" "$(( (t_origin+t_source)%t_size ))" )
 EOFeof
 	echo Starting $redstar_npt redstar.xml output.xml > $output
-	$redstar_npt redstar.xml output.xml &>> $output
+	exec $redstar_npt redstar.xml output.xml &>> $output
 	rm -f \$tmp_runpath
 }
 

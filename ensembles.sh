@@ -18,8 +18,10 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
-	confs="`seq 1000 10 1100`"
+	#confs="`seq 1000 10 1100`"
 	confs="${confs//1920/}"
+	#confs="1010"
+	#confs="`seq 1000 10 1090`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -273,7 +275,6 @@ ensemble0() {
 0 0 2
 0 0 -2"
 	redstar_3pt="yes"
-	redstar_max_moms_per_file=10
 	redstar_3pt_srcmom_snkmom="\
 0 0 -1  0 0 0   
 0 0 -2  0 0 0   
@@ -465,13 +466,12 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
-	#redstar_3pt_srcmom_snkmom="0 0 1  1 1 2"
-	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1"
-	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1"
-	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J0M_J1o2_H1o2D2E NucleonMG1g1MxD2J1A_J1o2_H1o2D2E NucleonMHg1SxD2J2M_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J0M_J3o2_H1o2D2E NucleonMG1g1MxD2J2S_J5o2_H1o2D2E NucleonMG1g1MxD1J1M_J1o2_H1o2D2E NucleonMHg1SxD1J1M_J1o2_H1o2D2E NucleonMG1g1MxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J5o2_H1o2D2E NucleonMG1g1MxD2J2S_J3o2_H1o2D2E NucleonMHg1SxD2J2M_J3o2_H1o2D2E NucleonMG1g1MxD2J2M_J3o2_H1o2D2E"
-	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D3E1 NucleonMHg1SxD2J2M_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J0M_J3o2_H1o2D3E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D3E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D3E1 NucleonMHg1SxD1J1M_J1o2_H1o2D3E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D3E1 NucleonMHg1SxD1J1M_J3o2_H1o2D3E1 NucleonMHg1SxD1J1M_J5o2_H1o2D3E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D3E1 NucleonMHg1SxD2J2M_J3o2_H1o2D3E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D3E1"
-	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J0M_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1A_J1o2_H1o2C4nm0E NucleonMHg1SxD2J2M_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J0M_J3o2_H1o2C4nm0E NucleonMG1g1MxD2J2S_J5o2_H1o2C4nm0E NucleonMG1g1MxD1J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD1J1M_J1o2_H1o2C4nm0E NucleonMG1g1MxD1J1M_J3o2_H1o2C4nm0E NucleonMHg1SxD1J1M_J3o2_H1o2C4nm0E NucleonMHg1SxD1J1M_J5o2_H1o2C4nm0E NucleonMG1g1MxD2J2S_J3o2_H1o2C4nm0E NucleonMHg1SxD2J2M_J3o2_H1o2C4nm0E NucleonMG1g1MxD2J2M_J3o2_H1o2C4nm0E"
-	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J0M_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1A_J1o2_H1o2C4nnmE NucleonMHg1SxD2J2M_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J0M_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J2S_J5o2_H1o2C4nnmE NucleonMG1g1MxD1J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J1o2_H1o2C4nnmE NucleonMG1g1MxD1J1M_J3o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J3o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J5o2_H1o2C4nnmE NucleonMG1g1MxD2J2S_J3o2_H1o2C4nnmE NucleonMHg1SxD2J2M_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J2M_J3o2_H1o2C4nnmE"
+	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
+	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
+	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
+	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1"
+	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
+	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
 	redstar_insertion_operators="\
 pion_pionxDX__J0_A1
 pion_pion_2xDX__J0_A1
@@ -504,9 +504,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
-	redstar_minutes=120
+	redstar_minutes=30
 	redstar_jobs_per_node=8
-	redstar_max_concurrent_jobs=1200
+	redstar_max_concurrent_jobs=24000
 	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
@@ -526,6 +526,9 @@ chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-ne
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 #chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+
+#chromaform="$HOME/chromaform_frontier_rocm5.4"
+#chromaform="$HOME/chromaform_frontier_rocm5.5"
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas"
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
@@ -533,11 +536,11 @@ redstar_npt="$redstar/bin/redstar_npt"
 
 slurm_procs_per_node=8
 slurm_cores_per_node=56
+slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
-#SBATCH --gpu-bind=none
-#SBATCH --gpus-per-task=1"
+#SBATCH --gpu-bind=none"
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -545,7 +548,7 @@ slurm_script_prologue="
 . $chromaform/env_extra_0.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
-export SLURM_CPU_BIND=\"cores\"
+#export SLURM_CPU_BIND=\"cores\"
 #export SB_MPI_GPU=1
 "
 
@@ -578,8 +581,8 @@ slurm_script_prologue_redstar="
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
-export SLURM_CPU_BIND=\"cores\"
-export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
+#export SLURM_CPU_BIND=\"cores\"
+#export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "
 
 #
