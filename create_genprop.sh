@@ -181,12 +181,12 @@ run() {
 			echo "cat << EOFo > /tmp/h"
 			i=0
 			for j in $js; do
-				echo $i $j
+				echo $i bash $j run
 				i="$((i+1))"
 			done
 			echo "EOFo"
 			num_jobs="$( echo $js | wc -w )"
-			echo srun -n $num_jobs -N $gprop_slurm_nodes \\\$MY_ARGS --multi-prog /tmp/h
+			echo srun -n $num_jobs -N $gprop_slurm_nodes \\\$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog /tmp/h
 		done
 	fi
 `
