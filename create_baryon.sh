@@ -100,7 +100,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/baryon_${zphase}.out0
 #SBATCH -t $baryon_chroma_minutes
-#SBATCH --nodes=$baryon_slurm_nodes
+#SBATCH --nodes=$baryon_slurm_nodes -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J bar-${cfg}-${zphase}-${baryon_file_index}
 
 run() {

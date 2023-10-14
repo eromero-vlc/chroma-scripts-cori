@@ -45,7 +45,16 @@ insertion_mom() {
 }
 
 mom_word() {
-	echo ${1}_${2}_${3}_${4}_${5}_${6}
+	[ ${#@} == 3 ] && echo ${1}_${2}_${3}
+	[ ${#@} == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
+}
+
+mom_fly() {
+	if [ $1 -ge $4 ]; then
+		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
+	else
+		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
+	fi
 }
 
 get_ops() {
@@ -508,11 +517,14 @@ EOF
 					# Correlation creation
 					#
 
-					prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}"
+					momf="$( mom_word $( mom_fly ${momw//_/ } ) )"
+					prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}_mf${momf}"
 					redstar_xml="redstar_${prefix}.xml"
 					output_xml="redstar_xml_out_${prefix}.out"
 					output="$runpath/redstar_${prefix}.out"
-					cat << EOF > $runpath/redstar_${prefix}.sh
+					redstar_sh="redstar_${prefix}.sh"
+					[ $gprop_are_local == yes ] && redstar_sh+=".future"
+					cat << EOF > $runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -545,7 +557,7 @@ deps() {
 	echo `corr_graph_file`
 	echo `prop_file_name | tr '\n' ' '` `meson_file_name | tr '\n' ' '` `baryon_file_name | tr '\n' ' '`
 `
-	[ $redstar_3pt == yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_3pt == yes -a $gprop_are_local != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }

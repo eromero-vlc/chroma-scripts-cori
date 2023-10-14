@@ -98,7 +98,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/meson_${zphase}.out0
 #SBATCH -t $meson_chroma_minutes
-#SBATCH --nodes=$meson_slurm_nodes
+#SBATCH --nodes=$meson_slurm_nodes -n $(( slurm_procs_per_node*meson_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J meson-${cfg}-${zphase}-${meson_file_index}
 
 run() {
