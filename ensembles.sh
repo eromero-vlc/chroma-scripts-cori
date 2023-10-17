@@ -120,6 +120,7 @@ ensemble0() {
 	gprop_chroma_minutes=120
 	localpath="/tmp"
 	gprop_are_local="yes"
+	gprop_max_moms_per_job=2
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		if [ $zphase == 0.00 ]; then
@@ -202,7 +203,7 @@ ensemble0() {
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
-	baryon_chroma_minutes=120
+	baryon_chroma_minutes=150
 	baryon_chroma_parts=1 # split the time slices into this many different files
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
@@ -474,7 +475,11 @@ ensemble0() {
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
 	redstar_3pt_srcmom_snkmom="\
-0 0 -1  0 0 0   "
+0 0 -1  0 0 0   
+0 0 -2  0 0 0   
+0 0 2   0 0 0   
+0 0 0   0 0 -1  
+0 0 0   0 0 1  " 
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -549,9 +554,12 @@ slurm_script_prologue="
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=6
-export SB_CACHEGB_CPU=10
+export SB_CACHEGB_CPU=3
 export SB_CACHEGB_GPU=3
-#export SB_LOG=3
+#export MPICH_GPU_SUPPORT_ENABLED=1
+#export SB_MPI_GPU=1
+export SB_LOG=3
+export SB_TRACK_MEM=1
 CPU_BIND="mask_cpu:7e000000000000,7e00000000000000"
 CPU_BIND="\${CPU_BIND},7e0000,7e000000"
 CPU_BIND="\${CPU_BIND},7e,7e00"

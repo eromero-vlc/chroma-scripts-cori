@@ -7,7 +7,7 @@ mom_word() {
 }
 
 mom_fly() {
-	if [ $1 -ge $4 ]; then
+	if [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
 		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
 	else
 		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
@@ -93,8 +93,10 @@ EOF
 		moms="`
 			echo "$redstar_3pt_srcmom_snkmom" | while read momij; do
 				mom_word $( mom_fly $momij )
-			done
+			done | sort -u
 		`"
+	else
+		gprop_max_moms_per_job=1
 	fi
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
@@ -106,7 +108,7 @@ EOF
 
 		for t_source in $gprop_t_sources; do
 		for zphase in $gprop_zphases; do
-		for mom_group in $moms; do
+		k_split $gprop_max_moms_per_job $moms | while read mom_group ; do
 
 			# Find t_origin
 			perl -e " 
@@ -133,7 +135,7 @@ EOF
 			# Genprops creation
 			#
 			if [ $gprop_are_local == yes ]; then
-				gprop_moms="$( unpack_moms ${mom_group//_/ } )"
+				gprop_moms="$( for mom in $mom_group; do unpack_moms ${mom//_/ }; done )"
 			fi
 			gdm="`
 				for g in $gammas; do
@@ -146,7 +148,8 @@ EOF
 			`"
 			GDM="`echo $gdm | cut -b 2-`"
 			N_COLOR_FILES=1
-			gprop_xml="$runpath/gprop_t${t_source}_z${zphase}.xml"
+			prefix="gprop_t${t_source}_z${zphase}_mf${mom_group// /_}"
+			gprop_xml="$runpath/${prefix}.xml"
 			mkdir -p `dirname ${gprop_xml}`
 			$PYTHON $chroma_python/unsmeared_hadron_node.py \
 				-c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} \
@@ -159,12 +162,12 @@ EOF
 			redstar_tasks=""
 			if [ $gprop_are_local == yes ]; then
 				gprop_class="d"
-				redstar_tasks="`ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom_group}.sh.future`"
+				redstar_tasks="$( for mom in $mom_group; do ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom}.sh.future; done )"
 			fi
-			output="$runpath/gprop_t${t_source}_z${zphase}.out"
-			cat << EOF > $runpath/gprop_t${t_source}_z${zphase}.sh
+			output="$runpath/${prefix}.out"
+			cat << EOF > $runpath/${prefix}.sh
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/gprop_t${t_source}_z${zphase}.out0
+#SBATCH -o $runpath/${prefix}.out0
 #SBATCH -t $gprop_chroma_minutes
 #SBATCH --nodes=$gprop_slurm_nodes -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J gprop-${cfg}-${t_source}
