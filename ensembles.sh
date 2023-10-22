@@ -7,7 +7,7 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="yes"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
@@ -20,6 +20,7 @@ ensemble0() {
 	confs="`seq 1000 10 4500`"
 	confs="`seq 1000 10 1100`"
 	confs="${confs//1920/}"
+	confs="1030"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -502,11 +503,11 @@ zn6 -3 -3 -3 -3 -3 -3
 zn7 -3 -3 -3 -3 -3 -3 -3
 zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
-		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_tsep${t_sep}_${insertion_ops}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
 	redstar_minutes=120
 	redstar_jobs_per_node=8
-	redstar_max_concurrent_jobs=1200
+	redstar_max_concurrent_jobs=600
 	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"

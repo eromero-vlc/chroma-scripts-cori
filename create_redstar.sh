@@ -236,7 +236,7 @@ npoint_3pt() {
 }
 
 corr_graph_file() {
-	echo "$PWD/${tag}/redstar_corr_graph/corr_graph_insop${insertion_op}_m${momw}.bin"
+	echo "$PWD/${tag}/redstar_corr_graph/corr_tsep${t_sep}_m${momw}_${insertion_ops}.bin"
 }
 
 corr_graph() {
@@ -266,19 +266,18 @@ corr_graph() {
     <NPointList>
 `
 	if [ $t_origin == -1 ]; then
-		if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
+		if [ ${insertion_ops} == 2pt ]; then
 			operators="$redstar_zeromom_operators"
 			[ "$mom" != "0 0 0" ] && operators="$redstar_nonzeromom_operators"
 			npoint_2pt "$mom" "$operators"
-		fi
-		if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
+		else
 			momarray=( $mom )
 			momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
 			momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
 			operatorsi="$( get_ops $momi )"
 			operatorsj="$( get_ops $momj )"
 			momk="$( insertion_mom $momi $momj )"
-			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
+			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$t_sep" "$redstar_insertion_disps"
 		fi
 	fi
 `
@@ -410,11 +409,20 @@ for ens in $ensembles; do
 
 	corr_runpath="$PWD/${tag}/redstar_corr_graph"
 	mkdir -p $corr_runpath
-	for insertion_op in "_2pt_" $redstar_insertion_operators; do
-		[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
-		all_moms="$all_moms_2pt"
-		[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+	for insertion_ops in "2pt" "3pt"; do
+		if [ ${insertion_ops} == 2pt ]; then
+			[ ${redstar_2pt} != yes ] && continue
+			insertion_op="_2pt_"
+			all_moms="$all_moms_2pt"
+			t_seps=0
+		else
+			[ ${redstar_3pt} != yes ] && continue
+			insertion_op="$redstar_insertion_operators"
+			all_moms="$all_moms_3pt"
+			t_seps="$gprop_t_seps"
+		fi
 
+		for t_sep in $t_seps; do
 		echo "$all_moms" | while read momw; do
 
 		corr_graph_bin="`corr_graph_file`"
@@ -452,8 +460,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo c $redstar_minutes 1 $redstar_jobs_per_node
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo c $redstar_minutes 1 $redstar_jobs_per_node 0
 }
 
 globus() { echo -n; }
@@ -462,6 +470,7 @@ eval "\${1:-run}"
 EOF
 
 		done # momw
+		done # t_sep
 	done # insertion_op
 
 	for cfg in $confs; do
@@ -489,12 +498,21 @@ EOF
 			t_origin="${t_origin_offset[0]}"
 			t_offset="${t_origin_offset[1]}"
 
-			for insertion_op in "_2pt_" $redstar_insertion_operators; do
-				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
-				all_moms="$all_moms_2pt"
-				[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+			for insertion_ops in "2pt" "3pt"; do
+				if [ ${insertion_ops} == 2pt ]; then
+					[ ${redstar_2pt} != yes ] && continue
+					insertion_op="_2pt_"
+					all_moms="$all_moms_2pt"
+					t_seps=0
+				else
+					[ ${redstar_3pt} != yes ] && continue
+					insertion_op="$redstar_insertion_operators"
+					all_moms="$all_moms_3pt"
+					t_seps="$gprop_t_seps"
+				fi
 
 				for zphase in $prop_zphases; do
+				for t_sep in $t_seps; do
 				echo "$all_moms" | while read momw; do
 
 					mom="${momw//_/ }"
@@ -505,7 +523,7 @@ EOF
 					# Correlation creation
 					#
 
-					prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}"
+					prefix="t${t_source}_tsep${t_sep}_m${momw}_z${zphase}_${insertion_ops}"
 					redstar_xml="redstar_${prefix}.xml"
 					output_xml="redstar_xml_out_${prefix}.out"
 					output="$runpath/redstar_${prefix}.out"
@@ -560,8 +578,9 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # insertion_op
+		done # insertion_ops
 		done # mom
+		done # t_sep
 		done # zphase
 		done # t_source
 	done # cfg
