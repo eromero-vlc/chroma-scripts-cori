@@ -6,8 +6,8 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="nop"
-	run_gprops="yes"
-	run_baryons="yes"
+	run_gprops="nop"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
@@ -20,7 +20,7 @@ ensemble0() {
 	confs="`seq 1000 10 4500`"
 	#confs="`seq 1000 10 1100`"
 	confs="${confs//1920/}"
-	#confs="1010"
+	confs="1100"
 	#confs="`seq 1000 10 1090`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -45,6 +45,7 @@ ensemble0() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
+	prop_t_sources="0"
 	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=64
@@ -466,6 +467,8 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
+	redstar_3pt_srcmom_snkmom="\
+0 0 -1  0 0 0   "
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -504,9 +507,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
-	redstar_minutes=30
+	redstar_minutes=100
 	redstar_jobs_per_node=8
-	redstar_max_concurrent_jobs=24000
+	redstar_max_concurrent_jobs=3000
 	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
@@ -579,8 +582,9 @@ export OMP_NUM_THREADS=$slurm_threads_per_proc_cpu
 slurm_script_prologue_redstar="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
-export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=7
+export SB_CACHEGB_CPU=200
+#export OPENBLAS_NUM_THREADS=1
+#export OMP_NUM_THREADS=7
 #export SLURM_CPU_BIND=\"cores\"
 #export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "

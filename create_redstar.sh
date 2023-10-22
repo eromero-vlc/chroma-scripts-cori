@@ -271,14 +271,14 @@ corr_graph() {
 			[ "$mom" != "0 0 0" ] && operators="$redstar_nonzeromom_operators"
 			npoint_2pt "$mom" "$operators"
 		fi
-		if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
+		if [ ${redstar_3pt} == yes -a ${insertion_op} == _3pt_ ]; then
 			momarray=( $mom )
 			momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
 			momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
 			operatorsi="$( get_ops $momi )"
 			operatorsj="$( get_ops $momj )"
 			momk="$( insertion_mom $momi $momj )"
-			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
+			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$redstar_insertion_operators" "$gprop_t_seps" "$redstar_insertion_disps"
 		fi
 	fi
 `
@@ -410,10 +410,11 @@ for ens in $ensembles; do
 
 	corr_runpath="$PWD/${tag}/redstar_corr_graph"
 	mkdir -p $corr_runpath
-	for insertion_op in "_2pt_" $redstar_insertion_operators; do
+	for insertion_op in "_2pt_" "_3pt_"; do
 		[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+		[ ${redstar_3pt} != yes -a ${insertion_op} == _3pt_ ] && continue
 		all_moms="$all_moms_2pt"
-		[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+		[ ${insertion_op} == _3pt_ ] && all_moms="$all_moms_3pt"
 
 		echo "$all_moms" | while read momw; do
 
@@ -492,10 +493,11 @@ EOF
 			t_origin="${t_origin_offset[0]}"
 			t_offset="${t_origin_offset[1]}"
 
-			for insertion_op in "_2pt_" $redstar_insertion_operators; do
+			for insertion_op in "_2pt_" "_3pt_"; do
 				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+				[ ${redstar_3pt} != yes -a ${insertion_op} == _3pt_ ] && continue
 				all_moms="$all_moms_2pt"
-				[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
+				[ ${insertion_op} == _3pt_ ] && all_moms="$all_moms_3pt"
 
 				for zphase in $prop_zphases; do
 				echo "$all_moms" | while read momw; do
@@ -524,6 +526,7 @@ environ() {
 }
 
 run() {
+	environ
 	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
@@ -556,7 +559,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes jobs_per_node max_concurrent_jobs
-	echo d $redstar_minutes 1 $redstar_jobs_per_node $redstar_max_concurrent_jobs
+	echo d $redstar_minutes 1 1 $redstar_max_concurrent_jobs
 }
 
 globus() {
