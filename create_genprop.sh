@@ -19,6 +19,10 @@ unpack_moms() {
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
 }
 
+num_args() {
+	echo $#
+}
+
 k_split() {
 	local n i f
 	n="$1"
@@ -150,6 +154,17 @@ EOF
 			N_COLOR_FILES=1
 			prefix="gprop_t${t_source}_z${zphase}_mf${mom_group// /_}"
 			gprop_xml="$runpath/${prefix}.xml"
+			gprop_class="b"
+			redstar_tasks=""
+			num_redstar_tasks=0
+
+			if [ $gprop_are_local == yes ]; then
+				gprop_class="d"
+				redstar_tasks="$( for mom in $mom_group; do ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom}.sh.future; done )"
+				num_redstar_tasks="$( num_args $redstar_tasks )"
+				[ $num_redstar_tasks == 0 ] && continue
+			fi
+
 			mkdir -p `dirname ${gprop_xml}`
 			$PYTHON $chroma_python/unsmeared_hadron_node.py \
 				-c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} \
@@ -158,13 +173,8 @@ EOF
 				-i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 \
 				--max_mom_contractions ${gprop_max_mom_in_contraction} --genprop5 --genprop5-format | sed "s@flime_1000.lime@${lime_file}@; s@fcolorvec.mod1000@${colorvec_file}@; s@fgprop.sdb1000@${gprop_file}@" > $gprop_xml
 
-			gprop_class="b"
-			redstar_tasks=""
-			if [ $gprop_are_local == yes ]; then
-				gprop_class="d"
-				redstar_tasks="$( for mom in $mom_group; do ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom}.sh.future; done )"
-			fi
 			output="$runpath/${prefix}.out"
+			local_aux="${localpath}/${runpath//\//_}_${prefix}.aux"
 			cat << EOF > $runpath/${prefix}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/${prefix}.out0
@@ -175,13 +185,14 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	[ $gprop_are_local == yes ] && mkdir -p `dirname ${gprop_file}`
-	rm -f ${gprop_file}*
+	[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
+	#rm -f ${gprop_file}*
 	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
 `
 	if [ $gprop_are_local ] ; then
-		k_split $(( slurm_procs_per_node*gprop_slurm_nodes )) $redstar_tasks | while read js ; do
-			echo "cat << EOFo > /tmp/h"
+		echo sleep 60
+		k_split $(( (num_redstar_tasks + slurm_procs_per_node*gprop_slurm_nodes-1 ) / (slurm_procs_per_node*gprop_slurm_nodes) )) $redstar_tasks | while read js ; do
+			echo "cat << EOFo > ${local_aux}"
 			i=0
 			for j in $js; do
 				echo $i bash $j run
@@ -189,7 +200,7 @@ run() {
 			done
 			echo "EOFo"
 			num_jobs="$( echo $js | wc -w )"
-			echo srun -n $num_jobs -N $gprop_slurm_nodes \\\$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog /tmp/h
+			echo srun -n $num_jobs -N $gprop_slurm_nodes \\\$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
 		done
 	fi
 `
@@ -201,6 +212,18 @@ check() {
 	if [ $gprop_are_local ] ; then
 		for t in $redstar_tasks; do
 			echo "bash $t check || exit 1"
+		done
+	fi
+`
+	exit 0
+}
+
+blame() {
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null || echo genprop creation failed
+`
+	if [ $gprop_are_local ] ; then
+		for t in $redstar_tasks; do
+			echo "bash $t check || echo fail $t"
 		done
 	fi
 `

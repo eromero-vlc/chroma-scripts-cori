@@ -170,6 +170,8 @@ EOF
 		done
 		ji="$(( ji+1 ))"
 	done
+	# Update the queued jobs
+	squeue -u $USER --array > $sq
 done
 
 rm -f $jobsfile

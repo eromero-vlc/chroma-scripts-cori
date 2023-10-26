@@ -7,7 +7,7 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="yes"
-	run_baryons="nop"
+	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
@@ -109,18 +109,18 @@ ensemble0() {
 2 1 1  
 2 1 -2   
 2 1 2    "
-	gprop_moms="\
-0 0 0    
-0 0 -1 
-0 0 1  "
+#	gprop_moms="\
+#0 0 0    
+#0 0 -1 
+#0 0 1  "
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
-	gprop_max_mom_in_contraction=3
+	gprop_max_mom_in_contraction=1
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
 	localpath="/tmp"
 	gprop_are_local="yes"
-	gprop_max_moms_per_job=2
+	gprop_max_moms_per_job=1
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		if [ $zphase == 0.00 ]; then
@@ -129,7 +129,7 @@ ensemble0() {
 			echo "${localpath}/${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
 	}
-	gprop_transfer_back="yes"
+	gprop_transfer_back="nop"
 	gprop_delete_after_transfer_back="nop"
 	gprop_transfer_from_jlab="nop"
 
@@ -199,11 +199,11 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="0.00"
-	baryon_chroma_max_tslices_in_contraction=2 # as large as possible
+	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
-	baryon_chroma_minutes=150
+	baryon_chroma_minutes=120
 	baryon_chroma_parts=1 # split the time slices into this many different files
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
@@ -474,12 +474,12 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
-	redstar_3pt_srcmom_snkmom="\
-0 0 -1  0 0 0   
-0 0 -2  0 0 0   
-0 0 2   0 0 0   
-0 0 0   0 0 -1  
-0 0 0   0 0 1  " 
+# 	redstar_3pt_srcmom_snkmom="\
+# 0 0 -1  0 0 0   
+# 0 0 -2  0 0 0   
+# 0 0 2   0 0 0   
+# 0 0 0   0 0 -1  
+# 0 0 0   0 0 1  " 
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -533,37 +533,42 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="/scratch/project_465000563/chromaform0"
+chromaform="$HOME/chromaform_frontier_rocm4.5"
+chromaform="$HOME/chromaform_frontier_rocm5.4"
+#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
+chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
+#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
+#chromaform="$HOME/chromaform_frontier_rocm5.4"
+#chromaform="$HOME/chromaform_frontier_rocm5.5"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas"
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-dg/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
 slurm_procs_per_node=8
-slurm_cores_per_node=48
+slurm_cores_per_node=56
 slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A project_465000563
-#SBATCH -p standard-g
-#SBATCH --gpu-bind=none --threads-per-core=1 -c6 --gpus-per-task=1"
+#SBATCH -A NPH122
+#SBATCH -p batch
+#SBATCH --gpu-bind=none"
 
 slurm_script_prologue="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
+. $chromaform/env_extra_0.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=6
-export SB_CACHEGB_CPU=3
-export SB_CACHEGB_GPU=3
-#export MPICH_GPU_SUPPORT_ENABLED=1
+export OMP_NUM_THREADS=7
+#export SLURM_CPU_BIND=\"cores\"
+# GPU-aware uses too much memory
 #export SB_MPI_GPU=1
-export SB_LOG=3
-export SB_TRACK_MEM=1
-CPU_BIND="mask_cpu:7e000000000000,7e00000000000000"
-CPU_BIND="\${CPU_BIND},7e0000,7e000000"
-CPU_BIND="\${CPU_BIND},7e,7e00"
-CPU_BIND="\${CPU_BIND},7e00000000,7e0000000000"
+#export MPICH_GPU_SUPPORT_ENABLED=1
 "
 
 #
@@ -594,7 +599,7 @@ slurm_script_prologue_redstar="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=7
 #export SLURM_CPU_BIND=\"cores\"
 #export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "
@@ -611,11 +616,10 @@ max_hours=2 # maximum hours for a single job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="/pfs/lustrep4/scratch/project_465000563/b6p3/"
-this_ep="045b5cc2-ef39-11ed-9bb5-c9bb788c490e:scratch_proj/b6p3/"  # lumi
-sub="/b6p3"
-jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover$sub/" # jlab#gw2
-jlab_local="/cache/isoClover$sub"
-jlab_tape_registry="/mss/lattice/isoClover$sub"
-jlab_user="eromero"
+confspath="$HOME/scratch"
+this_ep="ef1a9560-7ca1-11e5-992c-22000b96db58:scratch/"  # frontier
+jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
+jlab_local="/cache/isoClover/b6p3"
+jlab_tape_registry="/mss/lattice/isoClover/b6p3"
+jlab_user="$USER"
 jlab_ssh="ssh qcdi1402.jlab.org"
