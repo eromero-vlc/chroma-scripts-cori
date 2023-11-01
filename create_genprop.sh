@@ -191,17 +191,14 @@ run() {
 `
 	if [ $gprop_are_local ] ; then
 		echo sleep 60
+		echo "cat << EOFo > ${local_aux}"
+		i=0
 		k_split $(( (num_redstar_tasks + slurm_procs_per_node*gprop_slurm_nodes-1 ) / (slurm_procs_per_node*gprop_slurm_nodes) )) $redstar_tasks | while read js ; do
-			echo "cat << EOFo > ${local_aux}"
-			i=0
-			for j in $js; do
-				echo $i bash $j run
-				i="$((i+1))"
-			done
-			echo "EOFo"
-			num_jobs="$( echo $js | wc -w )"
-			echo srun -n $num_jobs -N $gprop_slurm_nodes \\\$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
+			echo "$i bash -c 'for t in $js; do bash \\\\\\\$t run; done'"
+			i="$((i+1))"
 		done
+		echo "EOFo"
+		echo srun -n $(( num_redstar_tasks < slurm_procs_per_node*gprop_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \\\$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
 	fi
 `
 }

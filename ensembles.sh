@@ -7,7 +7,7 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="yes"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
@@ -21,7 +21,9 @@ ensemble0() {
 	#confs="`seq 1000 10 1100`"
 	confs="${confs//1920/}"
 	confs="4500"
-	#confs="`seq 4000 10 4500`"
+	confs="`seq 4400 10 4500`"
+	confs="`seq 4000 10 4490`"
+	confs="`seq 2000 10 3900`"
 	#confs="`seq 1000 10 1090`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
