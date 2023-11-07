@@ -20,10 +20,10 @@ ensemble0() {
 	confs="`seq 1000 10 4500`"
 	#confs="`seq 1000 10 1100`"
 	confs="${confs//1920/}"
-	confs="4500"
 	confs="`seq 4400 10 4500`"
 	confs="`seq 4000 10 4490`"
 	confs="`seq 2000 10 3900`"
+	confs="`seq 1000 10 4500`"
 	#confs="`seq 1000 10 1090`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -520,10 +520,21 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
+	rename_moms() {
+		[ $# == 3 ] && echo "mom$1.$2.$3"
+		[ $# == 6 ] && echo "src$1.$2.$3snk$4.$5.$6"
+	}
+	corr_file_name_globus() {
+		if [ ${zphase} == 0.00 ]; then
+			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+		else
+			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+		fi
+	}
 	redstar_minutes=30
 	redstar_jobs_per_node=8
 	redstar_max_concurrent_jobs=24000
-	redstar_transfer_back="nop"
+	redstar_transfer_back="yes"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 }

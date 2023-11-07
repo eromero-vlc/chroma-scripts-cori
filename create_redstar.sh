@@ -511,6 +511,7 @@ EOF
 
 					mom="${momw//_/ }"
 					corr_file="`corr_file_name`"
+					corr_file_globus="`corr_file_name_globus`"
 					mkdir -p `dirname ${corr_file}`
 
 					#
@@ -549,7 +550,7 @@ EOFeof
 }
 
 check() {
-	grep -q "REDSTAR_NPT: total time" 2>&1 ${output} > /dev/null && exit 0
+	tail -n 10 ${output} 2> /dev/null | grep -q "REDSTAR_NPT: total time" && exit 0
 	exit 1
 }
 
@@ -572,7 +573,7 @@ class() {
 }
 
 globus() {
-	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
+	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file_globus#${confspath}} ${redstar_delete_after_transfer_back}
 }
 
 eval "\${1:-run}"

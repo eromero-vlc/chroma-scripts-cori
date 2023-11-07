@@ -204,7 +204,7 @@ run() {
 }
 
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null || exit 1
+	tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" || exit 1
 `
 	if [ $gprop_are_local ] ; then
 		for t in $redstar_tasks; do
@@ -216,7 +216,10 @@ check() {
 }
 
 blame() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null || echo genprop creation failed
+	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully"; then
+		echo genprop creation failed
+		exit 1
+	fi
 `
 	if [ $gprop_are_local ] ; then
 		for t in $redstar_tasks; do
@@ -256,7 +259,15 @@ class() {
 }
 
 globus() {
-	[ $gprop_transfer_back == yes ] && echo ${gprop_file}.globus ${this_ep}${gprop_file#${confspath}} ${jlab_ep}${gprop_file#${confspath}} ${gprop_delete_after_transfer_back}
+`
+	if [ $gprop_are_local ] ; then
+		for t in $redstar_tasks; do
+			echo bash $t globus
+		done
+	else
+		echo echo "[ $gprop_transfer_back == yes ] && echo ${gprop_file}.globus ${this_ep}${gprop_file#${confspath}} ${jlab_ep}${gprop_file#${confspath}} ${gprop_delete_after_transfer_back}"
+	fi
+`
 }
 
 eval "\${1:-run}"
