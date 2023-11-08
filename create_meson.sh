@@ -98,7 +98,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/meson_${zphase}.out0
 #SBATCH -t $meson_chroma_minutes
-#SBATCH --nodes=$meson_slurm_nodes
+#SBATCH --nodes=$meson_slurm_nodes -n $(( slurm_procs_per_node*meson_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J meson-${cfg}-${zphase}-${meson_file_index}
 
 run() {
@@ -122,8 +122,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo b $meson_chroma_minutes $meson_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo b $meson_chroma_minutes $meson_slurm_nodes 1 0
 }
 
 globus() { echo -n; }
