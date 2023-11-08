@@ -193,7 +193,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
 #SBATCH -t $prop_chroma_minutes
-#SBATCH --nodes=$prop_slurm_nodes
+#SBATCH --nodes=$prop_slurm_nodes -n $(( slurm_procs_per_node*prop_slurm_nodes ))  -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J prop-${cfg}-${t_source}-${zphase}
 
 run() {
@@ -217,8 +217,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo b $prop_chroma_minutes $prop_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo b $prop_chroma_minutes $prop_slurm_nodes 1 0
 }
 
 globus() {

@@ -23,7 +23,9 @@ for ens in $ensembles; do
 		grep -q "\<`cat $f`\>" $sq && continue
 		if bash ${f%.launched} check; then
 			echo >> $ok
-			bash ${f%.launched} globus >> $t
+			bash ${f%.launched} globus | while read fglobus orig dest delete ; do
+                		echo pending $orig $dest $delete > $fglobus
+			done
 			touch $f.verified
 			echo ok $f
 		else

@@ -44,6 +44,7 @@ ensemble0() {
 	prop_t_fwd=64
 	prop_t_back=0
 	prop_nvec=96
+	prop_zphases="0.00 2.00 -2.00"
 	prop_zphases="0.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
@@ -68,19 +69,27 @@ ensemble0() {
 	gprop_t_seps="4 6 8 10 12 14"
 	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$nvec
-	gprop_slurm_nodes=2
-	gprop_chroma_geometry="1 2 2 4"
-	gprop_chroma_minutes=600
+	gprop_moms="\
+0 0 0  "  
+	gprop_max_mom_in_contraction=1
+	gprop_slurm_nodes=1
+	gprop_chroma_geometry="1 1 2 4"
+	gprop_chroma_minutes=120
+	localpath="/tmp"
+	gprop_are_local="nop"
+	gprop_max_moms_per_job=1
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		if [ $zphase == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
+			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
+			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
+		[ $gprop_are_local == yes ] && n="${localpath}/$n"
+		echo $n
 	}
-	gprop_transfer_back="yes"
-	gprop_delete_after_transfer_back="yes"
+	gprop_transfer_back="nop"
+	gprop_delete_after_transfer_back="nop"
 	gprop_transfer_from_jlab="nop"
 
 	# Meson options
@@ -225,28 +234,269 @@ ensemble0() {
 	redstar_t_corr=14 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_2pt="yes"
-	redstar_3pt="nop"
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
-	redstar_irmom_momtype="\
-0 0 0  0 0 0"
-	redstar_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
-	redstar_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1"
-	redstar_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
-	redstar_insertion_operators="b_b0xDX__J0_A1" # use for 3pt correlation functions
+	redstar_2pt="yes"
+	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
+	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1"
+	redstar_2pt_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
+	redstar_2pt_moms="\
+0 0 0
+0 0 1
+0 0 -1
+0 0 2
+0 0 -2"
+	redstar_3pt="nop"
+	redstar_3pt_srcmom_snkmom="\
+0 0 -1  0 0 0   
+0 0 -2  0 0 0   
+0 0 2   0 0 0   
+0 0 0   0 0 -1  
+0 0 0   0 0 1   
+0 0 -1  0 0 1   
+0 0 -2  0 0 -1  
+0 0 2   0 0 1   
+0 0 0   0 0 -2  
+0 0 0   0 0 2   
+0 0 -1  0 0 -2  
+0 0 1   0 0 2   
+0 0 -1  0 1 0   
+0 0 1   0 1 0   
+0 0 -2  0 1 0   
+0 0 2   0 1 0   
+0 1 -1  0 1 0   
+0 1 1   0 1 0   
+0 1 -2  0 1 0   
+0 1 2   0 1 0   
+0 0 0   0 1 -1  
+0 0 0   0 1 1   
+0 0 -1  0 1 -1  
+0 0 1   0 1 1   
+0 0 -2  0 1 -1  
+0 0 2   0 1 1   
+0 1 0   0 1 -1  
+0 1 0   0 1 1   
+0 1 -2  0 1 -1  
+0 1 2   0 1 1   
+0 0 0   0 1 -2  
+0 0 0   0 1 2   
+0 0 -1  0 1 -2  
+0 0 1   0 1 2   
+0 0 -2  0 1 -2  
+0 0 2   0 1 2   
+0 1 0   0 1 -2  
+0 1 0   0 1 2   
+0 1 -1  0 1 -2  
+0 1 1   0 1 2   
+1 0 -1  1 0 0   
+1 0 1   1 0 0   
+1 0 -2  1 0 0   
+1 0 2   1 0 0   
+0 0 -1  1 0 -1  
+0 0 1   1 0 1   
+1 0 0   1 0 -1  
+1 0 0   1 0 1   
+1 0 -2  1 0 -1  
+1 0 2   1 0 1   
+0 0 -2  1 0 -2  
+0 0 2   1 0 2   
+1 0 0   1 0 -2  
+1 0 0   1 0 2   
+1 0 -1  1 0 -2  
+1 0 1   1 0 2   
+0 0 -1  1 1 0   
+0 0 1   1 1 0   
+0 0 -2  1 1 0   
+0 0 2   1 1 0   
+1 0 -1  1 1 0   
+1 0 1   1 1 0   
+1 0 -2  1 1 0   
+1 0 2   1 1 0   
+1 1 -1  1 1 0   
+1 1 1   1 1 0   
+1 1 -2  1 1 0   
+1 1 2   1 1 0   
+0 0 0   1 1 -1  
+0 0 0   1 1 1   
+0 0 -1  1 1 -1  
+0 0 1   1 1 1   
+0 0 -2  1 1 -1  
+0 0 2   1 1 1   
+0 1 -1  1 1 -1  
+0 1 1   1 1 1   
+1 0 0   1 1 -1  
+1 0 0   1 1 1   
+1 0 -2  1 1 -1  
+1 0 2   1 1 1   
+1 1 0   1 1 -1  
+1 1 0   1 1 1   
+1 1 -2  1 1 -1  
+1 1 2   1 1 1   
+0 0 0   1 1 -2  
+0 0 0   1 1 2   
+0 0 -1  1 1 -2  
+0 0 1   1 1 2   
+0 0 -2  1 1 -2  
+0 0 2   1 1 2   
+0 1 -2  1 1 -2  
+0 1 2   1 1 2   
+1 0 0   1 1 -2  
+1 0 0   1 1 2   
+1 0 -1  1 1 -2  
+1 0 1   1 1 2   
+1 1 0   1 1 -2  
+1 1 0   1 1 2   
+1 1 -1  1 1 -2  
+1 1 1   1 1 2   
+0 0 -3  1 1 -3  
+0 0 3   1 1 3   
+0 0 -1  2 0 0   
+0 0 1   2 0 0   
+0 0 -2  2 0 0   
+0 0 2   2 0 0   
+2 0 -1  2 0 0   
+2 0 1   2 0 0   
+2 0 -2  2 0 0   
+2 0 2   2 0 0   
+0 0 0   2 0 -1  
+0 0 0   2 0 1   
+0 0 -2  2 0 -1  
+0 0 2   2 0 1   
+1 0 -1  2 0 -1  
+1 0 1   2 0 1   
+2 0 0   2 0 -1  
+2 0 0   2 0 1   
+2 0 -2  2 0 -1  
+2 0 2   2 0 1   
+0 0 0   2 0 -2  
+0 0 0   2 0 2   
+0 0 -1  2 0 -2  
+0 0 1   2 0 2   
+1 0 -2  2 0 -2  
+1 0 2   2 0 2   
+2 0 0   2 0 -2  
+2 0 0   2 0 2   
+2 0 -1  2 0 -2  
+2 0 1   2 0 2   
+0 1 -1  2 1 0   
+0 1 1   2 1 0   
+0 1 -2  2 1 0   
+0 1 2   2 1 0   
+1 0 -1  2 1 0   
+1 0 1   2 1 0   
+1 0 -2  2 1 0   
+1 0 2   2 1 0   
+2 0 -1  2 1 0   
+2 0 1   2 1 0   
+2 0 -2  2 1 0   
+2 0 2   2 1 0   
+2 1 -1  2 1 0   
+2 1 1   2 1 0   
+2 1 -2  2 1 0   
+2 1 2   2 1 0   
+0 1 0   2 1 -1  
+0 1 0   2 1 1   
+0 1 -2  2 1 -1  
+0 1 2   2 1 1   
+1 0 0   2 1 -1  
+1 0 0   2 1 1   
+1 0 -1  2 1 -1  
+1 0 1   2 1 1   
+1 0 -2  2 1 -1  
+1 0 2   2 1 1   
+1 1 -1  2 1 -1  
+1 1 1   2 1 1   
+2 0 0   2 1 -1  
+2 0 0   2 1 1   
+2 0 -1  2 1 -1  
+2 0 1   2 1 1   
+2 0 -2  2 1 -1  
+2 0 2   2 1 1   
+2 1 0   2 1 -1  
+2 1 0   2 1 1   
+2 1 -2  2 1 -1  
+2 1 2   2 1 1   
+0 1 0   2 1 -2  
+0 1 0   2 1 2   
+0 1 -1  2 1 -2  
+0 1 1   2 1 2   
+1 0 0   2 1 -2  
+1 0 0   2 1 2   
+1 0 -1  2 1 -2  
+1 0 1   2 1 2   
+1 0 -2  2 1 -2  
+1 0 2   2 1 2   
+1 1 -2  2 1 -2  
+1 1 2   2 1 2   
+2 0 0   2 1 -2  
+2 0 0   2 1 2   
+2 0 -1  2 1 -2  
+2 0 1   2 1 2   
+2 0 -2  2 1 -2  
+2 0 2   2 1 2   
+2 1 0   2 1 -2  
+2 1 0   2 1 2   
+2 1 -1  2 1 -2  
+2 1 1   2 1 2 "
+	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
+	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
+	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
+	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1"
+	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
+	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
+	redstar_insertion_operators="\
+pion_pionxDX__J0_A1
+pion_pion_2xDX__J0_A1
+rho_rhoxDX__J1_T1
+rho_rho_2xDX__J1_T1
+b_b1xDX__J1_T1
+b_b0xDX__J0_A1
+a_a1xDX__J1_T1
+a_a0xDX__J0_A1
+" # use for 3pt correlation functions
+	#redstar_insertion_operators="rho_rhoxDX__J1_T1"
+	redstar_insertion_disps="\
+z0 
+z1 3
+z2 3 3
+z3 3 3 3
+z4 3 3 3 3
+z5 3 3 3 3 3
+z6 3 3 3 3 3 3
+z7 3 3 3 3 3 3 3
+z8 3 3 3 3 3 3 3 3
+zn1 -3
+zn2 -3 -3
+zn3 -3 -3 -3
+zn4 -3 -3 -3 -3
+zn5 -3 -3 -3 -3 -3
+zn6 -3 -3 -3 -3 -3 -3
+zn7 -3 -3 -3 -3 -3 -3 -3
+zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
-		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/corr/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 	}
-	redstar_minutes=120
+	rename_moms() {
+		[ $# == 3 ] && echo "mom$1.$2.$3"
+		[ $# == 6 ] && echo "src$1.$2.$3snk$4.$5.$6"
+	}
+	corr_file_name_globus() {
+		if [ ${zphase} == 0.00 ]; then
+			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+		else
+			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+		fi
+	}
+	redstar_minutes=30
 	redstar_jobs_per_node=8
-	redstar_transfer_back="nop"
+	redstar_max_concurrent_jobs=24000
+	redstar_transfer_back="yes"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 }
 
-chroma_python="$HOME/hadron/runs-eloy/chroma_python"
+chroma_python="$PWD/chroma_python"
 PYTHON=python3
 
 #
@@ -307,7 +557,7 @@ slurm_script_prologue_redstar="
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 export SLURM_CPU_BIND=\"cores\"
-export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
+#export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
 "
 
 #

@@ -15,6 +15,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p $runpath
 
 		for zphase in $baryon_zphases; do
 
@@ -56,6 +57,7 @@ for ens in $ensembles; do
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
         <phase>0.00 0.00 $zphase</phase>
+        <use_superb_format>true</use_superb_format>
 
         $baryon_extra_xml
 
@@ -98,7 +100,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/baryon_${zphase}.out0
 #SBATCH -t $baryon_chroma_minutes
-#SBATCH --nodes=$baryon_slurm_nodes
+#SBATCH --nodes=$baryon_slurm_nodes -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J bar-${cfg}-${zphase}-${baryon_file_index}
 
 run() {
@@ -122,8 +124,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo b $baryon_chroma_minutes $baryon_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo b $baryon_chroma_minutes $baryon_slurm_nodes 1 0
 }
 
 globus() {

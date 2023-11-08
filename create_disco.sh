@@ -170,7 +170,7 @@ EOF
 $slurm_sbatch_prologue_cpu
 #SBATCH -o $runpath/disco.out0
 #SBATCH -t $disco_chroma_minutes
-#SBATCH --nodes=$disco_slurm_nodes
+#SBATCH --nodes=$disco_slurm_nodes -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node_cpu ))
 #SBATCH -J disco-${cfg}
 
 run() {
@@ -195,8 +195,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo a $disco_chroma_minutes $disco_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo a $disco_chroma_minutes $disco_slurm_nodes 1 0
 }
 
 globus() {
