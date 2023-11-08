@@ -25,6 +25,7 @@ ensemble0() {
 	confs="`seq 2000 10 3900`"
 	confs="`seq 1000 10 4500`"
 	#confs="`seq 1000 10 1090`"
+	#confs=4500
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -476,12 +477,12 @@ ensemble0() {
 2 1 0   2 1 2   
 2 1 -1  2 1 -2  
 2 1 1   2 1 2 "
-# 	redstar_3pt_srcmom_snkmom="\
-# 0 0 -1  0 0 0   
-# 0 0 -2  0 0 0   
-# 0 0 2   0 0 0   
-# 0 0 0   0 0 -1  
-# 0 0 0   0 0 1  " 
+#	redstar_3pt_srcmom_snkmom="\
+#0 0 -1  0 0 0   
+#0 0 -2  0 0 0   
+#0 0 2   0 0 0   
+#0 0 0   0 0 -1  
+#0 0 0   0 0 1  " 
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"

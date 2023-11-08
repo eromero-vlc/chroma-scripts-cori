@@ -393,6 +393,8 @@ corr_graph() {
 "
 }
 
+redstar_files="`mktemp`"
+
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
@@ -476,56 +478,39 @@ EOF
 		done # momw
 	done # insertion_op
 
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		[ -f $lime_file ] || continue
+	template_runpath="$PWD/${tag}/redstar_template"
+	mkdir -p ${template_runpath}
+	cfg="@CFG"
+	runpath="$PWD/${tag}/conf_${cfg}"
+	rm -f ${redstar_files}*
 
-		runpath="$PWD/${tag}/conf_${cfg}"
-		mkdir -p ${runpath}
+	for t_source in $prop_t_sources; do
+		for insertion_op in "_2pt_" $redstar_insertion_operators; do
+			[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+			all_moms="$all_moms_2pt"
+			[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
 
-		for t_source in $prop_t_sources; do
+			for zphase in $prop_zphases; do
+			echo "$all_moms" | while read momw; do
 
-			# Find t_origin
-			t_origin_offset=( $( perl -e " 
-  srand($cfg);
+				mom="${momw//_/ }"
+				corr_file="`corr_file_name`"
+				corr_file_globus="`corr_file_name_globus`"
 
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\"
-") )
-			t_origin="${t_origin_offset[0]}"
-			t_offset="${t_origin_offset[1]}"
+				#
+				# Correlation creation
+				#
 
-			for insertion_op in "_2pt_" $redstar_insertion_operators; do
-				[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
-				all_moms="$all_moms_2pt"
-				[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
-
-				for zphase in $prop_zphases; do
-				echo "$all_moms" | while read momw; do
-
-					mom="${momw//_/ }"
-					corr_file="`corr_file_name`"
-					corr_file_globus="`corr_file_name_globus`"
-					mkdir -p `dirname ${corr_file}`
-
-					#
-					# Correlation creation
-					#
-
-					momf="$( mom_word $( mom_fly ${momw//_/ } ) )"
-					prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}_mf${momf}"
-					redstar_xml="redstar_${prefix}.xml"
-					output_xml="redstar_xml_out_${prefix}.out"
-					output="$runpath/redstar_${prefix}.out"
-					redstar_sh="redstar_${prefix}.sh"
-					[ $gprop_are_local == yes ] && redstar_sh+=".future"
-					cat << EOF > $runpath/${redstar_sh}
+				momf="$( mom_word $( mom_fly ${momw//_/ } ) )"
+				prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}_mf${momf}"
+				redstar_xml="redstar_${prefix}.xml"
+				output_xml="redstar_xml_out_${prefix}.out"
+				output="$runpath/redstar_${prefix}.out"
+				redstar_sh="redstar_${prefix}.sh"
+				[ $gprop_are_local == yes ] && redstar_sh+=".future"
+				redstar_sh+=".template"
+				echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
+				cat << EOF > $template_runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -542,8 +527,9 @@ run() {
 	cd \$tmp_runpath
 	rm -f ${corr_file}
 	cat << EOFeof > redstar.xml
-$( corr_graph "$corr_file" "$(( (t_origin+t_source)%t_size ))" )
+$( corr_graph "$corr_file" "@T_ORIGIN" )
 EOFeof
+	mkdir -p `dirname ${corr_file}`
 	echo Starting $redstar_npt redstar.xml output.xml > $output
 	exec $redstar_npt redstar.xml output.xml &>> $output
 	rm -f \$tmp_runpath
@@ -579,9 +565,49 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # insertion_op
-		done # mom
-		done # zphase
+	done # insertion_op
+	done # mom
+	done # zphase
+	done # t_source
+
+	for cfg in $confs; do
+		lime_file="`lime_file_name`"
+		[ -f $lime_file ] || continue
+
+		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p ${runpath}
+
+		for t_source in $prop_t_sources; do
+
+			# Find t_origin
+			t_origin_offset=( $( perl -e " 
+  srand($cfg);
+
+  # Call a few to clear out junk                                                                                                          
+  foreach \$i (1 .. 20)
+  {
+    rand(1.0);
+  }
+  \$t_origin = int(rand($t_size));
+  \$t_offset = ($t_source + \$t_origin) % $t_size;
+  print \"\$t_origin \$t_offset\"
+") )
+			t_origin="${t_origin_offset[0]}"
+			t_offset="${t_origin_offset[1]}"
+			t_origin="$(( (t_origin+t_source)%t_size ))"
+
+			cat ${redstar_files}.tsrc$t_source | while read template_file; do
+				cat << EOF > $runpath/${template_file%.template}
+#!/bin/bash
+t="\$(mktemp)"
+sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_origin/g' ${template_runpath}/${template_file} > \$t
+bash \$t \$@
+r="\$?"
+rm -f \$t
+exit \$r
+EOF
+
+			done # template_file
 		done # t_source
 	done # cfg
 done # ens
