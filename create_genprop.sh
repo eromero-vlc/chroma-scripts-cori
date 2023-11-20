@@ -185,7 +185,7 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
+	#[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
 	#rm -f ${gprop_file}*
 	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
 `
