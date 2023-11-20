@@ -510,6 +510,8 @@ redstar_corr_graph="$chromaform/install/redstar-colorvec-hadron-hip-adat/bin/red
 redstar_npt="$chromaform/install/redstar-colorvec-hadron-hip-adat/bin/redstar_npt"
 
 slurm_procs_per_node=4
+slurm_cores_per_node=56
+slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A hadron_g
 #SBATCH -C gpu
