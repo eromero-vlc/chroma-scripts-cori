@@ -18,14 +18,7 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
-	#confs="`seq 1000 10 1100`"
 	confs="${confs//1920/}"
-	confs="`seq 4400 10 4500`"
-	confs="`seq 4000 10 4490`"
-	confs="`seq 2000 10 3900`"
-	confs="`seq 1000 10 4500`"
-	#confs="`seq 1000 10 1090`"
-	#confs=4500
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -59,7 +52,7 @@ ensemble0() {
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=2
 	prop_chroma_geometry="1 2 2 4"
-	prop_chroma_minutes=600
+	prop_chroma_minutes=120
 	# propagator filename
 	prop_file_name() {
 		if [ ${zphase} == 0.00 ]; then
@@ -121,16 +114,17 @@ ensemble0() {
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
-	localpath="/tmp"
+	localpath="/mnt/bb/$USER"
 	gprop_are_local="yes"
 	gprop_max_moms_per_job=1
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		if [ $zphase == 0.00 ]; then
-			echo "${localpath}/${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
+			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		else
-			echo "${localpath}/${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
+			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
+		echo ${localpath}/${n//\//_}
 	}
 	gprop_transfer_back="nop"
 	gprop_delete_after_transfer_back="nop"
@@ -547,21 +541,11 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/chromaform_frontier_rocm4.5"
 chromaform="$HOME/chromaform_frontier_rocm5.4"
-#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
-chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
-#chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-#chromaform="$HOME/chromaform_frontier_rocm5.4"
-#chromaform="$HOME/chromaform_frontier_rocm5.5"
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas"
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas"
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
-redstar="$chromaform/install-dg/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -571,7 +555,8 @@ slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
-#SBATCH --gpu-bind=none"
+#SBATCH --gpu-bind=none
+#SBATCH -C nvme"
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -622,7 +607,7 @@ export OMP_NUM_THREADS=7
 # Options for launch
 #
 
-max_jobs=20 # maximum jobs to be launched
+max_jobs=50 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
 
 #
