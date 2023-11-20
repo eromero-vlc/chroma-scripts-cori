@@ -531,8 +531,8 @@ $( corr_graph "$corr_file" "@T_ORIGIN" )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
 	echo Starting $redstar_npt redstar.xml output.xml > $output
-	exec $redstar_npt redstar.xml output.xml &>> $output
-	rm -f \$tmp_runpath
+	$redstar_npt redstar.xml output.xml &>> $output
+	rm -rf \$tmp_runpath
 }
 
 check() {
