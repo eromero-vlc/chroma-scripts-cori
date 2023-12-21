@@ -14,17 +14,29 @@ for ens in $ensembles; do
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
-		disco_file="`disco_file_name`"
 		[ -f $lime_file ] || continue
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
 		mkdir -p $runpath
 		
-		#
-		# Basis creation
-		#
-		
-		cat << EOF > $runpath/disco.xml
+		for flavor in "light" "strange"; do
+			[ $flavor == light -a ${disco_do_light} != yes ] && continue
+			[ $flavor == strange -a ${disco_do_strange} != yes ] && continue
+
+			if [ $flavor == light ]; then
+				mass="${prop_mass}"
+				mass_label="U${prop_mass}"
+			else
+				mass="${prop_strange_mass}"
+				mass_label="U${prop_strange_mass}"
+			fi
+			disco_chroma_color_parts="$(( (disco_max_colors+disco_max_colors_at_once-1)/disco_max_colors_at_once ))"
+			for disco_color_part in `seq 0 $(( disco_chroma_color_parts-1 ))`; do
+			for disco_part in `seq 0 $(( disco_chroma_parts-1 ))`; do	
+				# Disco creation
+				disco_file="`disco_file_name`"
+				prefix="$runpath/disco_${flavor}_${disco_part}_${disco_color_part}"
+				cat << EOF > ${prefix}.xml
 <?xml version="1.0"?>
 <chroma>
  <Param>
@@ -42,10 +54,12 @@ for ens in $ensembles; do
            <elem>0 0 3</elem>
            <elem>0 0 -3</elem>
         </mom_list>
-        <mass_label>${prop_mass_label}</mass_label>
+        <mass_label>${mass_label}</mass_label>
         <probing_distance>${disco_probing_displacement}</probing_distance>
         <probing_power>${disco_probing_power}</probing_power>
-        <noise_vectors>${disco_noise_vectors}</noise_vectors>
+        <noise_vectors>$(( (disco_noise_vectors + disco_chroma_parts-1)/disco_chroma_parts ))</noise_vectors>
+	<first_color>$(( disco_color_part*disco_max_colors_at_once ))</first_color>
+	<num_colors>${disco_max_colors_at_once}</num_colors>
         <max_rhs>1</max_rhs>
         <Propagator>
           <version>10</version>
@@ -54,7 +68,7 @@ for ens in $ensembles; do
           <numRetries>1</numRetries>
           <FermionAction>
             <FermAct>CLOVER</FermAct>
-                <Mass>${prop_mass}</Mass>
+                <Mass>${mass}</Mass>
                 <clovCoeff>${prop_clov}</clovCoeff>
             <FermState>
               <Name>STOUT_FERM_STATE</Name>
@@ -70,7 +84,7 @@ for ens in $ensembles; do
             <InvertParam>
               <invType>MG_PROTO_QPHIX_EO_CLOVER_INVERTER</invType>
               <CloverParams>
-                <Mass>${prop_mass}</Mass>
+                <Mass>${mass}</Mass>
                 <clovCoeff>${prop_clov}</clovCoeff>
               </CloverParams>
               <AntiPeriodicT>true</AntiPeriodicT>
@@ -108,7 +122,7 @@ for ens in $ensembles; do
         <Projector>
               <projectorType>MG_PROTO_QPHIX_CLOVER_PROJECTOR</projectorType>
               <CloverParams>
-                <Mass>${prop_mass}</Mass>
+                <Mass>${mass}</Mass>
                 <clovCoeff>${prop_clov}</clovCoeff>
                 <AnisoParam>
                   <anisoP>false</anisoP>
@@ -151,7 +165,7 @@ for ens in $ensembles; do
   </Param>
   <RNG>
     <Seed>
-      <elem>2551</elem>
+      <elem>${disco_part}</elem>
       <elem>3189</elem>
       <elem>2855</elem>
       <elem>$cfg</elem>
@@ -165,20 +179,20 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-		output="$runpath/disco.out"
-		cat << EOF > $runpath/disco.sh
+		output="${prefix}.out"
+		cat << EOF > ${prefix}.sh
 $slurm_sbatch_prologue_cpu
-#SBATCH -o $runpath/disco.out0
-#SBATCH -t $disco_chroma_minutes
+#SBATCH -o ${prefix}.out0
+#SBATCH -t $disco_chroma_minutes:00
 #SBATCH --nodes=$disco_slurm_nodes
-#SBATCH -J disco-${cfg}
+#SBATCH -J disco-${flavor}-${cfg}
 
 run() {
 	$slurm_script_prologue_cpu
 	
 	cd $runpath
-	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma_cpu -i $runpath/disco.xml -geom $disco_chroma_geometry $chroma_extra_args_cpu &> $output
+	rm -f $disco_file
+	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma_cpu -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args_cpu &> $output
 }
 
 check() {
@@ -205,5 +219,8 @@ globus() {
 
 eval "\${1:-run}"
 EOF
+		done # disco_part
+		done # disco_color_part
+		done # flavor
 	done # cfg
 done # ens

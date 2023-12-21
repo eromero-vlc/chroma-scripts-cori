@@ -128,7 +128,7 @@ EOF
 
 	# If the batch file is too large, slurm complains
 	cat << EOF > $runpath/run_${jobtag}.sh
-$slurm_sbatch_prologue
+$slurm_sbatch_prologue_cpu
 #SBATCH -o $runpath/run_${jobtag}_%a.out
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))

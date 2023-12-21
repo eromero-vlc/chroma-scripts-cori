@@ -7,7 +7,7 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="nop"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="yes"
 	run_redstar="nop"
@@ -18,6 +18,9 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	confs="`seq 11000 10 13990`"
+	confs=11000
+	confs="`seq 11000 10 12000`"
+	confs="${confs//11080/}"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -208,14 +211,31 @@ ensemble0() {
 
 	# Disco options
 	disco_max_z_displacement=8
-	disco_probing_displacement=6
-	disco_probing_power=10
-	disco_noise_vectors=1
-	disco_slurm_nodes=2
-	disco_chroma_geometry="1 2 2 4"
-	disco_chroma_minutes=600
+	disco_probing_displacement=6 # good values are around disco_max_z_displacement/2
+	disco_probing_power=10 
+	disco_noise_vectors=10 # noise vectors
+	disco_do_light="yes"
+	disco_do_strange="yes"
+	prop_strange_mass="-0.2050"
+	disco_slurm_nodes=8
+	disco_chroma_geometry="1 1 2 4"
+	disco_chroma_minutes="$(( 20*60 ))"
+	disco_chroma_parts=${disco_noise_vectors} # split the noise vectors into this many different files
+	disco_max_colors=5000
+	disco_max_colors_at_once=1000
 	disco_file_name() {
-		echo "${confspath}/${confsprefix}/disco/${confsname}.disco.sdb${cfg}"
+		n="${confspath}/${confsprefix}/disco/${confsname}.disco.${flavor}.sdb${cfg}"
+		if [ $disco_chroma_parts == 1 ]; then
+			echo $n
+		elif [ x$disco_part != x ]; then
+			echo $n.part_${disco_part}_${disco_color_part}
+		else
+			for i in `seq 1 $disco_chroma_parts`; do
+				for c in `seq 1 $(( (disco_max_colors+disco_max_colors_at_once-1)/disco_max_colors_at_once ))`; do
+					echo $n.part_${i}_${c}
+				done
+			done
+		fi
 	}
 	disco_transfer_back="yes"
 	disco_delete_after_transfer_back="nop"
@@ -281,14 +301,14 @@ export SLURM_CPU_BIND=\"cores\"
 # SLURM configuration for disco
 #
 
-chromaform_cpu="$SCRATCH/chromaform-perlmutter-cpu-sp"
+chromaform_cpu="~/work_cib/chromaform"
 chroma_cpu="$chromaform_cpu/install/chroma-sp-mgproto-qphix-qdpxx-double-nd4-avx512-superbblas-cpu-next/bin/chroma"
-slurm_threads_per_proc_cpu=10
+slurm_threads_per_proc_cpu=40
 chroma_extra_args_cpu="-by 4 -bz 4 -pxy 0 -pxyz 0 -c $slurm_threads_per_proc_cpu -sy 1 -sz 1 -minct 1 -poolsize 1"
 
-slurm_procs_per_node_cpu=4
+slurm_procs_per_node_cpu=1
 slurm_sbatch_prologue_cpu="#!/bin/bash
-#SBATCH --account=qjs@cpu
+#SBATCH --account=qjs@cpu -c $slurm_threads_per_proc_cpu
 #SBATCH --ntasks-per-node=$slurm_procs_per_node_cpu # number of tasks per node"
 
 slurm_script_prologue_cpu="
@@ -314,18 +334,19 @@ export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
 # Options for launch
 #
 
-max_jobs=20 # maximum jobs to be launched
-max_hours=5 # maximum hours for a single job
+max_jobs=300 # maximum jobs to be launched
+max_hours=20 # maximum hours for a single job
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$SCRATCH/b6p3"
+confspath="/gpfsssd/scratch/rech/cib/uie52up"
 this_ep="6bdc7956-fc0f-4ad2-989c-7aa5ee643a79:${SCRATCH}/b6p3/"  # perlmutter
+this_ep="7cddb22d-7732-11ee-8433-378be0d9c521:/gpfsssd/scratch/rech/cib/uie52up/"  # jz (private)
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/" # jlab#gw2
 jlab_local="/cache/isoClover"
 jlab_tape_registry="/mss/lattice/isoClover"
-jlab_user="$USER"
+jlab_user="eromero"
 jlab_ssh="ssh qcdi1402.jlab.org"
