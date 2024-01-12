@@ -40,7 +40,7 @@ mom_letters() {
 
 insertion_mom() {
 	echo "$@" | while read momix momiy momiz momjx momjy momjz; do
-		echo "$(( momjx - momix )) $(( momjy - momiy )) $(( momjz - momiz ))"
+		echo "$(( momix - momjx )) $(( momiy - momjy )) $(( momiz - momjz ))"
 	done
 }
 
@@ -413,7 +413,7 @@ for ens in $ensembles; do
 	fi
 	if [ $redstar_3pt == yes ]; then
 		all_moms_3pt="`
-			echo "$redstar_3pt_srcmom_snkmom" | while read momij; do
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
 				mom_word $momij
 			done
 		`"
@@ -495,7 +495,6 @@ EOF
 
 				mom="${momw//_/ }"
 				corr_file="`corr_file_name`"
-				corr_file_globus="`corr_file_name_globus`"
 
 				#
 				# Correlation creation
@@ -559,7 +558,7 @@ class() {
 }
 
 globus() {
-	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file_globus#${confspath}} ${redstar_delete_after_transfer_back}
+	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
 }
 
 eval "\${1:-run}"

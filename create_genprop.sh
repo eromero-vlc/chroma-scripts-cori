@@ -95,7 +95,7 @@ EOF
 	moms="all"
 	if [ $gprop_are_local == yes ]; then
 		moms="`
-			echo "$redstar_3pt_srcmom_snkmom" | while read momij; do
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
 				mom_word $( mom_fly $momij )
 			done | sort -u
 		`"
