@@ -52,6 +52,77 @@ ensemble0() {
 	prop_slurm_nodes=2
 	prop_chroma_geometry="1 2 2 4"
 	prop_chroma_minutes=600
+	prop_inv="
+              <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
+              <CloverParams>
+                <Mass>${prop_mass}</Mass>
+                <clovCoeff>${prop_clov}</clovCoeff>
+                <AnisoParam>
+                  <anisoP>false</anisoP>
+                  <t_dir>3</t_dir>
+                  <xi_0>1</xi_0>
+                  <nu>1</nu>
+                </AnisoParam>
+              </CloverParams>
+              <RsdTarget>1e-07</RsdTarget>
+              <Delta>0.1</Delta>
+              <Pipeline>4</Pipeline>
+              <MaxIter>500</MaxIter>
+              <RsdToleranceFactor>8.0</RsdToleranceFactor>
+              <AntiPeriodicT>true</AntiPeriodicT>
+              <SolverType>GCR</SolverType>
+              <Verbose>true</Verbose>
+              <AsymmetricLinop>true</AsymmetricLinop>
+              <CudaReconstruct>RECONS_12</CudaReconstruct>
+              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
+              <CudaSloppyReconstruct>RECONS_8</CudaSloppyReconstruct>
+              <AxialGaugeFix>false</AxialGaugeFix>
+              <AutotuneDslash>true</AutotuneDslash>
+              <MULTIGRIDParams>
+                <Verbosity>true</Verbosity>
+                <Precision>HALF</Precision>
+                <Reconstruct>RECONS_8</Reconstruct>
+                <Blocking>
+                  <elem>4 4 4 4</elem>
+                  <elem>2 2 2 2</elem>
+                </Blocking>
+                <CoarseSolverType>
+                  <elem>GCR</elem>
+                  <elem>CA_GCR</elem>
+                </CoarseSolverType>
+                <CoarseResidual>0.1 0.1 0.1</CoarseResidual>
+                <MaxCoarseIterations>12 12 8</MaxCoarseIterations>
+                <RelaxationOmegaMG>1.0 1.0 1.0</RelaxationOmegaMG>
+                <SmootherType>
+                  <elem>CA_GCR</elem>
+                  <elem>CA_GCR</elem>
+                  <elem>CA_GCR</elem>
+                </SmootherType>
+                <SmootherTol>0.25 0.25 0.25</SmootherTol>
+                <NullVectors>24 32</NullVectors>
+                <Pre-SmootherApplications>0 0</Pre-SmootherApplications>
+                <Post-SmootherApplications>8 8</Post-SmootherApplications>
+                <SubspaceSolver>
+                  <elem>CG</elem>
+                  <elem>CG</elem>
+                </SubspaceSolver>
+                <RsdTargetSubspaceCreate>5e-06 5e-06</RsdTargetSubspaceCreate>
+                <MaxIterSubspaceCreate>500 500</MaxIterSubspaceCreate>
+                <MaxIterSubspaceRefresh>500 500</MaxIterSubspaceRefresh>
+                <OuterGCRNKrylov>20</OuterGCRNKrylov>
+                <PrecondGCRNKrylov>10</PrecondGCRNKrylov>
+                <GenerateNullspace>true</GenerateNullspace>
+                <GenerateAllLevels>true</GenerateAllLevels>
+                <CheckMultigridSetup>false</CheckMultigridSetup>
+                <CycleType>MG_RECURSIVE</CycleType>
+                <SchwarzType>ADDITIVE_SCHWARZ</SchwarzType>
+                <RelaxationOmegaOuter>1.0</RelaxationOmegaOuter>
+                <SetupOnGPU>1 1</SetupOnGPU>
+              </MULTIGRIDParams>
+              <SubspaceID>mg_subspace</SubspaceID>
+              <SolutionCheckP>true</SolutionCheckP>
+ "
+
 	# propagator filename
 	prop_file_name() {
 		if [ ${zphase} == 0.00 ]; then
