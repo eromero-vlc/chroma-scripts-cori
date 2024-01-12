@@ -49,49 +49,6 @@ for ens in $ensembles; do
 	# Check for running genprops
 	[ $run_gprops != yes ] && continue
 
-	MG_PARAM_FILE="`mktemp`"
-	cat <<EOF > $MG_PARAM_FILE
-AntiPeriodicT                 True
-MGLevels                      3
-Blocking                      4,4,3,3:2,2,2,2
-NullVecs                      24:32
-NullSolverMaxIters            800:800
-NullSolverRsdTarget           5e-6:5e-6
-OuterSolverNKrylov            5
-OuterSolverRsdTarget          1.0e-7
-OuterSolverVerboseP           True
-VCyclePreSmootherMaxIters     0:0
-VCyclePreSmootherRsdTarget    0.0:0.0
-VCyclePostSmootherNKrylov     4:4
-VCyclePostSmootherMaxIters    8:13
-VCyclePostSmootherRsdTarget   0.06:0.06
-VCycleBottomSolverMaxIters    100:100
-VCycleBottomSolverNKrylov     8:8
-VCycleBottomSolverRsdTarget   0.06:0.06
-EOF
-
-	# QUDA
-	cat <<EOF > $MG_PARAM_FILE
-RsdTarget                 1.0e-7
-AntiPeriodicT             True
-SolverType                GCR
-Blocking		  4,4,4,4:2,2,2,2
-NullVectors		  24:32
-SmootherType		  CA_GCR:CA_GCR:CA_GCR
-SmootherTol               0.25:0.25:0.25
-CoarseSolverType	  GCR:CA_GCR
-CoarseResidual            0.1:0.1:0.1
-Pre-SmootherApplications  0:0
-Post-SmootherApplications 8:8
-SubspaceSolver            CG:CG
-RsdTargetSubspaceCreate   5e-06:5e-06
-EOF
-
-	# More genprop crap
-	maxZ=8
-	gammas="one gx gy gxgy gz   gxgz gygz g5gt gt   gxgt gygt g5gz gzgt g5gy g5gx g5"
-	disps="+z,$maxZ -z,$maxZ none"
-
 	moms="all"
 	if [ $gprop_are_local == yes ]; then
 		moms="`
@@ -130,8 +87,6 @@ EOF
 			t_origin="`cat h | while read a b; do echo \$a; done`"
 			t_offset="`cat h | while read a b; do echo \$b; done`"
 
-			t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
-
 			gprop_file="`gprop_file_name`"
 			[ $gprop_are_local != yes ] && mkdir -p `dirname ${gprop_file}`
 
@@ -141,17 +96,6 @@ EOF
 			if [ $gprop_are_local == yes ]; then
 				gprop_moms="$( for mom in $mom_group; do unpack_moms ${mom//_/ }; done )"
 			fi
-			gdm="`
-				for g in $gammas; do
-					for d in $disps; do
-						echo "$gprop_moms" | while read momx momy momz; do
-							echo -n ";$g:$d:$momx,$momy,$momz"
-						done
-					done
-				done
-			`"
-			GDM="`echo $gdm | cut -b 2-`"
-			N_COLOR_FILES=1
 			prefix="gprop_t${t_source}_z${zphase}_mf${mom_group// /_}"
 			gprop_xml="$runpath/${prefix}.xml"
 			gprop_class="b"
@@ -166,13 +110,115 @@ EOF
 			fi
 
 			mkdir -p `dirname ${gprop_xml}`
-			$PYTHON $chroma_python/unsmeared_hadron_node.py \
-				-c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} \
-				-v fcolorvec -t ${t_offset} -k ${t_seps_commas} -p fgprop -d "${GDM}" \
-				-s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} \
-				-i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 \
-				--max_mom_contractions ${gprop_max_mom_in_contraction} --genprop5 --genprop5-format | sed "s@flime_1000.lime@${lime_file}@; s@fcolorvec.mod1000@${colorvec_file}@; s@fgprop.sdb1000@${gprop_file}@" > $gprop_xml
-
+			cat << EOF > $gprop_xml
+<?xml version="1.0"?>
+<chroma>
+  <Param>
+    <InlineMeasurements>
+      <elem>
+        <Name>UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB</Name>
+        <Frequency>1</Frequency>
+        <Param>
+          <Displacements>
+`
+	echo "$gprop_insertion_disps" | while read name disp; do
+		[ z$name != z ] && echo "<elem>$disp</elem>"
+	done
+`
+          </Displacements>
+          <Moms>
+`
+	echo "$gprop_moms" | while read mom; do
+		[ "z$mom" != z ] && echo "<elem>$mom</elem>"
+	done
+`
+          </Moms>
+          <LinkSmearing>
+            <version>1</version>
+            <LinkSmearingType>NONE</LinkSmearingType>
+          </LinkSmearing>
+          <SinkSourcePairs>
+`
+	for tsep in ${gprop_t_seps}; do
+	echo "<elem>
+              <t_source>${t_offset}</t_source>
+              <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
+              <Nt_forward>${gprop_t_fwd}</Nt_forward>
+              <Nt_backward>0</Nt_backward>
+            </elem>"
+	done
+`
+          </SinkSourcePairs>
+          <Contractions>
+            <num_vecs>${gprop_nvec}</num_vecs>
+            <use_derivP>false</use_derivP>
+            <mass_label>${prop_mass_label}</mass_label>
+            <decay_dir>3</decay_dir>
+            <displacement_length>1</displacement_length>
+            <num_tries>0</num_tries>
+            <phase>0.00 0.00 ${zphase}</phase>
+            <max_rhs>1</max_rhs>
+            <use_multiple_writers>false</use_multiple_writers>
+            <use_genprop4_format>false</use_genprop4_format>
+            <use_genprop5_format>true</use_genprop5_format>
+            <max_moms_in_contraction>${gprop_max_mom_in_contraction}</max_moms_in_contraction>
+            <max_tslices_in_contraction>${gprop_max_tslices_in_contraction}</max_tslices_in_contraction>
+          </Contractions>
+          <Propagator>
+            <version>10</version>
+            <quarkSpinType>FULL</quarkSpinType>
+            <obsvP>false</obsvP>
+            <numRetries>1</numRetries>
+            <FermionAction>
+              <FermAct>CLOVER</FermAct>
+              <Mass>${prop_mass}</Mass>
+              <clovCoeff>${prop_clov}</clovCoeff>
+              <AnisoParam>
+                <anisoP>false</anisoP>
+                <t_dir>3</t_dir>
+                <xi_0>1</xi_0>
+                <nu>1</nu>
+              </AnisoParam>
+              <FermState>
+                <Name>STOUT_FERM_STATE</Name>
+                <rho>0.125</rho>
+                <n_smear>1</n_smear>
+                <orthog_dir>-1</orthog_dir>
+                <FermionBC>
+                  <FermBC>SIMPLE_FERMBC</FermBC>
+                  <boundary>1 1 1 -1</boundary>
+                </FermionBC>
+              </FermState>
+            </FermionAction>
+            <InvertParam>
+               $prop_inv
+            </InvertParam>
+          </Propagator>
+        </Param>
+        <NamedObject>
+          <gauge_id>default_gauge_field</gauge_id>
+          <colorvec_files><elem>$colorvec_file</elem></colorvec_files>
+          <dist_op_file>${gprop_file}</dist_op_file>
+        </NamedObject>
+      </elem>
+    </InlineMeasurements>
+    <nrow>$s_size $s_size $s_size $t_size</nrow>
+  </Param>
+  <RNG>
+    <Seed>
+      <elem>2551</elem>
+      <elem>3189</elem>
+      <elem>2855</elem>
+      <elem>707</elem>
+    </Seed>
+  </RNG>
+  <Cfg>
+    <cfg_type>SZINQIO</cfg_type>
+    <cfg_file>${lime_file}</cfg_file>
+    <parallel_io>true</parallel_io>
+  </Cfg>
+</chroma>
+EOF
 			output="$runpath/${prefix}.out"
 			local_aux="${localpath}/${runpath//\//_}_${prefix}.aux"
 			cat << EOF > $runpath/${prefix}.sh
@@ -185,11 +231,11 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	#[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
+	[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
 	#rm -f ${gprop_file}*
 	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		echo sleep 60
 		echo "cat << EOFo > ${local_aux}"
 		i=0
@@ -206,7 +252,7 @@ run() {
 check() {
 	tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" || exit 1
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo "bash $t check || exit 1"
 		done
@@ -221,7 +267,7 @@ blame() {
 		exit 1
 	fi
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo "bash $t check || echo fail $t"
 		done
@@ -233,7 +279,7 @@ blame() {
 deps() {
 	echo $lime_file $colorvec_file
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo bash $t deps
 		done
@@ -242,8 +288,9 @@ deps() {
 }
 
 outs() {
+	echo -n
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo bash $t outs
 		done
@@ -259,8 +306,9 @@ class() {
 }
 
 globus() {
+	echo -n
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo bash $t globus
 		done
