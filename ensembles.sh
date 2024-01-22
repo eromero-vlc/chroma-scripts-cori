@@ -231,6 +231,7 @@ ensemble0() {
 	baryon_zphases="0.00"
 	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
+	baryon_chroma_max_vecs=12 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
 	baryon_chroma_minutes=120

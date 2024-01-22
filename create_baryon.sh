@@ -48,7 +48,7 @@ for ens in $ensembles; do
         <version>2</version>
         <max_tslices_in_contraction>${baryon_chroma_max_tslices_in_contraction}</max_tslices_in_contraction>
         <max_moms_in_contraction>${baryon_chroma_max_moms_in_contraction}</max_moms_in_contraction>
-        <max_vecs>0</max_vecs>
+        <max_vecs>${baryon_chroma_max_vecs}</max_vecs>
         
         <use_derivP>true</use_derivP>
         <t_source>$t_source</t_source>
