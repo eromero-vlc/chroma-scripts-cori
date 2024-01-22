@@ -495,6 +495,7 @@ EOF
 
 				mom="${momw//_/ }"
 				corr_file="`corr_file_name`"
+				local_corr_file="corr.sdb"
 
 				#
 				# Correlation creation
@@ -505,6 +506,7 @@ EOF
 				redstar_xml="redstar_${prefix}.xml"
 				output_xml="redstar_xml_out_${prefix}.out"
 				output="$runpath/redstar_${prefix}.out"
+				local_output="output.out"
 				redstar_sh="redstar_${prefix}.sh"
 				[ $gprop_are_local == yes ] && redstar_sh+=".future"
 				redstar_sh+=".template"
@@ -524,13 +526,15 @@ run() {
 	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
-	rm -f ${corr_file}
+	rm -f $local_corr_file
 	cat << EOFeof > redstar.xml
-$( corr_graph "$corr_file" "@T_ORIGIN" )
+$( corr_graph "$local_corr_file" "@T_ORIGIN" )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
-	echo Starting $redstar_npt redstar.xml output.xml > $output
-	$redstar_npt redstar.xml output.xml &>> $output
+	echo Starting $redstar_npt redstar.xml output.xml > $local_output
+	$redstar_npt redstar.xml output.xml &>> $local_output
+	cp $local_corr_file $corr_file
+	cp $local_output $output
 	rm -rf \$tmp_runpath
 }
 
