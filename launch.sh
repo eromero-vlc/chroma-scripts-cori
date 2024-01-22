@@ -132,7 +132,8 @@ wait
 EOF
 
 	# If the batch file is too large, slurm complains
-	cat << EOF > $runpath/run_${jobtag}.sh
+	while true; do
+		cat << EOF > $runpath/run_${jobtag}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
@@ -143,6 +144,8 @@ $slurm_sbatch_prologue
 #SBATCH --array=0-$((num_bundle_jobs-1))%${max_concurrent_slurm_jobs}
 `
 	dep_jobs="$(
+		# Update the queued jobs
+		squeue -u $USER --array > $sq
 		for j in $actual_jobs; do
 			for f in $( bash $j deps ); do
 				echo $f
@@ -160,8 +163,11 @@ bash -l $runpath/run_${jobtag}_script.sh
 exit 0 # always return ok no matter the actual result
 EOF
 
-	until sbatch $runpath/run_${jobtag}.sh > $runpath/run_${jobtag}.sh.launched; do sleep 60; done && sleep 2
+		sbatch $runpath/run_${jobtag}.sh > $runpath/run_${jobtag}.sh.launched && break
+		sleep 60
+	done
 	echo Launched bath job ${runtag}-${jobtag} with $num_jobs jobs
+	sleep 10
 	sbatch_job_id="`awk '/Submitted/ {print $4}' $runpath/run_${jobtag}.sh.launched`"
 	ji="0"
 	for j in $actual_jobs; do

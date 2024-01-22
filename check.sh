@@ -76,7 +76,7 @@ if [ -s $t ] ; then
 		done | sort -u | while read p ; do
 			globus mkdir $p
 		done
-		split -l 100 $tod ${tod}_
+		split -l 900 $tod ${tod}_
 		for tt in `ls ${tod}_*` ; do
 			success=1
 			cat $tt | while read f orig dest delete ; do
