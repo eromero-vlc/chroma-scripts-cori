@@ -80,7 +80,7 @@ done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max
 			cat << EOF > $wrapup_job
 #!/bin/bash -l
 . $first_job environ
-srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=closest -K0 -k -W0  bash -l -c "$(
+srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=per_task:$(( slurm_gpus_per_node/num_jobs_per_node )) -K0 -k -W0  bash -l -c "$(
 			j="0"
 			for job in $first_job $jobs_in_a_node; do
 				echo -n "[ \\\$SLURM_PROCID == $j ] && MY_JOB_INDEX=$j bash -l $job run; "

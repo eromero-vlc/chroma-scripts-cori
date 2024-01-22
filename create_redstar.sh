@@ -50,11 +50,17 @@ mom_word() {
 }
 
 mom_fly() {
-	if [ $1 -ge $4 ]; then
+	if [ $# == 3 ]; then
+		echo $1 $2 $3
+	elif [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
 		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
 	else
 		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
 	fi
+}
+
+num_args() {
+	echo $#
 }
 
 get_ops() {
@@ -276,8 +282,8 @@ corr_graph() {
 `
 	if [ $t_origin == -1 ]; then
 		if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
-			operators="$redstar_zeromom_operators"
-			[ "$mom" != "0 0 0" ] && operators="$redstar_nonzeromom_operators"
+			operators="$redstar_2pt_zeromom_operators"
+			[ "$mom" != "0 0 0" ] && operators="$redstar_2pt_nonzeromom_operators"
 			npoint_2pt "$mom" "$operators"
 		fi
 		if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
@@ -407,14 +413,14 @@ for ens in $ensembles; do
 	if [ $redstar_2pt == yes ]; then
 		all_moms_2pt="`
 			echo "$redstar_2pt_moms" | while read mom; do
-				mom_word $mom
+				[ $(num_args $mom) == 3 ] && mom_word $mom
 			done
 		`"
 	fi
 	if [ $redstar_3pt == yes ]; then
 		all_moms_3pt="`
 			echo "$redstar_3pt_srcmom_snkmom" | while read momij; do
-				mom_word $momij
+				[ $(num_args $momij) == 6 ] && mom_word $momij
 			done
 		`"
 	fi
@@ -442,7 +448,7 @@ environ() {
 }
 
 run() {
-	tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
+	tmp_runpath="${localpath}/${corr_graph_bin//\//_}"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
 	rm -f ${corr_graph_bin}
@@ -487,6 +493,7 @@ EOF
 	for t_source in $prop_t_sources; do
 		for insertion_op in "_2pt_" $redstar_insertion_operators; do
 			[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+			[ ${redstar_3pt} != yes -a ${insertion_op} != _2pt_ ] && continue
 			all_moms="$all_moms_2pt"
 			[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
 
@@ -494,6 +501,7 @@ EOF
 			echo "$all_moms" | while read momw; do
 
 				mom="${momw//_/ }"
+				[ $(num_args $mom) == 0 ] && continue
 				corr_file="`corr_file_name`"
 				corr_file_globus="`corr_file_name_globus`"
 
@@ -522,7 +530,7 @@ environ() {
 }
 
 run() {
-	tmp_runpath="\${TMPDIR:-/tmp}/${runpath//\//_}_$prefix"
+	tmp_runpath="${localpath}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
 	rm -f ${corr_file}
@@ -531,7 +539,7 @@ $( corr_graph "$corr_file" "@T_ORIGIN" )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
 	echo Starting $redstar_npt redstar.xml output.xml > $output
-	exec $redstar_npt redstar.xml output.xml &>> $output
+	$redstar_npt redstar.xml output.xml &>> $output
 	rm -f \$tmp_runpath
 }
 
@@ -598,13 +606,23 @@ EOF
 
 			cat ${redstar_files}.tsrc$t_source | while read template_file; do
 				cat << EOF > $runpath/${template_file%.template}
-#!/bin/bash
+$slurm_sbatch_prologue
+#SBATCH -o $runpath/${template_file%.sh.template}.out0
+#SBATCH -t $redstar_minutes
+#SBATCH --nodes=1
+#SBATCH -J redstar-${prefix}
+
 t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_origin/g' ${template_runpath}/${template_file} > \$t
-bash \$t \$@
-r="\$?"
-rm -f \$t
-exit \$r
+if [ \$1 != environ ]; then
+	bash -l \$t \$@
+	r="\$?"
+	rm -f \$t
+	exit \$r
+else
+	. \$t \$@
+	rm -f \$t
+fi
 EOF
 
 			done # template_file

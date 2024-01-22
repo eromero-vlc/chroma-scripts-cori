@@ -6,19 +6,19 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="yes"
 	run_props="yes"
-	run_gprops="yes"
-	run_baryons="nop"
+	run_gprops="nop"
+	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
-	run_redstar="nop"
+	run_redstar="yes"
 
 	# Ensemble properties
 	confsprefix="cl21_64_192_b6p7_m0p1830_m0p1650" # ensemble path after $confspath
 	ensemble="cl21_64_192_b6p7_m0p1830_m0p1650" # ensemble name for chroma_python
 	confsname="cl21_64_192_b6p7_m0p1830_m0p1650" # ensemble name prefixing files
 	tag="cl21_64_192_b6p7_m0p1830_m0p1650" # directory name for storing jobs and xmls
-	confs="`seq 1000 10 1400`"   # configuration numbers to work with
-	confs="1000"   # configuration numbers to work with
+	confs="`seq 1000 40 1400`"   # configuration numbers to work with
+	confs=1000
 	s_size=64 # lattice spatial size
 	t_size=192 # lattice temporal size
 
@@ -33,8 +33,8 @@ ensemble0() {
 	eigs_smear_steps=25 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
-	eigs_slurm_nodes=1
-	eigs_chroma_geometry="1 1 1 8"
+	eigs_slurm_nodes=8
+	eigs_chroma_geometry="1 1 1 64"
 	eigs_chroma_minutes=120
 	eigs_transfer_back="yes"
 	eigs_delete_after_transfer_back="nop"
@@ -42,11 +42,12 @@ ensemble0() {
 
 	# Props options
 	prop_t_sources="0 48 96 144"
+	prop_t_sources="0"
 	prop_t_fwd=25
 	prop_t_back=25
 	prop_nvec=128
-	prop_zphases="0.00"
 	prop_zphases="0.00 4.00 -4.00"
+	prop_zphases="0.00"
 	prop_mass="-0.1830"
 	prop_clov="1.14272664055312"
 	prop_mass_label="U${prop_mass}"
@@ -76,7 +77,7 @@ ensemble0() {
 	gprop_slurm_nodes=16
 	gprop_chroma_geometry="2 4 4 4"
 	gprop_chroma_minutes=120
-	localpath="/tmp"
+	localpath="/mnt/bb/$USER"
 	gprop_are_local="nop"
 	gprop_max_moms_per_job=1
 	gprop_file_name() {
@@ -95,7 +96,7 @@ ensemble0() {
 
 	# Meson options
 	meson_nvec=$nvec
-	meson_zphases="0.00 2.00"
+	meson_zphases="${prop_zphases}"
 	meson_slurm_nodes=2
 	meson_chroma_max_tslices_in_contraction="1" # as large as possible
 	meson_chroma_geometry="1 2 2 4"
@@ -159,12 +160,13 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="0.00"
-	baryon_chroma_max_tslices_in_contraction=2 # as large as possible
-	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_slurm_nodes=2
-	baryon_chroma_geometry="1 2 2 4"
+	baryon_chroma_max_tslices_in_contraction=192 # as large as possible (zero means do all time slices at once)
+	baryon_chroma_max_moms_in_contraction=8 # as large as possible (zero means do all momenta at once)
+	baryon_chroma_max_vecs=12 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_slurm_nodes=192
+	baryon_chroma_geometry="2 2 2 192"
 	baryon_chroma_minutes=120
-	baryon_chroma_parts=16 # split the time slices into this many different files
+	baryon_chroma_parts=1 # split the time slices into this many different files
 	baryon_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
@@ -185,12 +187,7 @@ ensemble0() {
 	baryon_extra_xml="
 	<mom_list>
                 <elem>0 0 0</elem>
-                <elem>0 0 1</elem>
-                <elem>0 0 -1</elem>
-                <elem>0 0 2</elem>
-                <elem>0 0 -2</elem>
-                <elem>0 0 3</elem>
-                <elem>0 0 -3</elem>
+$( for i in `seq 1 12`; do echo "<elem>0 0 $i</elem>"; echo "<elem>0 0 -$i</elem>"; done )
         </mom_list>
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -232,7 +229,7 @@ ensemble0() {
 	disco_transfer_from_jlab="nop"
 
 	# Redstar options
-	redstar_t_corr=14 # Number of time slices
+	redstar_t_corr=25 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_use_meson="nop"
@@ -244,10 +241,7 @@ ensemble0() {
 	redstar_2pt_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
 	redstar_2pt_moms="\
 0 0 0
-0 0 1
-0 0 -1
-0 0 2
-0 0 -2"
+$( for i in `seq 1 12`; do echo 0 0 $i; echo 0 0 -$i; done )"
 	redstar_3pt="nop"
 	redstar_3pt_srcmom_snkmom="\
 0 0 -1  0 0 0   
@@ -489,8 +483,8 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
 	}
-	redstar_minutes=30
-	redstar_jobs_per_node=8
+	redstar_minutes=120
+	redstar_jobs_per_node=4
 	redstar_max_concurrent_jobs=24000
 	redstar_transfer_back="yes"
 	redstar_delete_after_transfer_back="nop"
@@ -504,19 +498,25 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/chromaform_frontier_rocm5.4"
 chromaform="$HOME/chromaform_frontier_rocm4.5"
+chromaform="$HOME/chromaform_frontier_rocm5.4"
 #chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-superbblas-hip/bin/chroma"
-chroma="$chromaform/install/chroma-sp-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
-redstar_corr_graph="$chromaform/install/redstar-colorvec-hadron-hip-adat/bin/redstar_corr_graph"
-redstar_npt="$chromaform/install/redstar-colorvec-hadron-hip-adat/bin/redstar_npt"
+redstar="$chromaform/install-dg/redstar-colorvec-hadron-hip-adat-superbblas-sp"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+chromaform_redstar="$HOME/scratch/chromaform_rocm5.4_redstar"
+redstar="$chromaform_redstar/install-dg/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar_corr_graph="$redstar/bin/redstar_corr_graph"
+redstar_npt="$redstar/bin/redstar_npt"
 
 slurm_procs_per_node=8
+slurm_cores_per_node=56
+slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
+#SBATCH -C nvme
 #SBATCH --gpu-bind=none
 #SBATCH --threads-per-core=1 --cpus-per-task=7 # number of cores per task
 #SBATCH --ntasks-per-node=$slurm_procs_per_node # number of tasks per node
@@ -561,6 +561,8 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 export SLURM_CPU_BIND=\"cores\"
 #export ROCR_VISIBLE_DEVICES=\"\$MY_JOB_INDEX\"
+export HADRON_EVICTION_THRESHOLD=6G
+export SB_CACHEGB_CPU=12
 "
 
 #
