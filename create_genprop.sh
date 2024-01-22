@@ -189,7 +189,7 @@ run() {
 	#rm -f ${gprop_file}*
 	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		echo sleep 60
 		echo "cat << EOFo > ${local_aux}"
 		i=0
@@ -206,7 +206,7 @@ run() {
 check() {
 	tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" || exit 1
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo "bash $t check || exit 1"
 		done
@@ -221,7 +221,7 @@ blame() {
 		exit 1
 	fi
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo "bash $t check || echo fail $t"
 		done
@@ -233,7 +233,7 @@ blame() {
 deps() {
 	echo $lime_file $colorvec_file
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo bash $t deps
 		done
@@ -243,7 +243,7 @@ deps() {
 
 outs() {
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo bash $t outs
 		done
@@ -260,7 +260,7 @@ class() {
 
 globus() {
 `
-	if [ $gprop_are_local ] ; then
+	if [ $gprop_are_local == yes ] ; then
 		for t in $redstar_tasks; do
 			echo bash $t globus
 		done
