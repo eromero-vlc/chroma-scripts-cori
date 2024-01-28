@@ -7,7 +7,7 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="yes"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
@@ -19,7 +19,8 @@ ensemble0() {
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
 	confs="`seq 2000 10 3000`"
-	confs="`seq 1000 10 1990`"
+	confs="`seq 1000 10 2990`"
+	confs="`seq 3000 10 4500`"
 	confs="${confs//1920/}"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -69,7 +70,7 @@ ensemble0() {
 
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
-	gprop_t_seps="3 5 7 9 11 13"
+	gprop_t_seps="4 6 8 10 12 14"
 	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$nvec
 	gprop_moms="\
@@ -520,17 +521,19 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/unphased_even/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
 	}
 	redstar_minutes=30
 	redstar_jobs_per_node=8
-	redstar_max_concurrent_jobs=24000
+	redstar_max_concurrent_jobs=5000
 	redstar_transfer_back="yes"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
+
+	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_even"
 }
 
 chroma_python="$PWD/chroma_python"

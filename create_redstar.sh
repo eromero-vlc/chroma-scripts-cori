@@ -497,6 +497,12 @@ EOF
 				corr_file="`corr_file_name`"
 				local_corr_file="corr.sdb"
 
+				# NOTE: restricting for nnm, not useful for others
+				momarray=( $mom )
+				momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
+				momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
+				[ $( mom_letters $momi ) != nnm -a $( mom_letters $momj ) != nnm ] && continue
+
 				#
 				# Correlation creation
 				#
