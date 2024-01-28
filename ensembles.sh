@@ -21,6 +21,7 @@ ensemble0() {
 	confs="`seq 2000 10 3000`"
 	confs="`seq 1000 10 1990`"
 	confs="${confs//1920/}"
+	confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -183,6 +184,7 @@ ensemble0() {
 #0 0 -1 
 #0 0 1  "
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
+	gprop_max_tslices_in_contraction=16
 	gprop_max_mom_in_contraction=1
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
@@ -197,7 +199,7 @@ ensemble0() {
 		else
 			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
-		[ $gprop_are_local == yes ] && n="${localpath}/$n"
+		[ $gprop_are_local == yes ] && n="${localpath}/${n//\//_}"
 		echo $n
 	}
 	gprop_transfer_back="nop"
@@ -282,6 +284,7 @@ ensemble0() {
 		else
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
 		fi
+		[ $gprop_are_local == yes ] && n="${localpath}/${n//\//_}"
 		if [ $baryon_chroma_parts == 1 ]; then
 			echo $n
 		else
@@ -294,9 +297,6 @@ ensemble0() {
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
 	baryon_extra_xml="
-	<mom_list>
-		`echo "$gprop_moms" | while read mom; do echo "<elem>$mom</elem>"; done`
-        </mom_list>
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
@@ -355,196 +355,59 @@ ensemble0() {
 0 0 -2"
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
-0 0 0 0 0 -1
-0 0 0 0 0 -2
-0 0 0 0 0 2
-0 0 -1 0 0 0
-0 0 1 0 0 0
-0 0 1 0 0 -1
-0 0 -1 0 0 -2
-0 0 1 0 0 2
-0 0 -2 0 0 0
-0 0 2 0 0 0
-0 0 -2 0 0 -1
-0 0 2 0 0 1
-0 1 0 0 0 -1
-0 1 0 0 0 1
-0 1 0 0 0 -2
-0 1 0 0 0 2
-0 1 0 0 1 -1
-0 1 0 0 1 1
-0 1 0 0 1 -2
-0 1 0 0 1 2
-0 1 -1 0 0 0
-0 1 1 0 0 0
-0 1 -1 0 0 -1
-0 1 1 0 0 1
-0 1 -1 0 0 -2
-0 1 1 0 0 2
-0 1 -1 0 1 0
-0 1 1 0 1 0
-0 1 -1 0 1 -2
-0 1 1 0 1 2
-0 1 -2 0 0 0
-0 1 2 0 0 0
-0 1 -2 0 0 -1
-0 1 2 0 0 1
-0 1 -2 0 0 -2
-0 1 2 0 0 2
-0 1 -2 0 1 0
-0 1 2 0 1 0
-0 1 -2 0 1 -1
-0 1 2 0 1 1
-1 0 0 1 0 -1
-1 0 0 1 0 1
-1 0 0 1 0 -2
-1 0 0 1 0 2
-1 0 -1 0 0 -1
-1 0 1 0 0 1
-1 0 -1 1 0 0
-1 0 1 1 0 0
-1 0 -1 1 0 -2
-1 0 1 1 0 2
-1 0 -2 0 0 -2
-1 0 2 0 0 2
-1 0 -2 1 0 0
-1 0 2 1 0 0
-1 0 -2 1 0 -1
-1 0 2 1 0 1
-1 1 0 0 0 -1
-1 1 0 0 0 1
-1 1 0 0 0 -2
-1 1 0 0 0 2
-1 1 0 1 0 -1
-1 1 0 1 0 1
-1 1 0 1 0 -2
-1 1 0 1 0 2
-1 1 0 1 1 -1
-1 1 0 1 1 1
-1 1 0 1 1 -2
-1 1 0 1 1 2
-1 1 -1 0 0 0
-1 1 1 0 0 0
-1 1 -1 0 0 -1
-1 1 1 0 0 1
-1 1 -1 0 0 -2
-1 1 1 0 0 2
-1 1 -1 0 1 -1
-1 1 1 0 1 1
-1 1 -1 1 0 0
-1 1 1 1 0 0
-1 1 -1 1 0 -2
-1 1 1 1 0 2
-1 1 -1 1 1 0
-1 1 1 1 1 0
-1 1 -1 1 1 -2
-1 1 1 1 1 2
-1 1 -2 0 0 0
-1 1 2 0 0 0
-1 1 -2 0 0 -1
-1 1 2 0 0 1
-1 1 -2 0 0 -2
-1 1 2 0 0 2
-1 1 -2 0 1 -2
-1 1 2 0 1 2
-1 1 -2 1 0 0
-1 1 2 1 0 0
-1 1 -2 1 0 -1
-1 1 2 1 0 1
-1 1 -2 1 1 0
-1 1 2 1 1 0
-1 1 -2 1 1 -1
-1 1 2 1 1 1
-1 1 -3 0 0 -3
-1 1 3 0 0 3
-2 0 0 0 0 -1
-2 0 0 0 0 1
-2 0 0 0 0 -2
-2 0 0 0 0 2
-2 0 0 2 0 -1
-2 0 0 2 0 1
-2 0 0 2 0 -2
-2 0 0 2 0 2
-2 0 -1 0 0 0
+1 0 1 -1 0 1
+1 1 0 0 -1 1
+1 1 1 0 -1 1
 2 0 1 0 0 0
-2 0 -1 0 0 -2
-2 0 1 0 0 2
-2 0 -1 1 0 -1
-2 0 1 1 0 1
-2 0 -1 2 0 0
-2 0 1 2 0 0
-2 0 -1 2 0 -2
-2 0 1 2 0 2
-2 0 -2 0 0 0
+1 1 1 -1 -1 1
+-2 0 1 -1 0 0
+1 0 2 -1 0 0
+1 0 0 -1 0 2
+1 -2 0 0 0 1
+2 0 1 0 0 1
+1 0 1 -1 0 2
+-1 -2 1 0 -1 0
+1 1 2 0 0 1
+2 1 1 0 0 1
+1 1 1 0 0 2
+1 1 2 0 -1 1
+1 1 1 0 -1 2
 2 0 2 0 0 0
-2 0 -2 0 0 -1
+2 0 0 0 0 2
+2 2 1 0 0 0
 2 0 2 0 0 1
-2 0 -2 1 0 -2
-2 0 2 1 0 2
-2 0 -2 2 0 0
-2 0 2 2 0 0
-2 0 -2 2 0 -1
-2 0 2 2 0 1
-2 1 0 0 1 -1
-2 1 0 0 1 1
-2 1 0 0 1 -2
-2 1 0 0 1 2
-2 1 0 1 0 -1
-2 1 0 1 0 1
-2 1 0 1 0 -2
-2 1 0 1 0 2
-2 1 0 2 0 -1
-2 1 0 2 0 1
-2 1 0 2 0 -2
-2 1 0 2 0 2
-2 1 0 2 1 -1
-2 1 0 2 1 1
-2 1 0 2 1 -2
-2 1 0 2 1 2
-2 1 -1 0 1 0
-2 1 1 0 1 0
-2 1 -1 0 1 -2
-2 1 1 0 1 2
-2 1 -1 1 0 0
-2 1 1 1 0 0
-2 1 -1 1 0 -1
-2 1 1 1 0 1
-2 1 -1 1 0 -2
-2 1 1 1 0 2
-2 1 -1 1 1 -1
-2 1 1 1 1 1
-2 1 -1 2 0 0
-2 1 1 2 0 0
-2 1 -1 2 0 -1
-2 1 1 2 0 1
-2 1 -1 2 0 -2
-2 1 1 2 0 2
-2 1 -1 2 1 0
-2 1 1 2 1 0
-2 1 -1 2 1 -2
-2 1 1 2 1 2
-2 1 -2 0 1 0
-2 1 2 0 1 0
-2 1 -2 0 1 -1
-2 1 2 0 1 1
-2 1 -2 1 0 0
-2 1 2 1 0 0
-2 1 -2 1 0 -1
-2 1 2 1 0 1
-2 1 -2 1 0 -2
-2 1 2 1 0 2
-2 1 -2 1 1 -2
-2 1 2 1 1 2
-2 1 -2 2 0 0
-2 1 2 2 0 0
-2 1 -2 2 0 -1
-2 1 2 2 0 1
-2 1 -2 2 0 -2
-2 1 2 2 0 2
-2 1 -2 2 1 0
-2 1 2 2 1 0
-2 1 -2 2 1 -1
-2 1 2 2 1 1 "
+2 0 2 1 0 0
+1 0 0 2 0 2
+0 0 0 2 2 1
+-2 0 2 -1 0 1
+2 2 1 0 0 1
+1 0 -1 0 2 -2
+1 0 1 -1 2 2
+2 1 2 0 -1 1
+-3 0 1 0 0 1
+1 0 3 0 0 1
+1 0 1 0 0 3
+0 0 3 1 0 1
+0 0 1 1 0 3
+1 0 3 -1 0 1
+1 0 1 -1 0 3
+1 1 1 0 0 3
+1 0 3 0 1 1
+1 0 1 0 1 3
+3 0 1 1 0 1
+0 0 3 1 1 1
+1 0 3 -1 1 1
+1 1 1 0 -1 3
+-2 0 0 -3 0 1
+1 0 3 0 0 2
+1 0 2 0 0 3
+1 0 3 -1 0 2
+1 0 2 -1 0 3
+1 1 2 0 0 3
+1 0 3 0 1 2
+1 0 3 -1 1 2
+1 1 2 0 -1 3
+1 0 -3 2 0 -2 "
 #	redstar_3pt_srcmom_snkmom="\
 #0 0 -1  0 0 0   
 #0 0 -2  0 0 0   
@@ -586,13 +449,14 @@ zn5 -3 -3 -3 -3 -3
 zn6 -3 -3 -3 -3 -3 -3
 zn7 -3 -3 -3 -3 -3 -3 -3
 zn8 -3 -3 -3 -3 -3 -3 -3 -3"
+	gprop_insertion_disps="${redstar_insertion_disps}"
 	rename_moms() {
 		[ $# == 3 ] && echo "mom$1.$2.$3"
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/unphased_even_herve/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
@@ -603,6 +467,8 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_transfer_back="yes"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
+
+	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_even_herve"
 }
 
 chroma_python="$PWD/chroma_python"

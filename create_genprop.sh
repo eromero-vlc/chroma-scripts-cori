@@ -107,6 +107,7 @@ for ens in $ensembles; do
 				redstar_tasks="$( for mom in $mom_group; do ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom}.sh.future; done )"
 				num_redstar_tasks="$( num_args $redstar_tasks )"
 				[ $num_redstar_tasks == 0 ] && continue
+				baryon_xmls="$( for mom in $mom_group; do ls $runpath/baryon_${zphase}_t0_${t_source}_mf${mom}_idx0.xml; done )"
 			fi
 
 			mkdir -p `dirname ${gprop_xml}`
@@ -143,7 +144,7 @@ for ens in $ensembles; do
 	echo "<elem>
               <t_source>${t_offset}</t_source>
               <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
-              <Nt_forward>${gprop_t_fwd}</Nt_forward>
+              <Nt_forward>${redstar_t_corr}</Nt_forward>
               <Nt_backward>0</Nt_backward>
             </elem>"
 	done
@@ -231,9 +232,21 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
+	#[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
 	#rm -f ${gprop_file}*
-	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	if [ $gprop_are_local == yes ] ; then
+		srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+`
+		for baryon_xml in ${baryon_xmls}; do
+			echo "srun -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes \\\$MY_ARGS $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> ${baryon_xml%.xml}.out"
+		done
+`
+		#disp_node="\${MY_ARGS//-r /}"
+		#srun -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes -r \$(( disp_node+gprop_slurm_nodes )) $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $baryon_output &
+		#wait
+	else
+		srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	fi
 `
 	if [ $gprop_are_local == yes ] ; then
 		echo sleep 60

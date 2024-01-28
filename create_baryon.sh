@@ -2,6 +2,24 @@
 
 source ensembles.sh
 
+mom_word() {
+	echo ${1}_${2}_${3}
+}
+
+mom_fly() {
+	if [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
+		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
+	else
+		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
+	fi
+}
+
+mom_split() {
+	echo $1 $2 $3
+	echo $4 $5 $6
+}
+
+
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
@@ -9,6 +27,16 @@ for ens in $ensembles; do
 	# Check for running baryons
 	[ $run_baryons != yes ] && continue
 
+	moms="all"
+	if [ $gprop_are_local == yes ]; then
+		moms="`
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+				mom_word $( mom_fly $momij )
+			done | sort -u
+		`"
+	else
+		gprop_max_moms_per_job=1
+	fi
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -19,23 +47,52 @@ for ens in $ensembles; do
 
 		for zphase in $baryon_zphases; do
 
+			#
+			# Baryon creation
+			#
+
+			t_sources="all"
+			[ ${gprop_are_local} == yes ] && t_sources="$gprop_t_sources"
+			for gprop_t_source in $t_sources; do
+			for momf in $moms; do
+
+			if [ ${gprop_are_local} == yes ] ; then
+				first_t_source=$gprop_t_source
+				Nt_forward_total=$redstar_t_corr
+				baryon_moms_xml="
+<mom_list>
+	`
+		echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+			[ $( mom_word $( mom_fly $momij ) ) == $momf ] && mom_split $momij
+		done | sort -u | while read mom; do
+			echo "<elem>$mom</elem>"
+		done
+	`
+</mom_list>"
+			else
+				first_t_source=0
+				Nt_forward_total=$t_size
+				baryon_moms_xml="
+<mom_list>
+	`echo "$gprop_moms" | while read mom; do echo "<elem>$mom</elem>"; done`
+</mom_list>"
+			fi
+
 			baryon_files="`baryon_file_name`"
 			baryon_file_index=0
 			baryon_file_num="`echo $baryon_files | wc -w`"
 			for baryon_file in $baryon_files; do
-				mkdir -p `dirname ${baryon_file}`
+				[ ${gprop_are_local} != yes ] && mkdir -p `dirname ${baryon_file}`
 
-				#
-				# Baryon creation
-				#
-
-				t_source="$(( t_size/baryon_file_num*baryon_file_index ))"
+				t_source="$(( first_t_source + Nt_forward_total/baryon_file_num*baryon_file_index ))"
 				if [ $baryon_file_index != $(( baryon_file_num-1 )) ]; then
-					Nt_forward="$(( t_size/baryon_file_num ))"
+					Nt_forward="$(( Nt_forward_total/baryon_file_num ))"
 				else
-					Nt_forward="$(( t_size - t_source ))"
+					Nt_forward="$(( first_t_source+Nt_forward_total - t_source ))"
 				fi
-				baryon_xml="$runpath/baryon_${zphase}_${baryon_file_index}.xml"
+
+				prefix="$runpath/baryon_${zphase}_t0_${gprop_t_source}_mf${momf}_idx${baryon_file_index}"
+				baryon_xml="${prefix}.xml"
 				cat << EOF > $baryon_xml
 <?xml version="1.0"?>
 <chroma>
@@ -59,6 +116,7 @@ for ens in $ensembles; do
         <phase>0.00 0.00 $zphase</phase>
         <use_superb_format>true</use_superb_format>
 
+	$baryon_moms_xml
         $baryon_extra_xml
 
         <LinkSmearing>
@@ -95,10 +153,10 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-				output="$runpath/baryon_${zphase}_${baryon_file_index}.out"
-				cat << EOF > $runpath/baryon_${zphase}_${baryon_file_index}.sh
+				output="${prefix}.out"
+				[ $gprop_are_local != yes ] && cat << EOF > ${prefix}.sh
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/baryon_${zphase}.out0
+#SBATCH -o ${prefix}.out0
 #SBATCH -t $baryon_chroma_minutes
 #SBATCH --nodes=$baryon_slurm_nodes -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J bar-${cfg}-${zphase}-${baryon_file_index}
@@ -137,6 +195,8 @@ eval "\${1:-run}"
 EOF
 				baryon_file_index="$(( baryon_file_index+1 ))"
 			done # baryon_file
+			done # momf
+			done # t_source
 		done # zphase
 	done # cfg
 done # ens
