@@ -90,7 +90,23 @@ for ens in $ensembles; do
 				else
 					Nt_forward="$(( first_t_source+Nt_forward_total - t_source ))"
 				fi
+				
+				# Find t_origin
+				perl -e " 
+  srand($cfg);
 
+  # Call a few to clear out junk                                                                                                          
+  foreach \$i (1 .. 20)
+  {
+    rand(1.0);
+  }
+  \$t_origin = int(rand($t_size));
+  \$t_offset = ($t_source + \$t_origin) % $t_size;
+  print \"\$t_origin \$t_offset\\n\"
+" > h
+				t_offset="`cat h | while read a b; do echo \$b; done`"
+				baryon_t_source="${t_source}"
+				[ ${gprop_are_local} == yes ] && baryon_t_source="${t_offset}"
 				prefix="$runpath/baryon_${zphase}_t0_${gprop_t_source}_mf${momf}_idx${baryon_file_index}"
 				baryon_xml="${prefix}.xml"
 				cat << EOF > $baryon_xml
@@ -108,7 +124,7 @@ for ens in $ensembles; do
         <max_vecs>0</max_vecs>
         
         <use_derivP>true</use_derivP>
-        <t_source>$t_source</t_source>
+        <t_source>$baryon_t_source</t_source>
         <Nt_forward>$Nt_forward</Nt_forward>
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
