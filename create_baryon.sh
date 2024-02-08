@@ -60,7 +60,7 @@ for ens in $ensembles; do
 
 			if [ ${gprop_are_local} == yes ] ; then
 				first_t_source=$gprop_t_source
-				Nt_forward_total=$redstar_t_corr
+				Nt_forward_total=$(( redstar_t_corr + 2  ))
 				baryon_moms_xml="
 <mom_list>
 	`
