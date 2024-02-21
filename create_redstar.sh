@@ -44,25 +44,6 @@ insertion_mom() {
 	done
 }
 
-mom_word() {
-	[ ${#@} == 3 ] && echo ${1}_${2}_${3}
-	[ ${#@} == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
-}
-
-mom_fly() {
-	if [ $# == 3 ]; then
-		echo $1 $2 $3
-	elif [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
-		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
-	else
-		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
-	fi
-}
-
-num_args() {
-	echo $#
-}
-
 get_ops() {
 	varname="redstar_`mom_letters $@`"
 	echo "${!varname}"
@@ -514,7 +495,7 @@ EOF
 				output_xml="redstar_xml_out_${prefix}.out"
 				output="$runpath/redstar_${prefix}.out"
 				redstar_sh="redstar_${prefix}.sh"
-				[ $gprop_are_local == yes ] && redstar_sh+=".future"
+				[ $run_onthefly == yes ] && redstar_sh+=".future"
 				redstar_sh+=".template"
 				echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
 				cat << EOF > $template_runpath/${redstar_sh}
@@ -551,7 +532,7 @@ deps() {
 	echo `corr_graph_file`
 	echo `prop_file_name | tr '\n' ' '` `meson_file_name | tr '\n' ' '` `baryon_file_name | tr '\n' ' '`
 `
-	[ $redstar_3pt == yes -a $gprop_are_local != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_3pt == yes -a $run_onthefly != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }
@@ -613,7 +594,13 @@ $slurm_sbatch_prologue
 
 t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_origin/g' ${template_runpath}/${template_file} > \$t
-if [ \$1 != environ ]; then
+if [ x\$1 == x ]; then
+	. \$t environ
+	bash -l \$t
+	r="\$?"
+	rm -f \$t
+	exit \$r
+elif [ x\$1 != xenviron ]; then
 	bash -l \$t \$@
 	r="\$?"
 	rm -f \$t

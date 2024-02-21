@@ -2,44 +2,9 @@
 
 source ensembles.sh
 
-mom_word() {
-	echo ${1}_${2}_${3}
-}
-
-mom_fly() {
-	if [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
-		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
-	else
-		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
-	fi
-}
-
 unpack_moms() {
 	echo $1 $2 $3
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
-}
-
-num_args() {
-	echo $#
-}
-
-k_split() {
-	local n i f
-	n="$1"
-	shift
-	i="0"
-	for f in "$@" "__last_file__"; do
-		if [ $f != "__last_file__" ]; then
-			echo -n "$f "
-			i="$(( i+1 ))"
-			if [ $i == $n ]; then
-				i="0"
-				echo
-			fi
-		else
-			[ $i != 0 ] && echo
-		fi
-	done
 }
 
 for ens in $ensembles; do
@@ -50,14 +15,12 @@ for ens in $ensembles; do
 	[ $run_gprops != yes ] && continue
 
 	moms="all"
-	if [ $gprop_are_local == yes ]; then
+	if [ $run_onthefly == yes ]; then
 		moms="`
 			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
 				mom_word $( mom_fly $momij )
 			done | sort -u
 		`"
-	else
-		gprop_max_moms_per_job=1
 	fi
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
@@ -69,48 +32,26 @@ for ens in $ensembles; do
 
 		for t_source in $gprop_t_sources; do
 		for zphase in $gprop_zphases; do
-		k_split $gprop_max_moms_per_job $moms | while read mom_group ; do
+		[ ${run_onthefly} != yes ] && max_moms_per_job=1
+		k_split $max_moms_per_job $moms | while read mom_group ; do
 
 			# Find t_origin
-			perl -e " 
-  srand($cfg);
+			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\\n\"
-" > h
-			t_origin="`cat h | while read a b; do echo \$a; done`"
-			t_offset="`cat h | while read a b; do echo \$b; done`"
-
-			gprop_file="`gprop_file_name`"
-			[ $gprop_are_local != yes ] && mkdir -p `dirname ${gprop_file}`
+			gprop_file="`run_onthefly=nop gprop_file_name`"
 
 			#
 			# Genprops creation
 			#
-			if [ $gprop_are_local == yes ]; then
+			if [ $run_onthefly == yes ]; then
 				gprop_moms="$( for mom in $mom_group; do unpack_moms ${mom//_/ }; done )"
+				mom_leader="`take_first $mom_group`"
+				prefix_extra="_mf${mom_leader}"
+			else
+				prefix_extra=""
 			fi
-			prefix="gprop_t${t_source}_z${zphase}_mf${mom_group// /_}"
-			gprop_xml="$runpath/${prefix}.xml"
-			gprop_class="b"
-			redstar_tasks=""
-			num_redstar_tasks=0
-
-			if [ $gprop_are_local == yes ]; then
-				gprop_class="d"
-				redstar_tasks="$( for mom in $mom_group; do ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom}.sh.future; done )"
-				num_redstar_tasks="$( num_args $redstar_tasks )"
-				[ $num_redstar_tasks == 0 ] && continue
-				baryon_xmls="$( for mom in $mom_group; do ls $runpath/baryon_${zphase}_t0_${t_source}_mf${mom}_idx0.xml; done )"
-			fi
-
-			mkdir -p `dirname ${gprop_xml}`
+			prefix="${runpath}/gprop_t${t_source}_z${zphase}${prefix_extra}"
+			gprop_xml="${prefix}.xml"
 			cat << EOF > $gprop_xml
 <?xml version="1.0"?>
 <chroma>
@@ -162,6 +103,7 @@ for ens in $ensembles; do
             <use_multiple_writers>false</use_multiple_writers>
             <use_genprop4_format>false</use_genprop4_format>
             <use_genprop5_format>true</use_genprop5_format>
+            <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
             <max_moms_in_contraction>${gprop_max_mom_in_contraction}</max_moms_in_contraction>
             <max_tslices_in_contraction>${gprop_max_tslices_in_contraction}</max_tslices_in_contraction>
           </Contractions>
@@ -220,11 +162,12 @@ for ens in $ensembles; do
   </Cfg>
 </chroma>
 EOF
-			output="$runpath/${prefix}.out"
-			local_aux="${localpath}/${runpath//\//_}_${prefix}.aux"
-			cat << EOF > $runpath/${prefix}.sh
+			output="${prefix}.out"
+			script="${prefix}.sh"
+			[ $run_onthefly == yes ] && script="${script}.future"
+			cat << EOF > $runpath/${script}
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/${prefix}.out0
+#SBATCH -o ${prefix}.out0
 #SBATCH -t $gprop_chroma_minutes
 #SBATCH --nodes=$gprop_slurm_nodes -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J gprop-${cfg}-${t_source}
@@ -232,103 +175,39 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	#[ $gprop_are_local == yes ] && srun -N 1 -n 1 \$MY_ARGS mkdir -p `dirname ${gprop_file}`
-	#rm -f ${gprop_file}*
-	if [ $gprop_are_local == yes ] ; then
-		srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
-`
-		for baryon_xml in ${baryon_xmls}; do
-			echo "srun -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes \\\$MY_ARGS $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> ${baryon_xml%.xml}.out"
-		done
-`
-		#disp_node="\${MY_ARGS//-r /}"
-		#srun -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes -r \$(( disp_node+gprop_slurm_nodes )) $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $baryon_output &
-		#wait
-	else
-		srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	mkdir -p `dirname ${gprop_file}`
+	rm -f ${gprop_file}*
+	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+}
+
+blame() {
+	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" ; then
+		echo gprop creation failed
+		exit 1
 	fi
-`
-	if [ $gprop_are_local == yes ] ; then
-		echo sleep 60
-		echo "cat << EOFo > ${local_aux}"
-		i=0
-		k_split $(( (num_redstar_tasks + slurm_procs_per_node*gprop_slurm_nodes-1 ) / (slurm_procs_per_node*gprop_slurm_nodes) )) $redstar_tasks | while read js ; do
-			echo "$i bash -c 'for t in $js; do bash \\\\\\\$t run; done'"
-			i="$((i+1))"
-		done
-		echo "EOFo"
-		echo srun -n $(( num_redstar_tasks < slurm_procs_per_node*gprop_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \\\$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
-	fi
-`
+	exit 0
 }
 
 check() {
 	tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" || exit 1
-`
-	if [ $gprop_are_local == yes ] ; then
-		for t in $redstar_tasks; do
-			echo "bash $t check || exit 1"
-		done
-	fi
-`
-	exit 0
-}
-
-blame() {
-	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully"; then
-		echo genprop creation failed
-		exit 1
-	fi
-`
-	if [ $gprop_are_local == yes ] ; then
-		for t in $redstar_tasks; do
-			echo "bash $t check || echo fail $t"
-		done
-	fi
-`
 	exit 0
 }
 
 deps() {
 	echo $lime_file $colorvec_file
-`
-	if [ $gprop_are_local == yes ] ; then
-		for t in $redstar_tasks; do
-			echo bash $t deps
-		done
-	fi
-`
 }
 
 outs() {
-	echo -n
-`
-	if [ $gprop_are_local == yes ] ; then
-		for t in $redstar_tasks; do
-			echo bash $t outs
-		done
-	else
-		echo echo $gprop_file
-	fi
-`
+	echo $gprop_file
 }
 
 class() {
 	# class max_minutes nodes jobs_per_node max_concurrent_jobs
-	echo $gprop_class $gprop_chroma_minutes $gprop_slurm_nodes 1 0
+	echo b $gprop_chroma_minutes $gprop_slurm_nodes 1 0
 }
 
 globus() {
-	echo -n
-`
-	if [ $gprop_are_local == yes ] ; then
-		for t in $redstar_tasks; do
-			echo bash $t globus
-		done
-	else
-		echo echo "[ $gprop_transfer_back == yes ] && echo ${gprop_file}.globus ${this_ep}${gprop_file#${confspath}} ${jlab_ep}${gprop_file#${confspath}} ${gprop_delete_after_transfer_back}"
-	fi
-`
+	[ $gprop_transfer_back == yes ] && echo ${gprop_file}.globus ${this_ep}${gprop_file#${confspath}} ${jlab_ep}${gprop_file#${confspath}} ${gprop_delete_after_transfer_back}
 }
 
 eval "\${1:-run}"

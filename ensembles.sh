@@ -1,16 +1,24 @@
 # This shell script is executed at the beginning of create_*.sh, launch.sh, cancel.sh and check.sh
 
+. common.sh
+
 ensembles="ensemble0"
 
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
-	run_gprops="yes"
+	run_props="yes"
+	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
+
+	run_onthefly="yes"
+	onthefly_slurm_nodes=1
+	onthefly_chroma_geometry="1 1 2 4"
+	onthefly_chroma_minutes=120
+	max_moms_per_job=1
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
@@ -18,8 +26,8 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
-	confs="`seq 2000 10 3000`"
-	confs="`seq 1000 10 1990`"
+	#confs="`seq 2000 10 3000`"
+	#confs="`seq 1000 10 1990`"
 	confs="${confs//1920/}"
 	confs=1000
 	s_size=32 # lattice spatial size
@@ -53,8 +61,8 @@ ensemble0() {
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=2
-	prop_chroma_geometry="1 2 2 4"
+	prop_slurm_nodes=1
+	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=120
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
@@ -129,15 +137,18 @@ ensemble0() {
 
 	# propagator filename
 	prop_file_name() {
+		local n
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+			n="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+			n="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		fi
+		[ $run_onthefly == yes ] && n="${localpath}/${n//\//_}"
+		echo $n
 	}
 	prop_transfer_back="nop"
 	prop_delete_after_transfer_back="nop"
-	prop_transfer_from_jlab="yes"
+	prop_transfer_from_jlab="nop"
 
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
@@ -190,17 +201,22 @@ ensemble0() {
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
-	gprop_are_local="yes"
-	gprop_max_moms_per_job=1
+	localpath="/tmp"
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
+		local n node
 		if [ $zphase == 0.00 ]; then
 			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		else
 			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
-		[ $gprop_are_local == yes ] && n="${localpath}/${n//\//_}"
-		echo $n
+		if [ $run_onthefly == yes ] ; then
+			for (( node=0 ; node<gprop_slurm_nodes ; ++node )) ; do
+				echo "${localpath}/${n//\//_}.part$node"
+			done
+		else
+			echo $n
+		fi
 	}
 	gprop_transfer_back="nop"
 	gprop_delete_after_transfer_back="nop"
@@ -278,20 +294,19 @@ ensemble0() {
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
 	baryon_chroma_minutes=120
-	baryon_chroma_parts=1 # split the time slices into this many different files
 	baryon_file_name() {
+		local n node
 		if [ ${zphase} == 0.00 ]; then
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
 		else
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
 		fi
-		[ $gprop_are_local == yes ] && n="${localpath}/${n//\//_}"
-		if [ $baryon_chroma_parts == 1 ]; then
-			echo $n
-		else
-			for i in `seq 1 $baryon_chroma_parts`; do
-				echo $n.part_$i
+		if [ $run_onthefly == yes ] ; then
+			for (( node=0 ; node<baryon_slurm_nodes ; ++node )) ; do
+				echo "${localpath}/${n//\//_}.part$node"
 			done
+		else
+			echo $n
 		fi
 	}
 	baryon_transfer_back="nop"
@@ -344,17 +359,13 @@ ensemble0() {
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
-	redstar_2pt="nop"
+	redstar_2pt="yes"
 	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
 	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_2pt_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
 	redstar_2pt_moms="\
-0 0 0
-0 0 1
-0 0 -1
-0 0 2
-0 0 -2"
-	redstar_3pt="yes"
+0 0 0"
+	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 -1 0 1 1 0 1
 0 -1 1 1 1 0
@@ -457,7 +468,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased_even_herve/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/unphased_test/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
@@ -465,11 +476,11 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_minutes=30
 	redstar_jobs_per_node=8
 	redstar_max_concurrent_jobs=24000
-	redstar_transfer_back="yes"
+	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_even_herve"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_test"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -484,8 +495,11 @@ chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-h
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install_cpu/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
+
+anarchofs="$chromaform/install/anarchofs/anarchofs"
 
 slurm_procs_per_node=8
 slurm_cores_per_node=56
