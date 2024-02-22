@@ -143,7 +143,7 @@ ensemble0() {
 		fi
 		if [ $run_onthefly == yes -a $run_props == yes ] ; then
 			prot=""
-			[ x$1 != xsingle ] && prot="afs:"
+			#[ x$1 != xsingle ] && prot="afs:"
 			n="${prot}${localpath}/${n//\//_}"
 		fi
 		echo $n
@@ -371,9 +371,6 @@ ensemble0() {
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
 	redstar_2pt="yes"
-	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
-	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1"
-	redstar_2pt_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
 	redstar_2pt_moms="\
 0 0 1
 0 0 -1
