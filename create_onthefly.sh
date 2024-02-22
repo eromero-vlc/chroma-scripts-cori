@@ -9,6 +9,11 @@ for ens in $ensembles; do
 	# Check for running on the fly
 	[ $run_onthefly != yes -o $run_redstar != yes ] && continue
 
+	# Get the number of nodes to run
+	onthefly_slurm_nodes=1
+	[ $run_props == yes -a $onthefly_slurm_nodes -lt $prop_slurm_nodes ] && onthefly_slurm_nodes="$prop_slurm_nodes"
+	[ $run_gprops == yes -a $onthefly_slurm_nodes -lt $gprop_slurm_nodes ] && onthefly_slurm_nodes="$gprop_slurm_nodes"
+
 	moms="`
 		(
 			[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
@@ -63,9 +68,9 @@ run() {
 		bash $prop_script run
 		sleep 30
 	fi
-	if [ $run_gprops == yes -a $gprop_slurm_nodes -gt 1 ] || [ $run_baryons == yes -a $baryon_slurm_nodes -gt 1 ] ; then
+	if [ $run_gprops == yes -o $run_baryons == yes -o $run_props == yes ] ; then
 		$anarchofs &
-		sleep 10
+		sleep 30
 	fi
 
 	cat << EOFo > ${local_aux}
@@ -77,7 +82,7 @@ run() {
 	done
 `
 EOFo
-	srun -n $(( num_redstar_tasks < slurm_procs_per_node*gprop_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
+	srun -n $(( num_redstar_tasks < slurm_procs_per_node*gprop_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*gprop_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
 }
 
 check() {

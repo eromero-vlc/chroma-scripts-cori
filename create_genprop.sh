@@ -38,7 +38,7 @@ for ens in $ensembles; do
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-			gprop_file="`run_onthefly=nop gprop_file_name`"
+			gprop_file="`gprop_file_name single`"
 
 			#
 			# Genprops creation

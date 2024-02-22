@@ -23,7 +23,7 @@ for ens in $ensembles; do
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-			prop_file="`prop_file_name`"
+			prop_file="`prop_file_name single`"
 
 			#
 			# Propagators creation

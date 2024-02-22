@@ -15,10 +15,8 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_slurm_nodes=1
-	onthefly_chroma_geometry="1 1 2 4"
 	onthefly_chroma_minutes=120
-	max_moms_per_job=1
+	max_moms_per_job=2
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
@@ -137,13 +135,17 @@ ensemble0() {
 
 	# propagator filename
 	prop_file_name() {
-		local n
+		local n prot
 		if [ ${zphase} == 0.00 ]; then
 			n="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		else
 			n="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		fi
-		[ $run_onthefly == yes ] && n="${localpath}/${n//\//_}"
+		if [ $run_onthefly == yes -a $run_props == yes ] ; then
+			prot=""
+			[ x$1 != xsingle ] && prot="afs:"
+			n="${prot}${localpath}/${n//\//_}"
+		fi
 		echo $n
 	}
 	prop_transfer_back="nop"
@@ -201,7 +203,6 @@ ensemble0() {
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
-	localpath="/tmp"
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		local n node
@@ -210,10 +211,15 @@ ensemble0() {
 		else
 			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
 		fi
-		if [ $run_onthefly == yes ] ; then
-			for (( node=0 ; node<gprop_slurm_nodes ; ++node )) ; do
-				echo "${localpath}/${n//\//_}.part$node"
-			done
+		if [ $run_onthefly == yes -a $run_gprops == yes ] ; then
+			n="${localpath}/${n//\//_}"
+			if [ x$1 == xsingle ] ; then
+				echo $n
+			else
+				for (( node=0 ; node<gprop_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
+					echo "afs:${n}.part_$node"
+				done
+			fi
 		else
 			echo $n
 		fi
@@ -301,10 +307,15 @@ ensemble0() {
 		else
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
 		fi
-		if [ $run_onthefly == yes ] ; then
-			for (( node=0 ; node<baryon_slurm_nodes ; ++node )) ; do
-				echo "${localpath}/${n//\//_}.part$node"
-			done
+		if [ $run_onthefly == yes -a $run_baryons == yes ] ; then
+			n="${localpath}/${n//\//_}"
+			if [ x$1 == xsingle ] ; then
+				echo $n
+			else
+				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
+					echo "afs:${n}.part_$node"
+				done
+			fi
 		else
 			echo $n
 		fi
@@ -364,7 +375,14 @@ ensemble0() {
 	redstar_2pt_zeromom_operators="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_2pt_nonzeromom_operators="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
 	redstar_2pt_moms="\
-0 0 0"
+0 0 1
+0 0 -1
+0 0 2
+0 0 -2
+0 0 3
+0 0 -3
+0 0 0
+"
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 -1 0 1 1 0 1
@@ -494,8 +512,8 @@ chromaform="$HOME/chromaform_frontier_rocm5.4"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar="$chromaform/install_cpu/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas-sp"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 

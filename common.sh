@@ -16,8 +16,8 @@ take_first() {
 # Return a single word representing a momentum (transfer)
 
 mom_word() {
-	[ ${#@} == 3 ] && echo ${1}_${2}_${3}
-	[ ${#@} == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
+	[ $# == 3 ] && echo ${1}_${2}_${3}
+	[ $# == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
 }
 
 # mom_fly momx0 momy0 momz0 [momx1 momy1 momz1]
@@ -25,11 +25,17 @@ mom_word() {
 
 mom_fly() {
 	if [ $# == 3 ]; then
-		echo $1 $2 $3
-	elif [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
-		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
+		if [ $1 -gt 0 -o $2 -gt 0 -o $3 -ge 0 ]; then
+			echo $1 $2 $3
+		else
+			echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
+		fi
 	else
-		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
+		if [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
+			echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
+		else
+			echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
+		fi
 	fi
 }
 
@@ -39,11 +45,12 @@ mom_fly() {
 mom_split() {
 	if [ $# == 3 ]; then
 		echo $1 $2 $3
+		echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
 	else
 		echo $1 $2 $3
 		echo $4 $5 $6
-		echo $(( -${1} )) $(( -${2} )) $(( -${3} ))
-		echo $(( -${4} )) $(( -${5} )) $(( -${6} ))
+		echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
+		echo $(( -$4 )) $(( -$5 )) $(( -$6 ))
 	fi
 }
 
