@@ -47,7 +47,7 @@ for ens in $ensembles; do
 			baryon_moms_xml="
 <mom_list>
 	`
-		echo "$mom_group" | while read momij; do
+		for momij in $mom_group ; do
 			mom_split ${momij//_/ }
 		done | sort -u | while read mom; do
 			echo "<elem>$mom</elem>"

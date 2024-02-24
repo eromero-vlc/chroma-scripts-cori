@@ -409,6 +409,7 @@ for ens in $ensembles; do
 	mkdir -p $corr_runpath
 	for insertion_op in "_2pt_" $redstar_insertion_operators; do
 		[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+		[ ${redstar_3pt} != yes -a ${insertion_op} != _2pt_ ] && continue
 		all_moms="$all_moms_2pt"
 		[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
 
