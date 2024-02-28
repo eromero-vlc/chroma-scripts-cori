@@ -283,15 +283,6 @@ ensemble0() {
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
 	baryon_extra_xml="
-	<mom_list>
-                <elem>0 0 0</elem>
-                <elem>0 0 1</elem>
-                <elem>0 0 -1</elem>
-                <elem>0 0 2</elem>
-                <elem>0 0 -2</elem>
-                <elem>0 0 3</elem>
-                <elem>0 0 -3</elem>
-        </mom_list>
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
