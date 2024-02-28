@@ -36,7 +36,7 @@ for ens in $ensembles; do
 	done
 	echo OK: `wc -l < $ok`  Failed: `wc -l < $fail`
 
-	find -L ${confspath}/${confsprefix}/ -name '*.globus' | while read f; do
+	for globus_path in $globus_check_dirs; do find -L $globus_path -name '*.globus'; done | while read f; do
 		cat $f | while read globus_task orig dest delete; do
 			if [ $globus_task == pending ]; then
 				status="FAILED"

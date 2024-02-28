@@ -44,21 +44,6 @@ insertion_mom() {
 	done
 }
 
-mom_word() {
-	[ ${#@} == 3 ] && echo ${1}_${2}_${3}
-	[ ${#@} == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
-}
-
-mom_fly() {
-	if [ $# == 3 ]; then
-		echo $1 $2 $3
-	elif [ $1 -ge $4 ]; then
-		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
-	else
-		echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
-	fi
-}
-
 get_ops() {
 	varname="redstar_`mom_letters $@`"
 	echo "${!varname}"
@@ -278,8 +263,7 @@ corr_graph() {
 `
 	if [ $t_origin == -1 ]; then
 		if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
-			operators="$redstar_2pt_zeromom_operators"
-			[ "$mom" != "0 0 0" ] && operators="$redstar_2pt_nonzeromom_operators"
+			operators="$( get_ops $mom )"
 			npoint_2pt "$mom" "$operators"
 		fi
 		if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
@@ -410,14 +394,14 @@ for ens in $ensembles; do
 		all_moms_2pt="`
 			echo "$redstar_2pt_moms" | while read mom; do
 				[ $(num_args $mom) == 3 ] && mom_word $mom
-			done
+			done | sort -u
 		`"
 	fi
 	if [ $redstar_3pt == yes ]; then
 		all_moms_3pt="`
 			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
 				[ $(num_args $momij) == 6 ] && mom_word $momij
-			done
+			done | sort -u
 		`"
 	fi
 
@@ -425,6 +409,7 @@ for ens in $ensembles; do
 	mkdir -p $corr_runpath
 	for insertion_op in "_2pt_" $redstar_insertion_operators; do
 		[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
+		[ ${redstar_3pt} != yes -a ${insertion_op} != _2pt_ ] && continue
 		all_moms="$all_moms_2pt"
 		[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
 
@@ -444,7 +429,7 @@ environ() {
 }
 
 run() {
-	tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
+	tmp_runpath="${localpath}/${corr_graph_bin//\//_}"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
 	rm -f ${corr_graph_bin}
@@ -510,7 +495,7 @@ EOF
 				output_xml="redstar_xml_out_${prefix}.out"
 				output="$runpath/redstar_${prefix}.out"
 				redstar_sh="redstar_${prefix}.sh"
-				[ $gprop_are_local == yes ] && redstar_sh+=".future"
+				[ $run_onthefly == yes ] && redstar_sh+=".future"
 				redstar_sh+=".template"
 				echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
 				cat << EOF > $template_runpath/${redstar_sh}
@@ -547,7 +532,7 @@ deps() {
 	echo `corr_graph_file`
 	echo `prop_file_name | tr '\n' ' '` `meson_file_name | tr '\n' ' '` `baryon_file_name | tr '\n' ' '`
 `
-	[ $redstar_3pt == yes -a $gprop_are_local != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_3pt == yes -a $run_onthefly != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }
@@ -583,21 +568,7 @@ EOF
 		for t_source in $prop_t_sources; do
 
 			# Find t_origin
-			t_origin_offset=( $( perl -e " 
-  srand($cfg);
-
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\"
-") )
-			t_origin="${t_origin_offset[0]}"
-			t_offset="${t_origin_offset[1]}"
-			t_origin="$(( (t_origin+t_source)%t_size ))"
+			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			cat ${redstar_files}.tsrc$t_source | while read template_file; do
 				cat << EOF > $runpath/${template_file%.template}
@@ -608,8 +579,14 @@ $slurm_sbatch_prologue
 #SBATCH -J redstar-${prefix}
 
 t="\$(mktemp)"
-sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_origin/g' ${template_runpath}/${template_file} > \$t
-if [ \$1 != environ ]; then
+sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
+if [ x\$1 == x ]; then
+	. \$t environ
+	bash -l \$t
+	r="\$?"
+	rm -f \$t
+	exit \$r
+elif [ x\$1 != xenviron ]; then
 	bash -l \$t \$@
 	r="\$?"
 	rm -f \$t

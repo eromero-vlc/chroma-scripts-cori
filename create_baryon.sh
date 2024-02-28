@@ -9,6 +9,21 @@ for ens in $ensembles; do
 	# Check for running baryons
 	[ $run_baryons != yes ] && continue
 
+	moms="all"
+	if [ $run_onthefly == yes ]; then
+		if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
+			echo "Unsupported to compute 2pt and 3pt on the fly at once"
+			exit 1
+		fi
+		moms="`
+			(
+				[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
+				[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
+			) | while read momij; do
+				[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
+			done | sort -u
+		`"
+	fi
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -19,24 +34,43 @@ for ens in $ensembles; do
 
 		for zphase in $baryon_zphases; do
 
-			baryon_files="`baryon_file_name`"
-			baryon_file_index=0
-			baryon_file_num="`echo $baryon_files | wc -w`"
-			for baryon_file in $baryon_files; do
-				mkdir -p `dirname ${baryon_file}`
+			#
+			# Baryon creation
+			#
 
-				#
-				# Baryon creation
-				#
+			t_sources="all"
+			[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
+			[ ${run_onthefly} != yes ] && max_moms_per_job=1
+			for t_source in $t_sources; do
+			k_split $max_moms_per_job $moms | while read mom_group ; do
 
-				t_source="$(( t_size/baryon_file_num*baryon_file_index ))"
-				if [ $baryon_file_index != $(( baryon_file_num-1 )) ]; then
-					Nt_forward="$(( t_size/baryon_file_num ))"
-				else
-					Nt_forward="$(( t_size - t_source ))"
-				fi
-				baryon_xml="$runpath/baryon_${zphase}_${baryon_file_index}.xml"
-				cat << EOF > $baryon_xml
+			baryon_moms_xml="
+<mom_list>
+	`
+		for momij in $mom_group ; do
+			mom_split ${momij//_/ }
+		done | sort -u | while read mom; do
+			echo "<elem>$mom</elem>"
+		done
+	`
+</mom_list>"
+			if [ ${run_onthefly} == yes ] ; then
+				# Find t_origin
+				baryon_t_source="`shuffle_t_source $cfg $t_size $t_source`"
+				Nt_forward=$(( redstar_t_corr + 2  ))
+				mom_leader="`take_first $mom_group`"
+				prefix_extra="_t0_${t_source}_mf${mom_leader}"
+			else
+				baryon_t_source=0
+				Nt_forward=$t_size
+				prefix_extra=""
+			fi
+
+			baryon_file="`baryon_file_name single`"
+
+			prefix="$runpath/baryon_${zphase}${prefix_extra}"
+			baryon_xml="${prefix}.xml"
+			cat << EOF > $baryon_xml
 <?xml version="1.0"?>
 <chroma>
 <Param>
@@ -51,14 +85,16 @@ for ens in $ensembles; do
         <max_vecs>${baryon_chroma_max_vecs}</max_vecs>
         
         <use_derivP>true</use_derivP>
-        <t_source>$t_source</t_source>
+        <t_source>$baryon_t_source</t_source>
         <Nt_forward>$Nt_forward</Nt_forward>
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
         <phase>0.00 0.00 $zphase</phase>
         <use_superb_format>true</use_superb_format>
+        <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
 
+	$baryon_moms_xml
         $baryon_extra_xml
 
         <LinkSmearing>
@@ -95,10 +131,12 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-				output="$runpath/baryon_${zphase}_${baryon_file_index}.out"
-				cat << EOF > $runpath/baryon_${zphase}_${baryon_file_index}.sh
+			output="${prefix}.out"
+			script="${prefix}.sh"
+			[ $run_onthefly == yes ] && script="${script}.future"
+			cat << EOF > ${script}
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/baryon_${zphase}.out0
+#SBATCH -o ${prefix}.out0
 #SBATCH -t $baryon_chroma_minutes
 #SBATCH --nodes=$baryon_slurm_nodes -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J bar-${cfg}-${zphase}-${baryon_file_index}
@@ -107,12 +145,21 @@ run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $baryon_file
+	mkdir -p `dirname ${baryon_file}`
 	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
 	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
+}
+
+blame() {
+	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" ; then
+		echo baryon creation failed
+		exit 1
+	fi
+	exit 0
 }
 
 deps() {
@@ -135,8 +182,8 @@ globus() {
 eval "\${1:-run}"
 
 EOF
-				baryon_file_index="$(( baryon_file_index+1 ))"
-			done # baryon_file
+			done # mom_group
+			done # t_source
 		done # zphase
 	done # cfg
 done # ens
