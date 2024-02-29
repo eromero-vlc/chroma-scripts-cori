@@ -68,7 +68,7 @@ run() {
 		bash $prop_script run
 		sleep 30
 	fi
-	if false && [ $run_gprops == yes -o $run_baryons == yes -o $run_props == yes ] ; then
+	if [ $run_gprops == yes -o $run_baryons == yes -o $run_props == yes ] ; then
 		srun --overlap -s -G 0 \$MY_ARGS -N $onthefly_slurm_nodes -n $onthefly_slurm_nodes $anarchofs &
 		sleep 30
 	fi

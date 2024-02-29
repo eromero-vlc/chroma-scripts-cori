@@ -165,7 +165,7 @@ EOF
 			output="${prefix}.out"
 			script="${prefix}.sh"
 			[ $run_onthefly == yes ] && script="${script}.future"
-			cat << EOF > $runpath/${script}
+			cat << EOF > ${script}
 $slurm_sbatch_prologue
 #SBATCH -o ${prefix}.out0
 #SBATCH -t $gprop_chroma_minutes

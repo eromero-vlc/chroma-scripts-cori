@@ -7,8 +7,8 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
-	run_gprops="nop"
+	run_props="yes"
+	run_gprops="yes"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
@@ -19,16 +19,14 @@ ensemble0() {
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
-	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 1000 10 4500`"
-	#confs="`seq 2000 10 3000`"
-	#confs="`seq 1000 10 1990`"
-	confs="${confs//1920/}"
-	s_size=32 # lattice spatial size
-	t_size=64 # lattice temporal size
+	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
+	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
+	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
+	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
+	confs="`seq 1000 10 4990`"
+	confs=1010
+	s_size=48 # lattice spatial size
+	t_size=128 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
@@ -36,11 +34,11 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=64  # colorvecs to use
+	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
@@ -52,14 +50,14 @@ ensemble0() {
 	prop_t_sources="0 16 32 48"
 	prop_t_fwd=16
 	prop_t_back=0
-	prop_nvec=64
+	prop_nvec=128
 	prop_zphases="0.00 2.00 -2.00"
 	prop_zphases="0.00"
-	prop_mass="-0.2350"
-	prop_clov="1.20536588031793"
+	prop_mass="-0.2070"
+	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=1
-	prop_chroma_geometry="1 1 2 4"
+	prop_slurm_nodes=2
+	prop_chroma_geometry="1 1 2 8"
 	prop_chroma_minutes=120
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
@@ -92,7 +90,7 @@ ensemble0() {
                 <Precision>HALF</Precision>
                 <Reconstruct>RECONS_8</Reconstruct>
                 <Blocking>
-                  <elem>4 4 4 4</elem>
+                  <elem>4 3 3 4</elem>
                   <elem>2 2 2 2</elem>
                 </Blocking>
                 <CoarseSolverType>
@@ -134,18 +132,24 @@ ensemble0() {
 
 	# propagator filename
 	prop_file_name() {
-		local n prot
+		local n node
 		if [ ${zphase} == 0.00 ]; then
 			n="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		else
 			n="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		fi
 		if [ $run_onthefly == yes -a $run_props == yes ] ; then
-			prot=""
-			#[ x$1 != xsingle ] && prot="afs:"
-			n="${prot}${localpath}/${n//\//_}"
+			n="${localpath}/${n//\//_}"
+			if [ x$1 == xsingle ] ; then
+				echo $n
+			else
+				for (( node=0 ; node<gprop_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
+					echo "afs:${n}.part_$node"
+				done
+			fi
+		else
+			echo $n
 		fi
-		echo $n
 	}
 	prop_transfer_back="nop"
 	prop_delete_after_transfer_back="nop"
@@ -156,50 +160,12 @@ ensemble0() {
 	gprop_t_seps="4 6 8 10 12 14"
 	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$nvec
-	gprop_moms="\
-0 0 0    
-0 0 -1 
-0 0 1  
-0 0 -2 
-0 0 2  
-0 0 -3   
-0 0 3    
-0 1 0  
-0 1 -1 
-0 1 1  
-0 1 -2 
-0 1 2  
-1 0 0  
-1 0 -1 
-1 0 1  
-1 0 -2 
-1 0 2  
-1 1 0  
-1 1 -1 
-1 1 1  
-1 1 -2 
-1 1 2  
-1 1 -3 
-1 1 3  
-2 0 0    
-2 0 -1   
-2 0 1    
-2 0 -2   
-2 0 2    
-2 1 0    
-2 1 -1   
-2 1 1  
-2 1 -2   
-2 1 2    "
-#	gprop_moms="\
-#0 0 0    
-#0 0 -1 
-#0 0 1  "
+	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
 	gprop_max_tslices_in_contraction=16
 	gprop_max_mom_in_contraction=1
-	gprop_slurm_nodes=1
-	gprop_chroma_geometry="1 1 2 4"
+	gprop_slurm_nodes=2
+	gprop_chroma_geometry="1 1 2 8"
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
 	gprop_file_name() {
@@ -296,8 +262,8 @@ ensemble0() {
 	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
 	baryon_chroma_max_vecs=0 # as large as possible (zero means do all eigenvectors are contracted at once)
-	baryon_slurm_nodes=1
-	baryon_chroma_geometry="1 1 1 8"
+	baryon_slurm_nodes=2
+	baryon_chroma_geometry="1 1 2 8"
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
@@ -312,7 +278,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "${n}.part_$node"
+					echo "afs:${n}.part_$node"
 				done
 			fi
 		else
@@ -363,13 +329,13 @@ ensemble0() {
 	disco_transfer_from_jlab="nop"
 
 	# Redstar options
-	redstar_t_corr=14 # Number of time slices
+	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
-	redstar_2pt="yes"
+	redstar_2pt="nop"
 	redstar_2pt_moms="\
 -2 0 2
 0 2 -2
@@ -428,67 +394,8 @@ ensemble0() {
 1 -1 1
 0 -2 0
 0 -2 2 "
-	redstar_3pt="nop"
-	redstar_3pt_snkmom_srcmom="\
--1 0 1 1 0 1
-0 -1 1 1 1 0
-0 -1 1 1 1 1
-0 0 0 2 0 1
--1 -1 1 1 1 1
--1 0 0 -2 0 1
--1 0 0 1 0 2
--1 0 2 1 0 0
-0 0 1 1 -2 0
-0 0 1 2 0 1
--1 0 2 1 0 1
-0 -1 0 -1 -2 1
-0 0 1 1 1 2
-0 0 1 2 1 1
-0 0 2 1 1 1
-0 -1 1 1 1 2
-0 -1 2 1 1 1
-0 0 0 2 0 2
-0 0 2 2 0 0
-0 0 0 2 2 1
-0 0 1 2 0 2
-1 0 0 2 0 2
-2 0 2 1 0 0
-2 2 1 0 0 0
--1 0 1 -2 0 2
-0 0 1 2 2 1
-0 2 -2 1 0 -1
--1 2 2 1 0 1
-0 -1 1 2 1 2
-0 0 1 -3 0 1
-0 0 1 1 0 3
-0 0 3 1 0 1
-1 0 1 0 0 3
-1 0 3 0 0 1
--1 0 1 1 0 3
--1 0 3 1 0 1
-0 0 3 1 1 1
-0 1 1 1 0 3
-0 1 3 1 0 1
-1 0 1 3 0 1
-1 1 1 0 0 3
--1 1 1 1 0 3
-0 -1 3 1 1 1
--3 0 1 -2 0 0
-0 0 2 1 0 3
-0 0 3 1 0 2
--1 0 2 1 0 3
--1 0 3 1 0 2
-0 0 3 1 1 2
-0 1 2 1 0 3
--1 1 2 1 0 3
-0 -1 3 1 1 2
-2 0 -2 1 0 -3 "
-#	redstar_3pt_srcmom_snkmom="\
-#0 0 -1  0 0 0   
-#0 0 -2  0 0 0   
-#0 0 2   0 0 0   
-#0 0 0   0 0 -1  
-#0 0 0   0 0 1  " 
+	redstar_3pt="yes"
+	redstar_3pt_snkmom_srcmom="$( for (( z=-3 ; z<=3 ; ++z )) do echo "0 0 $z 0 0 $z" ; done )"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -505,7 +412,6 @@ b_b0xDX__J0_A1
 a_a1xDX__J1_T1
 a_a0xDX__J0_A1
 " # use for 3pt correlation functions
-	#redstar_insertion_operators="rho_rhoxDX__J1_T1"
 	redstar_insertion_disps="\
 z0 
 z1 3
@@ -531,7 +437,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased_2pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/unphased_pdfs/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
@@ -543,7 +449,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_2pt"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_pdfs"
 }
 
 chroma_python="$PWD/chroma_python"

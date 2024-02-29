@@ -326,7 +326,11 @@ corr_graph() {
       <smeared_glue_dbs>
       </smeared_glue_dbs>
       <prop_dbs>
-        <elem>`prop_file_name`</elem>
+`
+		for i in $( prop_file_name ); do
+			echo "<elem>$i</elem>"
+		done
+`
       </prop_dbs>
       <twoquark_discoblock_dbs>
 `
@@ -366,7 +370,9 @@ corr_graph() {
       <unsmeared_genprop4_dbs>
 `
 	if [ $redstar_3pt == yes ]; then
-        	echo "<elem>$( gprop_file_name )</elem>"
+		for i in $( gprop_file_name ); do
+			echo "<elem>$i</elem>"
+		done
 	fi
 `
       </unsmeared_genprop4_dbs>
@@ -530,8 +536,10 @@ check() {
 
 deps() {
 	echo `corr_graph_file`
-	echo `prop_file_name | tr '\n' ' '` `meson_file_name | tr '\n' ' '` `baryon_file_name | tr '\n' ' '`
 `
+	[ $redstar_use_meson == yes ] && echo echo $( meson_file_name | tr '\n' ' ' )
+	[ $redstar_use_baryon == yes -a $run_onthefly != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
+	[ $run_onthefly != yes ] && echo echo $( prop_file_name | tr '\n' ' ' )
 	[ $redstar_3pt == yes -a $run_onthefly != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
