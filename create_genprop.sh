@@ -39,6 +39,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			gprop_file="`gprop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
 
 			#
 			# Genprops creation

@@ -24,6 +24,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			prop_file="`prop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${prop_file}`
 
 			#
 			# Propagators creation
