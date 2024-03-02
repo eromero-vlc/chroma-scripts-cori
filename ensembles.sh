@@ -7,7 +7,7 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="yes"
+	run_props="nop"
 	run_gprops="yes"
 	run_baryons="yes"
 	run_mesons="nop"
@@ -56,8 +56,8 @@ ensemble0() {
 	prop_mass="-0.2070"
 	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=2
-	prop_chroma_geometry="1 1 2 8"
+	prop_slurm_nodes=3
+	prop_chroma_geometry="1 1 3 8"
 	prop_chroma_minutes=120
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
@@ -90,7 +90,7 @@ ensemble0() {
                 <Precision>HALF</Precision>
                 <Reconstruct>RECONS_8</Reconstruct>
                 <Blocking>
-                  <elem>4 3 3 4</elem>
+                  <elem>4 4 4 4</elem>
                   <elem>2 2 2 2</elem>
                 </Blocking>
                 <CoarseSolverType>
@@ -162,10 +162,10 @@ ensemble0() {
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
-	gprop_max_tslices_in_contraction=16
+	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
-	gprop_slurm_nodes=2
-	gprop_chroma_geometry="1 1 2 8"
+	gprop_slurm_nodes=3
+	gprop_chroma_geometry="1 1 3 8"
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
 	gprop_file_name() {
@@ -259,11 +259,11 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="0.00"
-	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
+	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_chroma_max_vecs=0 # as large as possible (zero means do all eigenvectors are contracted at once)
-	baryon_slurm_nodes=2
-	baryon_chroma_geometry="1 1 2 8"
+	baryon_chroma_max_vecs=1 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_slurm_nodes=3
+	baryon_chroma_geometry="1 1 3 8"
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
@@ -491,9 +491,8 @@ slurm_script_prologue="
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 #export SLURM_CPU_BIND=\"cores\"
-# GPU-aware uses too much memory
-#export SB_MPI_GPU=1
-#export MPICH_GPU_SUPPORT_ENABLED=1
+export SB_MPI_GPU=1
+export MPICH_GPU_SUPPORT_ENABLED=1
 "
 
 #

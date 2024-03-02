@@ -39,6 +39,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			gprop_file="`gprop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
 
 			#
 			# Genprops creation
@@ -85,7 +86,7 @@ for ens in $ensembles; do
 	echo "<elem>
               <t_source>${t_offset}</t_source>
               <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
-              <Nt_forward>${redstar_t_corr}</Nt_forward>
+              <Nt_forward>$(( t_sep+1 ))</Nt_forward>
               <Nt_backward>0</Nt_backward>
             </elem>"
 	done

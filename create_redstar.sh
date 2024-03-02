@@ -490,6 +490,7 @@ EOF
 				mom="${momw//_/ }"
 				[ $(num_args $mom) == 0 ] && continue
 				corr_file="`corr_file_name`"
+				[ $run_onthefly != yes ] && mkdir -p `dirname ${corr_file}`
 
 				#
 				# Correlation creation

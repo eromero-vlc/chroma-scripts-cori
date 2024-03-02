@@ -67,6 +67,7 @@ for ens in $ensembles; do
 			fi
 
 			baryon_file="`baryon_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${baryon_file}`
 
 			prefix="$runpath/baryon_${zphase}${prefix_extra}"
 			baryon_xml="${prefix}.xml"
