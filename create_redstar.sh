@@ -490,7 +490,7 @@ EOF
 				mom="${momw//_/ }"
 				[ $(num_args $mom) == 0 ] && continue
 				corr_file="`corr_file_name`"
-				[ $run_onthefly != yes ] && mkdir -p `dirname ${corr_file}`
+				mkdir -p `dirname ${corr_file}`
 
 				#
 				# Correlation creation
@@ -539,9 +539,9 @@ deps() {
 	echo `corr_graph_file`
 `
 	[ $redstar_use_meson == yes ] && echo echo $( meson_file_name | tr '\n' ' ' )
-	[ $redstar_use_baryon == yes -a $run_onthefly != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
-	[ $run_onthefly != yes ] && echo echo $( prop_file_name | tr '\n' ' ' )
-	[ $redstar_3pt == yes -a $run_onthefly != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_use_baryon == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
+	[ $run_onthefly != yes -o $run_props != yes ] && echo echo $( prop_file_name | tr '\n' ' ' )
+	[ $redstar_3pt == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }

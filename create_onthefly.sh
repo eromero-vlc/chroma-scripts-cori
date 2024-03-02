@@ -114,6 +114,7 @@ deps() {
 `
 	for t in $redstar_tasks; do
 		echo bash $t deps
+		break
 	done
 `
 }
