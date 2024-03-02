@@ -7,7 +7,7 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="yes"
+	run_props="nop"
 	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
@@ -16,7 +16,7 @@ ensemble0() {
 
 	run_onthefly="yes"
 	onthefly_chroma_minutes=120
-	max_moms_per_job=2
+	max_moms_per_job=100
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
@@ -27,7 +27,6 @@ ensemble0() {
 	#confs="`seq 2000 10 3000`"
 	#confs="`seq 1000 10 1990`"
 	confs="${confs//1920/}"
-	confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -313,7 +312,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "afs:${n}.part_$node"
+					echo "${n}.part_$node"
 				done
 			fi
 		else
@@ -327,7 +326,7 @@ ensemble0() {
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
-          <elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <!-- elem><left>0</left><middle>0</middle><right>1</right></elem>
           <elem><left>0</left><middle>0</middle><right>2</right></elem>
           <elem><left>0</left><middle>0</middle><right>3</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
@@ -344,7 +343,7 @@ ensemble0() {
           <elem><left>0</left><middle>1</middle><right>3</right></elem>
           <elem><left>0</left><middle>2</middle><right>2</right></elem>
           <elem><left>0</left><middle>2</middle><right>3</right></elem>
-          <elem><left>0</left><middle>3</middle><right>3</right></elem>
+          <elem><left>0</left><middle>3</middle><right>3</right></elem -->
         </displacement_list>
 "
 
@@ -372,14 +371,63 @@ ensemble0() {
 	redstar_use_disco="nop"
 	redstar_2pt="yes"
 	redstar_2pt_moms="\
-0 0 1
-0 0 -1
-0 0 2
-0 0 -2
-0 0 3
-0 0 -3
-0 0 0
-"
+-2 0 2
+0 2 -2
+-1 2 2
+2 2 1
+-1 0 3
+-3 0 1
+0 -1 3
+3 0 1
+1 1 1
+-1 -1 1
+-1 1 1
+0 1 -2
+-2 0 1
+-1 0 2
+0 -1 2
+1 -2 0
+-1 1 2
+-1 -2 1
+-1 0 0
+0 -1 0
+0 1 1
+-1 0 1
+0 -1 1
+-2 0 0
+1 3 1
+-2 -1 1
+1 -1 0
+-2 -2 1
+2 -2 0
+1 -1 2
+-1 3 1
+0 -2 -2
+-2 1 -1
+0 -1 -1
+-1 -2 -1
+-3 -1 -1
+-2 -2 0
+2 -1 2
+-1 1 0
+1 3 -1
+-3 0 -1
+1 -2 -2
+1 3 0
+0 -3 0
+-2 2 0
+1 -1 -1
+-1 3 -1
+-1 -3 1
+1 -3 -1
+1 -1 -3
+0 2 0
+2 2 0
+-1 1 -1
+-1 -1 -1
+1 -1 1
+0 -2 0
+0 -2 2 "
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 -1 0 1 1 0 1
@@ -483,9 +531,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased_test/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/unphased_2pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/corr/z${phase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
 	}
 	redstar_minutes=30
@@ -495,7 +543,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_test"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_2pt"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -513,6 +561,11 @@ redstar="$chromaform/install_cpu/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-su
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
+
+adat="$chromaform/install/adat-pdf-superbblas-sp"
+dbavgsrc="$adat/bin/dbavgsrc"
+dbmerge="$adat/bin/dbmerge"
+dbutil="$adat/bin/dbutil"
 
 anarchofs="$chromaform/install/anarchofs/anarchofs"
 
