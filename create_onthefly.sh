@@ -76,13 +76,14 @@ run() {
 	cat << EOFo > ${local_aux}
 `
 	i=0
-	k_split $(( (num_redstar_tasks + slurm_procs_per_node*gprop_slurm_nodes-1 ) / (slurm_procs_per_node*gprop_slurm_nodes) )) $redstar_tasks | while read js ; do
+	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read js ; do
 		echo "$i bash -c 'for t in $js; do bash \\\\\\\$t run; done'"
 		i="$((i+1))"
 	done
+	[ $num_redstar_tasks -lt $(( slurm_procs_per_node*onthefly_slurm_nodes )) ] && echo '* sleep 1'
 `
 EOFo
-	srun -n $(( num_redstar_tasks < slurm_procs_per_node*gprop_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*gprop_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
+	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
 }
 
 check() {

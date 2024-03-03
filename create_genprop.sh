@@ -86,7 +86,7 @@ for ens in $ensembles; do
 	echo "<elem>
               <t_source>${t_offset}</t_source>
               <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
-              <Nt_forward>$(( t_sep+1 ))</Nt_forward>
+              <Nt_forward>$(( tsep+1 ))</Nt_forward>
               <Nt_backward>0</Nt_backward>
             </elem>"
 	done
