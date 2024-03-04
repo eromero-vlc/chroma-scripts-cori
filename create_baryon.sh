@@ -47,9 +47,17 @@ for ens in $ensembles; do
 			baryon_moms_xml="
 <mom_list>
 	`
-		for momij in $mom_group ; do
-			mom_split ${momij//_/ }
-		done | sort -u | while read mom; do
+		if [ ${redstar_2pt} == yes ] ; then
+			for momij in $mom_group ; do
+				mom_split ${momij//_/ }
+			done
+		elif [ ${redstar_3pt} == yes ] ; then
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+				for this_momij in $mom_group ; do
+					[ $( mom_word $( mom_fly $momij ) ) == $this_momij ] && mom_split $momij
+				done
+			done
+		fi | sort -u | while read mom; do
 			echo "<elem>$mom</elem>"
 		done
 	`
