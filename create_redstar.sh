@@ -231,14 +231,11 @@ npoint_3pt() {
 	done #operatork
 }
 
-corr_graph_file() {
-	echo "$PWD/${tag}/redstar_corr_graph/corr_graph_insop${insertion_op}_m${momw}.bin"
-}
-
 corr_graph() {
-	local corr_file="$1"
-	local t_origin="$2"
-	local mom="${momw//_/ }"
+	local corr_graph_file="$1"
+	local corr_file="$2"
+	local t_origin="$3"
+	shift 3
 	echo "<?xml version=\"1.0\"?>
 <RedstarNPt>
   <Param>
@@ -262,26 +259,30 @@ corr_graph() {
     <NPointList>
 `
 	if [ $t_origin == -1 ]; then
-		if [ ${redstar_2pt} == yes -a ${insertion_op} == _2pt_ ]; then
-			operators="$( get_ops $mom )"
-			npoint_2pt "$mom" "$operators"
-		fi
-		if [ ${redstar_3pt} == yes -a ${insertion_op} != _2pt_ ]; then
-			momarray=( $mom )
-			momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
-			momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
-			operatorsi="$( get_ops $momi )"
-			operatorsj="$( get_ops $momj )"
-			momk="$( insertion_mom $momi $momj )"
-			npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
-		fi
+		for insert_op_mom_combo in "$@" ; do
+			local insert_op_mom_array=( ${insert_op_mom_combo/\~/ } )
+			local insertion_op="${insert_op_mom_array[0]}"
+			local mom="${insert_op_mom_array[1]//_/ }"
+			if [ ${redstar_2pt} == yes ] ; then
+				local operators="$( get_ops $mom )"
+				npoint_2pt "$mom" "$operators"
+			else
+				local momarray=( $mom )
+				local momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
+				local momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
+				local operatorsi="$( get_ops $momi )"
+				local operatorsj="$( get_ops $momj )"
+				local momk="$( insertion_mom $momi $momj )"
+				npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
+			fi
+		done
 	fi
 `
     </NPointList>
   </Param> 
   <DBFiles>
     <proj_op_xmls></proj_op_xmls>
-    <corr_graph_bin>$( corr_graph_file )</corr_graph_bin>
+    <corr_graph_bin>${corr_graph_file}</corr_graph_bin>
     <output_db>${corr_file}</output_db>
   </DBFiles> 
   <ColorVec>
@@ -394,36 +395,63 @@ for ens in $ensembles; do
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
 
-	all_moms_2pt=""
-	all_moms_3pt=""
-	if [ $redstar_2pt == yes ]; then
-		all_moms_2pt="`
-			echo "$redstar_2pt_moms" | while read mom; do
-				[ $(num_args $mom) == 3 ] && mom_word $mom
-			done | sort -u
-		`"
+	if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
+		echo "Unsupported to compute 2pt and 3pt on the fly at once"
+		exit 1
 	fi
-	if [ $redstar_3pt == yes ]; then
-		all_moms_3pt="`
-			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-				[ $(num_args $momij) == 6 ] && mom_word $momij
-			done | sort -u
-		`"
-	fi
+	mom_groups="`
+		(
+			[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
+			[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
+		) | while read momij; do
+			[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
+		done | sort -u
+	`"
+
+	[ ${run_onthefly} != yes ] && max_moms_per_job=1
 
 	corr_runpath="$PWD/${tag}/redstar_corr_graph"
 	mkdir -p $corr_runpath
-	for insertion_op in "_2pt_" $redstar_insertion_operators; do
-		[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
-		[ ${redstar_3pt} != yes -a ${insertion_op} != _2pt_ ] && continue
-		all_moms="$all_moms_2pt"
-		[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
 
-		echo "$all_moms" | while read momw; do
+	template_runpath="$PWD/${tag}/redstar_template"
+	mkdir -p ${template_runpath}
+	cfg="@CFG"
+	runpath="$PWD/${tag}/conf_${cfg}"
+	rm -f ${redstar_files}*
 
-		corr_graph_bin="`corr_graph_file`"
-		output="${corr_graph_bin}.out"
-		cat << EOF > ${corr_graph_bin}.sh
+	k_split $max_moms_per_job $mom_groups | while read mom_group ; do
+		echo mom group $mom_group
+		mom_leader="`take_first $mom_group`"
+		if [ ${redstar_2pt} == yes ]; then
+			all_insert_ops="_2pt_"
+		else
+			all_insert_ops="$redstar_insertion_operators"
+		fi
+		this_all_moms="$(
+			if [ ${redstar_2pt} == yes ] ; then
+				echo "$redstar_2pt_moms" | while read momij; do
+					for this_momij in $mom_group ; do
+						[ $( mom_word $( mom_fly $momij ) ) == $this_momij ] && mom_word $momij
+					done
+				done
+			else
+				echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+					for this_momij in $mom_group ; do
+						[ $( mom_word $( mom_fly $momij ) ) == $this_momij ] && mom_word $momij
+					done
+				done
+			fi | sort -u | while read mom ; do
+				for insert_op in $all_insert_ops ; do
+					echo ${insert_op}~${mom}
+				done
+			done
+		)"
+		#echo this_all_moms= ${this_all_moms}
+		combo_line=0
+		k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $this_all_moms | while read insert_op_mom_combos ; do
+			corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}.bin"
+			output="${corr_graph_bin}.out"
+			cat << EOF > ${corr_graph_bin}.sh
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -440,7 +468,7 @@ run() {
 	cd \$tmp_runpath
 	rm -f ${corr_graph_bin}
 	cat << EOFeof > corr_graph.xml
-$( corr_graph "none" "-1" )
+$( corr_graph "${corr_graph_bin}" "none" "-1" $insert_op_mom_combos )
 EOFeof
 	echo Starting $redstar_corr_graph corr_graph.xml output_xml > $output
 	$redstar_corr_graph corr_graph.xml output_xml &>> $output
@@ -468,44 +496,19 @@ globus() { echo -n; }
 eval "\${1:-run}"
 EOF
 
-		done # momw
-	done # insertion_op
-
-	template_runpath="$PWD/${tag}/redstar_template"
-	mkdir -p ${template_runpath}
-	cfg="@CFG"
-	runpath="$PWD/${tag}/conf_${cfg}"
-	rm -f ${redstar_files}*
-
-	for t_source in $prop_t_sources; do
-		for insertion_op in "_2pt_" $redstar_insertion_operators; do
-			[ ${redstar_2pt} != yes -a ${insertion_op} == _2pt_ ] && continue
-			[ ${redstar_3pt} != yes -a ${insertion_op} != _2pt_ ] && continue
-			all_moms="$all_moms_2pt"
-			[ ${insertion_op} != _2pt_ ] && all_moms="$all_moms_3pt"
-
-			for zphase in $prop_zphases; do
-			echo "$all_moms" | while read momw; do
-
-				mom="${momw//_/ }"
-				[ $(num_args $mom) == 0 ] && continue
-				corr_file="`corr_file_name`"
-				mkdir -p `dirname ${corr_file}`
-
-				#
-				# Correlation creation
-				#
-
-				momf="$( mom_word $( mom_fly ${momw//_/ } ) )"
-				prefix="t${t_source}_insop${insertion_op}_m${momw}_z${zphase}_mf${momf}"
-				redstar_xml="redstar_${prefix}.xml"
-				output_xml="redstar_xml_out_${prefix}.out"
-				output="$runpath/redstar_${prefix}.out"
-				redstar_sh="redstar_${prefix}.sh"
-				[ $run_onthefly == yes ] && redstar_sh+=".future"
-				redstar_sh+=".template"
-				echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
-				cat << EOF > $template_runpath/${redstar_sh}
+			for t_source in $prop_t_sources; do
+				for zphase in $prop_zphases; do
+					corr_file="`mom=${mom_leader} insertion_op=${combo_line} corr_file_name`"
+					mkdir -p `dirname ${corr_file}`
+					prefix="t${t_source}_insop${combo_line}_z${zphase}_mf${mom_leader}"
+					redstar_xml="redstar_${prefix}.xml"
+					output_xml="redstar_xml_out_${prefix}.out"
+					output="$runpath/redstar_${prefix}.out"
+					redstar_sh="redstar_${prefix}.sh"
+					[ $run_onthefly == yes ] && redstar_sh+=".future"
+					redstar_sh+=".template"
+					echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
+					cat << EOF > $template_runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -522,7 +525,7 @@ run() {
 	cd \$tmp_runpath
 	rm -f ${corr_file}
 	cat << EOFeof > redstar.xml
-$( corr_graph "$corr_file" "@T_ORIGIN" )
+$( corr_graph "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
 	echo Starting $redstar_npt redstar.xml output.xml > $output
@@ -536,7 +539,7 @@ check() {
 }
 
 deps() {
-	echo `corr_graph_file`
+	echo ${corr_graph_bin}
 `
 	[ $redstar_use_meson == yes ] && echo echo $( meson_file_name | tr '\n' ' ' )
 	[ $redstar_use_baryon == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
@@ -561,11 +564,12 @@ globus() {
 
 eval "\${1:-run}"
 EOF
+				done # zphase
+			done # t_source
 
-	done # insertion_op
-	done # mom
-	done # zphase
-	done # t_source
+			combo_line="$(( combo_line+1 ))"
+		done # insert_op_mom_combos
+	done # mom_group
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"

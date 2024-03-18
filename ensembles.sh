@@ -16,7 +16,7 @@ ensemble0() {
 
 	run_onthefly="yes"
 	onthefly_chroma_minutes=120
-	max_moms_per_job=100
+	max_moms_per_job=2
 
 	# Ensemble properties
 	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
@@ -442,8 +442,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 			echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
 	}
+	redstar_slurm_nodes=3
 	redstar_minutes=30
-	redstar_jobs_per_node=8
+	redstar_jobs_per_node=8 # use for computing corr graphs
 	redstar_max_concurrent_jobs=24000
 	redstar_transfer_back="nop"
 	redstar_delete_after_transfer_back="nop"
