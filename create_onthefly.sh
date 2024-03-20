@@ -45,7 +45,6 @@ for ens in $ensembles; do
 
 			prefix="onthfly_t${t_source}_z${zphase}_mf${mom_leader}"
 			output="$runpath/${prefix}.out"
-			local_aux="${localpath}/${runpath//\//_}_${prefix}.aux"
 			cat << EOF > $runpath/${prefix}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/${prefix}.out0
@@ -68,22 +67,17 @@ run() {
 		bash $prop_script run
 		sleep 30
 	fi
-	if [ $run_gprops == yes -o $run_baryons == yes -o $run_props == yes ] ; then
-		srun --overlap -s -G 0 \$MY_ARGS -N $onthefly_slurm_nodes -n $onthefly_slurm_nodes $anarchofs &
-		sleep 30
-	fi
 
-	cat << EOFo > ${local_aux}
+	$slurm_script_prologue_redstar
+	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash -l -c '
 `
 	i=0
-	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read js ; do
-		echo "$i bash -c 'for t in $js; do bash \\\\\\\$t run; done'"
+	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
+		echo "[ \\\$SLURM_PROCID == $i ] && bash -l $j run"
 		i="$((i+1))"
 	done
-	[ $num_redstar_tasks -lt $(( slurm_procs_per_node*onthefly_slurm_nodes )) ] && echo '* sleep 1'
 `
-EOFo
-	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 --multi-prog ${local_aux}
+'
 }
 
 check() {

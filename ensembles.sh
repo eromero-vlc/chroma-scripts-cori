@@ -18,13 +18,21 @@ ensemble0() {
 	onthefly_chroma_minutes=120
 	max_moms_per_job=2
 
+	#run_eigs="nop"
+	#run_props="yes"
+	#run_gprops="nop"
+	#run_baryons="nop"
+	#run_mesons="nop"
+	#run_discos="nop"
+	#run_redstar="nop"
+	#run_onthefly="nop"
+
 	# Ensemble properties
 	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
 	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
-	confs="`seq 1000 10 4990`"
-	confs=1010
+	confs="`seq 1010 30 2000`"
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
 
@@ -524,7 +532,7 @@ slurm_script_prologue_redstar="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=7
+export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 #export SLURM_CPU_BIND=\"cores\"
 #export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "

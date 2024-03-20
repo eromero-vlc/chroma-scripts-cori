@@ -446,7 +446,6 @@ for ens in $ensembles; do
 				done
 			done
 		)"
-		#echo this_all_moms= ${this_all_moms}
 		combo_line=0
 		k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $this_all_moms | while read insert_op_mom_combos ; do
 			corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}.bin"
