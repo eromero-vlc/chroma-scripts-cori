@@ -52,7 +52,10 @@ for ens in $ensembles; do
 	# Checking for configurations with all expected correlation functions
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
-		[ -f $lime_file ] || continue
+		if ! [ -f $lime_file ] ; then
+			echo Excluding $cfg >&2
+			continue
+		fi
 		file="$( for t_source in $prop_t_sources ; do
 			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
 		done )"
@@ -92,7 +95,9 @@ for ens in $ensembles; do
 				echo creating final $corr_file_avg
 				mkdir -p `dirname $corr_file_avg`
 				rm -f $corr_file_avg
-				$dbavgsrc $corr_file_avg `for t_source in $prop_t_sources ; do cfg= corr_file_name | sed 's/sdb/edb/g' ; done`
+				factor="$( echo "1" "/" "$(num_args $prop_t_sources)" | bc -l )"
+				# NOTE: don't use dbavgsrc, it won't average the times sourcs, that's a UI bug!
+				$dbavg $corr_file_avg $( for t_source in $prop_t_sources ; do echo $( cfg= corr_file_name | sed 's/sdb/edb/g' ) $factor ; done )
 
 				# Extract the content
 				(

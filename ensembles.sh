@@ -7,7 +7,7 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
+	run_props="yes"
 	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
@@ -564,6 +564,7 @@ redstar_npt="$redstar/bin/redstar_npt"
 
 adat="$chromaform/install/adat-pdf-superbblas-sp"
 dbavgsrc="$adat/bin/dbavgsrc"
+dbavg="$adat/bin/dbavg"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
 
