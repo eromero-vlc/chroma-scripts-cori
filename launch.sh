@@ -67,9 +67,7 @@ sort $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jo
 done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max_concurrent_jobs jobs; do
 	# Remove the tracking for all files that are going to be created
 	for j in $jobs; do
-		for f in `bash $j outs`; do
-			rm -f ${f}.launched
-		done
+		rm -f $( for f in `bash $j outs`; do echo ${f}.launched; done )
 	done
 
 	# Wrap jobs that need a fraction of a node into full node jobs
