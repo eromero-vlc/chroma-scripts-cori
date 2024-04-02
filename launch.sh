@@ -67,9 +67,7 @@ sort $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jo
 done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max_concurrent_jobs jobs; do
 	# Remove the tracking for all files that are going to be created
 	for j in $jobs; do
-		for f in `bash $j outs`; do
-			rm -f ${f}.launched
-		done
+		rm -f $( for f in `bash $j outs`; do echo ${f}.launched; done )
 	done
 
 	# Wrap jobs that need a fraction of a node into full node jobs
@@ -103,7 +101,7 @@ EOF
 	# total SLURM jobs to launch
 	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
 	num_bundle_jobs="$(( num_bundle_jobs < min_slurm_jobs ? min_slurm_jobs : num_bundle_jobs ))"
-	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? 100 : num_bundle_jobs / min_slurm_jobs ))"
+	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? num_bundle_jobs : num_bundle_jobs / min_slurm_jobs ))"
 	# maximum number of jobs running on a single SLURM job
 	max_jobs_in_bundle="$(( (num_jobs+num_bundle_jobs-1)/num_bundle_jobs ))"
 	# maximum number of parallel jobs inside a SLURM job

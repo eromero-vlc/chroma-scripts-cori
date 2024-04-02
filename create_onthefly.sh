@@ -39,7 +39,7 @@ for ens in $ensembles; do
 			gprop_script="${runpath}/gprop_t${t_source}_z${zphase}_mf${mom_leader}.sh.future"
 			prop_script="${runpath}/prop_t${t_source}_z${zphase}.sh.future"
 
-			redstar_tasks="$( for mom in $mom_group; do ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom}.sh.future; done )"
+			redstar_tasks="$( ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom_leader}.sh.future )"
 			num_redstar_tasks="$( num_args $redstar_tasks )"
 			[ $num_redstar_tasks == 0 ] && continue
 
