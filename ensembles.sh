@@ -24,9 +24,8 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
-	confs="`seq 1000 10 2000`"
-	confs="`seq 2010 10 4500`"
-	#confs="`seq 1000 10 1990`"
+	#confs="`seq 1000 10 2000`"
+	#confs="`seq 2010 10 4500`"
 	confs="${confs//1920/}"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
