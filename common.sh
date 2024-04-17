@@ -98,3 +98,27 @@ k_split() {
 		fi
 	done
 }
+
+# k_split n args...
+# Return args... broken in different up to <n> lines
+k_split_lines() {
+	local n i f num_args line
+	n="$1"
+	shift
+	num_args="$#"
+	i=0
+	line=0
+	for f in "$@" "__last_file__"; do
+		if [ $f != "__last_file__" ]; then
+			echo -n "$f "
+			i="$(( i+1 ))"
+			if [ $i == $(( num_args/n + (line<num_args%n ? 1 : 0) )) ]; then
+				i="0"
+				line="$(( line+1 ))"
+				echo
+			fi
+		else
+			[ $i != 0 ] && echo
+		fi
+	done
+}

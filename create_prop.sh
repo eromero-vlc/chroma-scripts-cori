@@ -24,6 +24,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			prop_file="`prop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${prop_file}`
 
 			#
 			# Propagators creation
@@ -52,6 +53,8 @@ for ens in $ensembles; do
           <num_tries>-1</num_tries>
           <max_rhs>1</max_rhs>
           <phase>0.00 0.00 $zphase</phase>
+          <use_superb_format>true</use_superb_format>
+          <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         </Contractions>
         <Propagator>
           <version>10</version>

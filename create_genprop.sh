@@ -39,6 +39,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			gprop_file="`gprop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
 
 			#
 			# Genprops creation
@@ -165,7 +166,7 @@ EOF
 			output="${prefix}.out"
 			script="${prefix}.sh"
 			[ $run_onthefly == yes ] && script="${script}.future"
-			cat << EOF > $runpath/${script}
+			cat << EOF > ${script}
 $slurm_sbatch_prologue
 #SBATCH -o ${prefix}.out0
 #SBATCH -t $gprop_chroma_minutes
