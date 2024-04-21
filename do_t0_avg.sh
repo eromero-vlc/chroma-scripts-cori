@@ -73,7 +73,7 @@ for ens in $ensembles; do
 			echo Excluding $cfg >&2
 			continue
 		fi
-		file="$( for t_source in $prop_t_sources ; do
+		files="$( for t_source in $prop_t_sources ; do
 			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
 		done )"
 		if ls $files &> /dev/null ; then
@@ -108,9 +108,7 @@ for ens in $ensembles; do
 				echo creating final $corr_file_avg
 				mkdir -p `dirname $corr_file_avg`
 				rm -f $corr_file_avg
-				factor="$( echo "1" "/" "$(num_args $prop_t_sources)" | bc -l )"
-				# NOTE: don't use dbavgsrc, it won't average the times sourcs, that's a UI bug!
-				$dbavg $corr_file_avg $( for t_source in $prop_t_sources ; do echo $( cfg= corr_file_name | sed 's/sdb/edb/g' ) $factor ; done )
+				$dbavgsrc $corr_file_avg $( for t_source in $prop_t_sources ; do echo $( cfg= corr_file_name | sed 's/sdb/edb/g' ) ; done )
 
 				# Extract the content
 				(
