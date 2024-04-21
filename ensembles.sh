@@ -152,6 +152,12 @@ ensemble0() {
 		else
 			echo $n
 		fi
+		if [ $run_onthefly == yes -a $run_props == yes ] ; then
+			prot=""
+			[ x$1 != xsingle ] && prot="afs:"
+			n="${prot}${localpath}/${n//\//_}"
+		fi
+		echo $n
 	}
 	prop_transfer_back="nop"
 	prop_delete_after_transfer_back="nop"
@@ -184,7 +190,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<gprop_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "${n}.part_$node"
+					echo "afs:${n}.part_$node"
 				done
 			fi
 		else
@@ -280,7 +286,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "${n}.part_$node"
+					echo "afs:${n}.part_$node"
 				done
 			fi
 		else
@@ -463,7 +469,11 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			if [ $t_source == avg ]; then
+				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			else
+				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			fi
 		else
 			if [ $t_source == avg ]; then
 				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
@@ -496,7 +506,6 @@ chromaform="$HOME/scratch/chromaform_rocm5.5"
 chroma="$chromaform/install-rocm5.4/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install_cpu/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas-sp"
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar="$chromaform/install-rocm5.4/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
@@ -508,8 +517,6 @@ dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
-
-anarchofs="$chromaform/install/anarchofs/anarchofs"
 
 slurm_procs_per_node=8
 slurm_cores_per_node=56
@@ -576,7 +583,6 @@ max_hours=2 # maximum hours for a single job
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
 confspath="$HOME/scratch"
-this_ep="ef1a9560-7ca1-11e5-992c-22000b96db58:scratch/"  # frontier
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
