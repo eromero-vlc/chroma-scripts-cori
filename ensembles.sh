@@ -24,9 +24,6 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
-	#confs="`seq 1000 10 2000`"
-	#confs="`seq 2010 10 4500`"
-	confs="${confs//1920/}"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -403,24 +400,30 @@ ensemble0() {
 0 -2 2 "
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
-0 0 5   1 0 5
-0 0 4   0 1 4
-0 0 5   0 1 5
-0 0 6   0 1 6
-0 0 4   1 0 4
-0 0 5   1 1 5
-0 0 6   1 0 6
-0 0 4   1 1 4
-0 1 4   1 1 4
-1 0 4   1 1 4
-1 0 6   1 1 6
-0 1 5   1 1 5
-1 0 5   1 1 5
-0 0 6   1 1 6
-0 1 6   1 1 6
-1 0 4   2 0 4
-1 0 5   2 0 5
-1 0 6   2 0 6 "
+1 0 5   0 0 5   
+0 1 4   0 0 4   
+0 1 5   0 0 5   
+0 1 6   0 0 6   
+1 0 4   0 0 4   
+1 1 5   0 0 5   
+1 0 6   0 0 6   
+1 1 4   0 0 4   
+1 1 4   0 1 4   
+1 1 4   1 0 4   
+1 1 6   1 0 6   
+1 1 5   0 1 5   
+1 1 5   1 0 5   
+1 1 6   0 0 6   
+1 1 6   0 1 6   
+2 0 4   1 0 4   
+2 0 5   1 0 5   
+2 0 6   1 0 6"
+	redstar_2pt_moms="$(
+		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+			echo $m0 $m1 $m2
+			echo $m3 $m4 $m5
+		done | sort -u
+)"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -462,9 +465,17 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			if [ $t_source == avg ]; then
+				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			else
+				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			fi
 		else
-			echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			if [ $t_source == avg ]; then
+				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			else
+				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			fi
 		fi
 	}
 	redstar_slurm_nodes=1

@@ -60,8 +60,7 @@ for ens in $ensembles; do
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
 			for momw in $mom_leaders; do
-				mom="${momw}" # Fix in general
-				corr_file_name
+				mom="${momw//_/ }" corr_file_name
 			done # momw
 		done # insertion_op
 	done > $redstar_files  # zphase
@@ -73,7 +72,7 @@ for ens in $ensembles; do
 			echo Excluding $cfg >&2
 			continue
 		fi
-		file="$( for t_source in $prop_t_sources ; do
+		files="$( for t_source in $prop_t_sources ; do
 			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
 		done )"
 		if ls $files &> /dev/null ; then
@@ -87,7 +86,7 @@ for ens in $ensembles; do
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
 			for momw in $mom_leaders; do
-				mom="${momw}" # Fix in general
+				mom="${momw//_/ }"
 
 				for t_source in $prop_t_sources ; do
 					cfg_number=0
