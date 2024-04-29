@@ -8,7 +8,7 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
-	run_gprops="yes"
+	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
@@ -152,12 +152,6 @@ ensemble0() {
 		else
 			echo $n
 		fi
-		if [ $run_onthefly == yes -a $run_props == yes ] ; then
-			prot=""
-			[ x$1 != xsingle ] && prot="afs:"
-			n="${prot}${localpath}/${n//\//_}"
-		fi
-		echo $n
 	}
 	prop_transfer_back="nop"
 	prop_delete_after_transfer_back="nop"
@@ -286,7 +280,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "afs:${n}.part_$node"
+					echo "${n}.part_$node"
 				done
 			fi
 		else
@@ -343,66 +337,69 @@ ensemble0() {
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
-	redstar_2pt="nop"
+	redstar_2pt="yes"
 	redstar_2pt_moms="\
--2 0 2
-0 2 -2
--1 2 2
-2 2 1
--1 0 3
--3 0 1
-0 -1 3
-3 0 1
-1 1 1
--1 -1 1
--1 1 1
-0 1 -2
--2 0 1
--1 0 2
-0 -1 2
-1 -2 0
--1 1 2
--1 -2 1
--1 0 0
-0 -1 0
-0 1 1
--1 0 1
-0 -1 1
--2 0 0
-1 3 1
--2 -1 1
-1 -1 0
--2 -2 1
-2 -2 0
-1 -1 2
--1 3 1
-0 -2 -2
--2 1 -1
-0 -1 -1
--1 -2 -1
--3 -1 -1
--2 -2 0
-2 -1 2
--1 1 0
-1 3 -1
--3 0 -1
-1 -2 -2
-1 3 0
-0 -3 0
--2 2 0
-1 -1 -1
--1 3 -1
--1 -3 1
-1 -3 -1
-1 -1 -3
-0 2 0
-2 2 0
--1 1 -1
--1 -1 -1
-1 -1 1
-0 -2 0
-0 -2 2 "
-	redstar_3pt="yes"
+1 1 4
+0 1 4
+0 0 4
+1 1 6
+1 0 6
+1 0 5
+0 0 5
+0 1 6
+0 0 6
+1 0 4
+2 0 5
+1 1 5
+2 0 4
+2 0 6
+0 1 5
+0 4 -2
+-4 -2 3
+3 4 0
+-3 1 -4
+-5 0 -2
+-4 0 1
+-1 -5 1
+-1 -4 -3
+-3 -2 2
+-6 1 0
+0 3 4
+-3 -2 -5
+-3 2 -2
+-2 -4 0
+6 1 1
+6 0 -2
+0 3 3
+6 0 2
+-1 6 1
+-1 0 6
+1 4 3
+0 6 -1
+-2 -6 0
+4 3 2
+-4 0 3
+-2 6 0
+-2 0 -5
+0 -2 -4
+-3 2 -5
+-4 0 0
+3 -3 3
+2 0 -4
+-3 -3 0
+3 0 -4
+4 4 2
+3 3 3
+4 2 -4
+-3 0 -3
+2 4 -4
+4 4 -2
+-3 0 3
+-3 3 -3
+0 -4 0
+0 0 -4
+0 4 0 "
+	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
 0 1 4   0 0 4   
@@ -422,12 +419,6 @@ ensemble0() {
 2 0 4   1 0 4   
 2 0 5   1 0 5   
 2 0 6   1 0 6"
-	redstar_2pt_moms="$(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
-			echo $m0 $m1 $m2
-			echo $m3 $m4 $m5
-		done | sort -u
-)"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -476,9 +467,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
@@ -490,7 +481,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/z2.00"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/z2.00-2pt"
 }
 
 chroma_python="$PWD/chroma_python"
