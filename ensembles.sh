@@ -54,7 +54,7 @@ ensemble0() {
 	prop_t_back=0
 	prop_nvec=64
 	prop_zphases="0.00 2.00 -2.00"
-	prop_zphases="2.00"
+	prop_zphases="0.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -339,66 +339,19 @@ ensemble0() {
 	redstar_use_disco="nop"
 	redstar_2pt="yes"
 	redstar_2pt_moms="\
-1 1 4
-0 1 4
-0 0 4
-1 1 6
-1 0 6
-1 0 5
-0 0 5
-0 1 6
-0 0 6
-1 0 4
-2 0 5
-1 1 5
-2 0 4
-2 0 6
-0 1 5
-0 4 -2
--4 -2 3
-3 4 0
--3 1 -4
--5 0 -2
--4 0 1
--1 -5 1
--1 -4 -3
--3 -2 2
--6 1 0
-0 3 4
--3 -2 -5
--3 2 -2
--2 -4 0
-6 1 1
-6 0 -2
-0 3 3
-6 0 2
--1 6 1
--1 0 6
-1 4 3
-0 6 -1
--2 -6 0
-4 3 2
--4 0 3
--2 6 0
--2 0 -5
-0 -2 -4
--3 2 -5
--4 0 0
-3 -3 3
-2 0 -4
--3 -3 0
-3 0 -4
-4 4 2
-3 3 3
-4 2 -4
--3 0 -3
-2 4 -4
-4 4 -2
--3 0 3
--3 3 -3
-0 -4 0
-0 0 -4
-0 4 0 "
+0 0 0
+0 0 1
+1 0 0
+1 -1 0
+-1 1 0
+1 0 -1
+0 2 1
+2 0 1
+1 0 2
+0 2 2
+2 0 2
+2 2 1
+1 2 2 "
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
@@ -461,9 +414,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased_extra/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased_extra/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
@@ -481,7 +434,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/z2.00-2pt"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/z2.00-2pt-none"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -524,7 +477,7 @@ slurm_script_prologue="
 . $chromaform/env_extra_rocm5.4_0.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
-#export SLURM_CPU_BIND=\"cores\"
+export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 export MPICH_GPU_SUPPORT_ENABLED=1
 "
@@ -557,6 +510,7 @@ slurm_script_prologue_redstar="
 . $chromaform/env_rocm5.4.sh
 . $chromaform/env_extra_rocm5.4.sh
 export OPENBLAS_NUM_THREADS=1
+export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 "
