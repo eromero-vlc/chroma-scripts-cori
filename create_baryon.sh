@@ -9,21 +9,19 @@ for ens in $ensembles; do
 	# Check for running baryons
 	[ $run_baryons != yes ] && continue
 
-	moms="all"
-	if [ $run_onthefly == yes ]; then
-		if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
-			echo "Unsupported to compute 2pt and 3pt on the fly at once"
-			exit 1
-		fi
-		moms="`
-			(
-				[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
-				[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
-			) | while read momij; do
-				[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
-			done | sort -u
-		`"
+	if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
+		echo "Unsupported to compute 2pt and 3pt on the fly at once"
+		exit 1
 	fi
+	moms="`
+		(
+			[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
+			[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
+		) | while read momij; do
+			[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
+		done | sort -u
+	`"
+
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -40,7 +38,7 @@ for ens in $ensembles; do
 
 			t_sources="all"
 			[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
-			[ ${run_onthefly} != yes ] && max_moms_per_job=1
+			[ ${run_onthefly} != yes ] && max_moms_per_job=100000000
 			for t_source in $t_sources; do
 			k_split $max_moms_per_job $moms | while read mom_group ; do
 
