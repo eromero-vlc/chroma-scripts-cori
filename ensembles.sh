@@ -7,14 +7,14 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="yes"
+	run_props="nop"
 	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
-	run_redstar="yes"
+	run_redstar="nop"
 
-	run_onthefly="yes"
+	run_onthefly="nop"
 	onthefly_chroma_minutes=120
 	max_moms_per_job=100
 
@@ -24,6 +24,8 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 5170 10 20070`"
+	confs="`seq 5170 10 10990`"
+	confs="`seq 11000 10 20070`"
 	#confs=5170
 	#confs="`seq 10010 10 20070`"
 	#confs="`seq 5170 10 10000`"
@@ -261,12 +263,12 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="${prop_zphases}"
-	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
+	baryon_chroma_max_tslices_in_contraction=8 # as large as possible
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_chroma_max_vecs=2 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_chroma_max_vecs=64 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
-	baryon_chroma_minutes=120
+	baryon_chroma_minutes=60
 	baryon_file_name() {
 		local n node
 		if [ ${zphase} == 0.00 ]; then
@@ -294,7 +296,7 @@ ensemble0() {
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
-          <!-- elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1</right></elem>
           <elem><left>0</left><middle>0</middle><right>2</right></elem>
           <elem><left>0</left><middle>0</middle><right>3</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
@@ -311,7 +313,7 @@ ensemble0() {
           <elem><left>0</left><middle>1</middle><right>3</right></elem>
           <elem><left>0</left><middle>2</middle><right>2</right></elem>
           <elem><left>0</left><middle>2</middle><right>3</right></elem>
-          <elem><left>0</left><middle>3</middle><right>3</right></elem -->
+          <elem><left>0</left><middle>3</middle><right>3</right></elem>
         </displacement_list>
 "
 
@@ -341,17 +343,12 @@ ensemble0() {
 	redstar_2pt_moms="\
 0 0 0
 0 0 1
-1 0 0
-1 -1 0
--1 1 0
-1 0 -1
-0 2 1
-2 0 1
-1 0 2
-0 2 2
-2 0 2
-2 2 1
-1 2 2 "
+0 0 2
+0 0 3
+0 0 -1
+0 0 -2
+0 0 -3 "
+
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
