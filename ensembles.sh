@@ -148,12 +148,6 @@ ensemble0() {
 		else
 			echo $n
 		fi
-		if [ $run_onthefly == yes -a $run_props == yes ] ; then
-			prot=""
-			[ x$1 != xsingle ] && prot="afs:"
-			n="${prot}${localpath}/${n//\//_}"
-		fi
-		echo $n
 	}
 	prop_transfer_back="nop"
 	prop_delete_after_transfer_back="nop"
@@ -336,9 +330,6 @@ ensemble0() {
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_use_meson="nop"
-	redstar_use_baryon="yes"
-	redstar_use_disco="nop"
 	redstar_2pt="nop"
 	redstar_2pt_moms="\
 -2 0 2
@@ -424,6 +415,7 @@ ensemble0() {
 			echo $m3 $m4 $m5
 		done | sort -u
 )"
+	redstar_disco="nop" # contracting for disco
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -459,6 +451,14 @@ zn6 -3 -3 -3 -3 -3 -3
 zn7 -3 -3 -3 -3 -3 -3 -3
 zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	gprop_insertion_disps="${redstar_insertion_disps}"
+	redstar_use_meson="nop"
+	redstar_use_baryon="yes"
+	redstar_use_gprops="`
+		if [ $redstar_3pt == yes -a $redstar_disco != yes ] ; then echo yes ; else echo nop ; fi
+`"
+	redstar_use_disco="`
+		if [ $redstar_3pt == yes -a $redstar_disco == yes ] ; then echo yes ; else echo nop ; fi
+`"
 	rename_moms() {
 		[ $# == 3 ] && echo "mom$1.$2.$3"
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
@@ -498,8 +498,6 @@ PYTHON=python3
 
 chromaform="$HOME/chromaform_frontier_rocm5.4"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-chromaform="$HOME/scratch/chromaform_rocm5.5"
-chroma="$chromaform/install-rocm5.4/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"

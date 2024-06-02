@@ -51,9 +51,17 @@ get_ops() {
 
 operator_rows() {
 	case $1 in
-		pion*|b_b0*|a_a0*) echo 1 ;;
+		pion*|b_b0*|a_a0*|hc_b0*) echo 1 ;;
 		rho_rho*|b_b1*|a_a1*) echo 1 2 3 ;;
 		*) echo "operator_rows: $1 ?" >&2; exit 1;;
+	esac
+}
+
+operator_twoI() {
+	case $1 in
+		hc_b0*) echo 0 ;;
+		pion*|b_b0*|a_a0*|rho_rho*|b_b1*|a_a1*) echo 2 ;;
+		*) echo "operator_twoI: $1 ?" >&2; exit 1;;
 	esac
 }
 
@@ -177,7 +185,7 @@ npoint_3pt() {
                  <creation_op>true</creation_op>
                  <smearedP>false</smearedP>
                  <flavor>
-                   <twoI>2</twoI>
+                   <twoI>$( operator_twoI $operatork )</twoI>
                    <threeY>0</threeY>
                    <twoI_z>0</twoI_z>
                  </flavor>
@@ -241,7 +249,7 @@ corr_graph() {
   <Param>
     <version>12</version>
     <diagnostic_level>0</diagnostic_level>
-    <autoIrrepCG>false</autoIrrepCG>
+    <autoIrrepCG>true</autoIrrepCG>
     <rephaseIrrepCG>false</rephaseIrrepCG>
     <Nt_corr>${redstar_t_corr}</Nt_corr>
     <convertUDtoL>true</convertUDtoL>
@@ -297,7 +305,7 @@ corr_graph() {
       <FlavorToMass>
         <elem>
           <flavor>c</flavor>
-          <mass>U0.20</mass>
+          <mass>U${prop_mass}</mass>
         </elem>
         <elem>
           <flavor>e</flavor>
@@ -370,7 +378,7 @@ corr_graph() {
       </hadron2pt_discoblock_dbs>
       <unsmeared_genprop4_dbs>
 `
-	if [ $redstar_3pt == yes ]; then
+	if [ $redstar_use_gprops == yes ]; then
 		for i in $( gprop_file_name ); do
 			echo "<elem>$i</elem>"
 		done
@@ -395,8 +403,8 @@ for ens in $ensembles; do
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
 
-	if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
-		echo "Unsupported to compute 2pt and 3pt on the fly at once"
+	if [ ${redstar_2pt} == yes -a ${redstar_disco} == yes ] ; then
+		echo "Unsupported to compute 2pt and disco correlation functions"
 		exit 1
 	fi
 	mom_groups="`
@@ -542,7 +550,7 @@ deps() {
 	[ $redstar_use_meson == yes ] && echo echo $( meson_file_name | tr '\n' ' ' )
 	[ $redstar_use_baryon == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
 	[ $run_onthefly != yes -o $run_props != yes ] && echo echo $( prop_file_name | tr '\n' ' ' )
-	[ $redstar_3pt == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_use_gprops == yes ] && [ $run_onthefly != yes -o $run_gprops != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }
