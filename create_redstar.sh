@@ -2,61 +2,6 @@
 
 source ensembles.sh
 
-momtype() {
-	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
-}
-
-num_zeros_mom() {
-	local n=0
-	for i in $@; do
-		[ "$i" == 0 ] && n="$(( n+1 ))"
-	done
-	echo $n
-}
-
-mom_letters() {
-	if [ $# != 3 ]; then
-		echo "mom_letters should get three args"  >&2
-		exit 1
-	fi
-	echo "`momtype $@`" | while read momx momy momz; do
-		if [ $momx == 0 -a $momy == 0 -a $momz == 0 ]; then
-			echo 000
-		elif [ $momx != 0 -a $momy == 0 -a $momz == 0 ]; then
-			echo n00
-		elif [ $momx == $momy -a $momz == 0 ]; then
-			echo nn0
-		elif [ $momx != $momy -a $momz == 0 ]; then
-			echo nm0
-		elif [ $momx == $momy -a $momx == $momz ]; then
-			echo nnn
-		elif [ $momx == $momy -o $momy == $momz ]; then
-			echo nnm
-		else
-			echo nmk
-		fi
-	done
-}
-
-insertion_mom() {
-	echo "$@" | while read momix momiy momiz momjx momjy momjz; do
-		echo "$(( momix - momjx )) $(( momiy - momjy )) $(( momiz - momjz ))"
-	done
-}
-
-get_ops() {
-	varname="redstar_`mom_letters $@`"
-	echo "${!varname}"
-}
-
-operator_rows() {
-	case $1 in
-		pion*|b_b0*|a_a0*|hc_b0*) echo 1 ;;
-		rho_rho*|b_b1*|a_a1*) echo 1 2 3 ;;
-		*) echo "operator_rows: $1 ?" >&2; exit 1;;
-	esac
-}
-
 operator_twoI() {
 	case $1 in
 		hc_b0*) echo 0 ;;
@@ -454,7 +399,9 @@ for ens in $ensembles; do
 			done
 		)"
 		combo_line=0
-		k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $this_all_moms | while read insert_op_mom_combos ; do
+		max_jobs="$(( slurm_procs_per_node*redstar_slurm_nodes ))"
+		[ $run_onthefly == yes -a  $onthefly_all_tsources_per_job == yes ] && max_jobs=1
+		k_split_lines $max_jobs $this_all_moms | while read insert_op_mom_combos ; do
 			corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}.bin"
 			output="${corr_graph_bin}.out"
 			cat << EOF > ${corr_graph_bin}.sh
@@ -499,7 +446,12 @@ class() {
 
 globus() { echo -n; }
 
-eval "\${1:-run}"
+run_env() {
+	environ
+	run
+}
+
+eval "\${1:-run_env}"
 EOF
 
 			for t_source in $prop_t_sources; do
@@ -526,6 +478,12 @@ environ() {
 }
 
 run() {
+	if [ x\$( echo "$redstar_black_list_cnf_tslice" | while read cnf tslice ; do
+		[ x\$cnf == x@CFG -a x\$tslice == x$t_source ] && echo yes
+	done ) == xyes ] ; then
+		echo "REDSTAR_NPT: total time" > ${output}
+		exit 0
+	fi
 	tmp_runpath="${localpath}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
@@ -568,7 +526,12 @@ globus() {
 	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
 }
 
-eval "\${1:-run}"
+run_env() {
+	environ
+	run
+}
+
+eval "\${1:-run_env}"
 EOF
 				done # zphase
 			done # t_source

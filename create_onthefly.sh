@@ -30,16 +30,24 @@ for ens in $ensembles; do
 		runpath="$PWD/${tag}/conf_${cfg}"
 		mkdir -p $runpath
 
-		for t_source in $gprop_t_sources; do
+		t_sources="all"
+		[ ${onthefly_all_tsources_per_job} != yes ] && t_sources="$gprop_t_sources"
+
+		for t_source in $t_sources; do
 		for zphase in $gprop_zphases; do
 		k_split $max_moms_per_job $moms | while read mom_group ; do
 
 			mom_leader="`take_first $mom_group`"
-			baryon_script="${runpath}/baryon_${zphase}_t0_${t_source}_mf${mom_leader}.sh.future"
-			gprop_script="${runpath}/gprop_t${t_source}_z${zphase}_mf${mom_leader}.sh.future"
-			prop_script="${runpath}/prop_t${t_source}_z${zphase}.sh.future"
+			real_t_source="${t_source}"
+			[ ${onthefly_all_tsources_per_job} == yes ] && real_t_source="$gprop_t_sources"
 
-			redstar_tasks="$( ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom_leader}.sh.future )"
+			baryon_script="${runpath}/baryon_${zphase}_t0_${t_source}_mf${mom_leader}.sh.future"
+			gprop_scripts=""
+			[ $run_gprops == yes ] && gprop_scripts="$( for t in $real_t_source; do echo ${runpath}/gprop_t${t}_z${zphase}_mf${mom_leader}.sh.future ; done )"
+			prop_scripts=""
+			[ $run_props == yes ] && prop_scripts="$( for t in $real_t_source; do echo ${runpath}/prop_t${t}_z${zphase}.sh.future ; done )"
+
+			redstar_tasks="$( for t in $real_t_source ; do ls $runpath/redstar_t${t}_*_z${zphase}_mf${mom_leader}.sh.future ; done )"
 			num_redstar_tasks="$( num_args $redstar_tasks )"
 			[ $num_redstar_tasks == 0 ] && continue
 
@@ -55,37 +63,45 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	if [ $run_gprops == yes ] ; then
-		bash $gprop_script run
-		sleep 30
-	fi
+`
+	for gprop_script in $gprop_scripts ; do
+		echo bash $gprop_script run
+		echo sleep 30
+	done
+`
 	if [ $run_baryons == yes ] ; then
 		bash $baryon_script run
 		sleep 30
 	fi
-	if [ $run_props == yes ] ; then
-		bash $prop_script run
-		sleep 30
-	fi
+`
+	for prop_script in $prop_scripts ; do
+		echo bash $prop_script run
+		echo sleep 30
+	done
+`
 
 	$slurm_script_prologue_redstar
-	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash -l -c '
+	t="\$(mktemp)"
+	cat << 'EOFA' > \$t
 `
 	i=0
-	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
-		echo "[ \\\$SLURM_PROCID == $i ] && bash -l $j run"
+	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read js ; do
+		for j in $js ; do
+			echo "[ \\\$OMPI_COMM_WORLD_LOCAL_RANK == $i ] && bash $j run"
+		done
 		i="$((i+1))"
 	done
 `
-'
+true # return success!
+EOFA
+	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) \$MY_ARGS bash \$t
+	rm -fr $localpath/*
 }
 
 check() {
-	[ $run_gprops != yes ] || bash $gprop_script check || exit 1
 	[ $run_baryons != yes ] || bash $baryon_script check || exit 1
-	[ $run_props != yes ] || bash $prop_script check || exit 1
 `
-	for t in $redstar_tasks; do
+	for t in $gprop_scripts $prop_scripts $redstar_tasks; do
 		echo "bash $t check || exit 1"
 	done
 `
@@ -93,11 +109,9 @@ check() {
 }
 
 blame() {
-	[ $run_gprops != yes ] || bash $gprop_script blame || exit 1
 	[ $run_baryons != yes ] || bash $baryon_script blame || exit 1
-	[ $run_props != yes ] || bash $prop_script blame || exit 1
 `
-	for t in $redstar_tasks; do
+	for t in $gprop_scripts $prop_scripts $redstar_tasks; do
 		echo "bash $t check || echo fail $t"
 	done
 `

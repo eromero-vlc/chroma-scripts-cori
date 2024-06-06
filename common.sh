@@ -54,6 +54,54 @@ mom_split() {
 	fi
 }
 
+momtype() {
+	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
+}
+
+mom_letters() {
+	if [ $# != 3 ]; then
+		echo "mom_letters should get three args"  >&2
+		exit 1
+	fi
+	echo "`momtype $@`" | while read momx momy momz; do
+		if [ $momx == 0 -a $momy == 0 -a $momz == 0 ]; then
+			echo 000
+		elif [ $momx != 0 -a $momy == 0 -a $momz == 0 ]; then
+			echo n00
+		elif [ $momx == $momy -a $momz == 0 ]; then
+			echo nn0
+		elif [ $momx != $momy -a $momz == 0 ]; then
+			echo nm0
+		elif [ $momx == $momy -a $momx == $momz ]; then
+			echo nnn
+		elif [ $momx == $momy -o $momy == $momz ]; then
+			echo nnm
+		else
+			echo nmk
+		fi
+	done
+}
+
+insertion_mom() {
+	echo "$@" | while read momix momiy momiz momjx momjy momjz; do
+		echo "$(( momix - momjx )) $(( momiy - momjy )) $(( momiz - momjz ))"
+	done
+}
+
+get_ops() {
+	varname="redstar_`mom_letters $@`"
+	echo "${!varname}"
+}
+
+operator_rows() {
+	case $1 in
+		pion*|b_b0*|a_a0*|hc_b0*) echo 1 ;;
+		rho_rho*|b_b1*|a_a1*) echo 1 2 3 ;;
+		*) echo "operator_rows: $1 ?" >&2; exit 1;;
+	esac
+}
+
+
 # shuffle_t_source cfg [t_size t_source]
 shuffle_t_source() {
 	local cfg t_size t_source t_shift
@@ -99,7 +147,7 @@ k_split() {
 	done
 }
 
-# k_split n args...
+# k_split_lines n args...
 # Return args... broken in different up to <n> lines
 k_split_lines() {
 	local n i f num_args line

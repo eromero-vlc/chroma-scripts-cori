@@ -137,7 +137,6 @@ $slurm_sbatch_prologue
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size )) --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node ))
 #SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) # number of cores per task
-#SBATCH --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) ))
 #SBATCH -J batch-${tag}
 #SBATCH --array=0-$((num_bundle_jobs-1))%${max_concurrent_slurm_jobs}
 `

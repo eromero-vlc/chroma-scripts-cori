@@ -39,7 +39,7 @@ for ens in $ensembles; do
 			#
 
 			t_sources="all"
-			[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
+			[ ${run_onthefly} == yes -a ${onthefly_all_tsources_per_job} != yes ] && t_sources="$gprop_t_sources"
 			[ ${run_onthefly} != yes ] && max_moms_per_job=1
 			for t_source in $t_sources; do
 			k_split $max_moms_per_job $moms | while read mom_group ; do
@@ -62,15 +62,18 @@ for ens in $ensembles; do
 		done
 	`
 </mom_list>"
-			if [ ${run_onthefly} == yes ] ; then
+			if [ ${run_onthefly} == yes -a ${onthefly_all_tsources_per_job} != yes ] ; then
 				# Find t_origin
 				baryon_t_source="`shuffle_t_source $cfg $t_size $t_source`"
 				Nt_forward=$(( redstar_t_corr + 2  ))
-				mom_leader="`take_first $mom_group`"
-				prefix_extra="_t0_${t_source}_mf${mom_leader}"
 			else
 				baryon_t_source=0
 				Nt_forward=$t_size
+			fi
+			if [ ${run_onthefly} == yes ] ; then
+				mom_leader="`take_first $mom_group`"
+				prefix_extra="_t0_${t_source}_mf${mom_leader}"
+			else
 				prefix_extra=""
 			fi
 
@@ -155,7 +158,7 @@ run() {
 	cd $runpath
 	rm -f $baryon_file
 	mkdir -p `dirname ${baryon_file}`
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
