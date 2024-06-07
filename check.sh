@@ -23,7 +23,9 @@ for ens in $ensembles; do
 		grep -q "\<`cat $f`\>" $sq && continue
 		if bash ${f%.launched} check; then
 			echo >> $ok
-			bash ${f%.launched} globus >> $t
+			bash ${f%.launched} globus | while read fglobus orig dest delete ; do
+                		echo pending $orig $dest $delete > $fglobus
+			done
 			touch $f.verified
 			echo ok $f
 		else
@@ -34,7 +36,7 @@ for ens in $ensembles; do
 	done
 	echo OK: `wc -l < $ok`  Failed: `wc -l < $fail`
 
-	find -L ${confspath}/${confsprefix}/ -name '*.globus' | while read f; do
+	for globus_path in $globus_check_dirs; do find -L $globus_path -name '*.globus'; done | while read f; do
 		cat $f | while read globus_task orig dest delete; do
 			if [ $globus_task == pending ]; then
 				status="FAILED"
@@ -74,7 +76,7 @@ if [ -s $t ] ; then
 		done | sort -u | while read p ; do
 			globus mkdir $p
 		done
-		split -l 100 $tod ${tod}_
+		split -l 900 $tod ${tod}_
 		for tt in `ls ${tod}_*` ; do
 			success=1
 			cat $tt | while read f orig dest delete ; do

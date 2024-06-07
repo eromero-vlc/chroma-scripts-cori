@@ -72,7 +72,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/eigs.out0
 #SBATCH -t $eigs_chroma_minutes
-#SBATCH --nodes=$eigs_slurm_nodes
+#SBATCH --nodes=$eigs_slurm_nodes -n $(( slurm_procs_per_node*eigs_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J eig-${cfg}
 
 run() {
@@ -97,8 +97,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo a $eigs_chroma_minutes $eigs_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo a $eigs_chroma_minutes $eigs_slurm_nodes 1 0
 }
 
 globus() {

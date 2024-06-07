@@ -2,11 +2,30 @@
 
 source ensembles.sh
 
+k_split() {
+	local n i f
+	n="$1"
+	shift
+	i="0"
+	for f in "$@" "__last_file__"; do
+		if [ $f != "__last_file__" ]; then
+			echo -n "$f "
+			i="$(( i+1 ))"
+			if [ $i == $n ]; then
+				i="0"
+				echo
+			fi
+		else
+			[ $i != 0 ] && echo
+		fi
+	done
+}
+
 sq="`mktemp`"
 squeue -u $USER --array > $sq
 
 tq="`mktemp`"
-$jlab_ssh srmPendingRequest | grep -E -e "-> (pending|running)" | while read f crap; do echo $f; done > $tq
+$jlab_ssh srmPendingRequest < /dev/null | grep -E -e "-> (pending|running)" | while read f crap; do echo $f; done > $tq
 tape_reg="`mktemp`"
 cache_reg="`mktemp`"
 transfer_q="`mktemp`"
@@ -39,7 +58,7 @@ for ens in $ensembles; do
 	zphase=0.00 # set to a dummy value
 	path_to_inspect=""
 	[ $lime_transfer_from_jlab == yes ] && path_to_inspect+="$( dirname `lime_file_name` )"
-	[ $eigs_transfer_from_jlab == yes ] && path_to_inspect+=" $( dirname `eig_file_name` )"
+	[ $eigs_transfer_from_jlab == yes ] && path_to_inspect+=" $( dirname `colorvec_file_name` )"
 	for t_source in $prop_t_sources; do
 		for zphase in $prop_zphases; do
 			[ $prop_transfer_from_jlab == yes ] && path_to_inspect+=" $( dirname `prop_file_name` )"
@@ -64,19 +83,19 @@ for ens in $ensembles; do
 	for i in $path_to_inspect ; do
 		jlab_path_to_inspect+=" $jlab_tape_registry/${i#${confspath}/}"
 	done
-	$jlab_ssh find $jlab_path_to_inspect -type f | sed "s@${jlab_tape_registry}/@@" > $tape_reg
+	$jlab_ssh find $jlab_path_to_inspect -type f < /dev/null | sed "s@${jlab_tape_registry}/@@" > $tape_reg
 
 	jlab_path_to_inspect=""
 	for i in $path_to_inspect ; do
 		jlab_path_to_inspect+=" $jlab_local/${i#${confspath}/}"
 	done
-	$jlab_ssh find $jlab_path_to_inspect -type f | sed "s@${jlab_local}/@@" > $cache_reg
+	$jlab_ssh find $jlab_path_to_inspect -type f < /dev/null | sed "s@${jlab_local}/@@" > $cache_reg
 
 	# Get all the files to transfer from jlab
 	echo -n > $transfer_q
 	for cfg in $confs; do
 		[ $lime_transfer_from_jlab == yes ] && check_do_transfer "`lime_file_name`"
-		[ $eigs_transfer_from_jlab == yes ] && check_do_transfer "`eigs_file_name`"
+		[ $eigs_transfer_from_jlab == yes ] && check_do_transfer "`colorvec_file_name`"
 		for t_source in $prop_t_sources; do
 			for zphase in $prop_zphases; do
 				[ $prop_transfer_from_jlab == yes ] && check_do_transfer "`prop_file_name`"
@@ -107,15 +126,20 @@ for ens in $ensembles; do
 			echo ${jlab_local}/$f >> $srmget_q
 		else
 			mkdir -p `dirname ${confspath}/$f`
-			echo ${confspath}/$f.globus ${jlab_ep}${f} ${this_ep}${f} nop > ${confspath}/$f.globus
+			echo pending ${jlab_ep}${f} ${this_ep}${f} nop > ${confspath}/$f.globus
 			echo jlab-tape > ${confspath}/$f.launched 
 		fi
 	done
 
 	# Call srmGet
-	echo Files to recover from tape
-	cat $srmget_q
-	[ -s $srmget_q ] && $jlab_ssh srmGet `cat $srmget_q`
+	if [ -s $srmget_q ]; then
+		echo Files to recover from tape
+		cat $srmget_q
+		k_split 40 `cat $srmget_q` | while read f; do
+			echo "Executing at jlab: " $jlab_ssh srmGet $f
+			$jlab_ssh srmGet $f < /dev/null
+		done
+	fi
 done # ens
 
 rm -f $sq $tq $tape_reg $cache_reg $transfer_q $srmget_q

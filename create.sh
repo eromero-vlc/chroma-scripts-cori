@@ -7,3 +7,4 @@ bash create_baryon.sh
 bash create_meson.sh
 bash create_disco.sh
 bash create_redstar.sh
+bash create_onthefly.sh
