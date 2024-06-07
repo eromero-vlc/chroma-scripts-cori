@@ -67,9 +67,7 @@ sort $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jo
 done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max_concurrent_jobs jobs; do
 	# Remove the tracking for all files that are going to be created
 	for j in $jobs; do
-		for f in `bash $j outs`; do
-			rm -f ${f}.launched
-		done
+		rm -f $( for f in `bash $j outs`; do echo ${f}.launched; done )
 	done
 
 	# Wrap jobs that need a fraction of a node into full node jobs
@@ -96,18 +94,26 @@ EOF
 	# total jobs to run
 	num_jobs="`echo $jobs | wc -w`"
 	[ $num_jobs == 0 ] && continue
+	if [ $(( minutes_per_job > max_hours*60 )) != 0 ] ; then
+		this_max_hours="$large_max_hours"
+		min_nodes="$large_min_nodes"
+	else
+		this_max_hours="$max_hours"
+		min_nodes=0
+	fi
+	
 	# Max sequential jobs in a SLURM job
-	max_jobs_in_seq="$(( max_hours*60 / minutes_per_job ))"
+	max_jobs_in_seq="$(( this_max_hours*60 / minutes_per_job ))"
 	# minimum number of jobs to run
 	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
 	# total SLURM jobs to launch
 	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
 	num_bundle_jobs="$(( num_bundle_jobs < min_slurm_jobs ? min_slurm_jobs : num_bundle_jobs ))"
-	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? 100 : num_bundle_jobs / min_slurm_jobs ))"
+	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? num_bundle_jobs : num_bundle_jobs / min_slurm_jobs ))"
 	# maximum number of jobs running on a single SLURM job
 	max_jobs_in_bundle="$(( (num_jobs+num_bundle_jobs-1)/num_bundle_jobs ))"
 	# maximum number of parallel jobs inside a SLURM job
-	bundle_size="$(( (max_jobs_in_bundle*minutes_per_job + max_hours*60-1)/(max_hours*60) ))"
+	bundle_size="$(( (max_jobs_in_bundle*minutes_per_job + this_max_hours*60-1)/(this_max_hours*60) ))"
 	# maximum number of jobs executed one after another in a SLURM job
 	max_jobs_in_seq="$(( (max_jobs_in_bundle + bundle_size-1) / bundle_size ))"
 	cat << EOF > $runpath/run_${jobtag}_script.sh
@@ -132,6 +138,7 @@ wait
 EOF
 
 	# If the batch file is too large, slurm complains
+	num_nodes="$((  ))"
 	while true; do
 		cat << EOF > $runpath/run_${jobtag}.sh
 $slurm_sbatch_prologue

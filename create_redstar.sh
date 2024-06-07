@@ -598,14 +598,19 @@ if [ x\$1 == x ]; then
 	r="\$?"
 	rm -f \$t
 	exit \$r
-elif [ x\$1 != xenviron ]; then
+elif [ x\$1 == xenviron ]; then
+	. \$t \$@
+	rm -f \$t
+elif [ x\$1 == xrun ]; then
 	bash -l \$t \$@
 	r="\$?"
 	rm -f \$t
 	exit \$r
 else
-	. \$t \$@
+	bash \$t \$@
+	r="\$?"
 	rm -f \$t
+	exit \$r
 fi
 EOF
 

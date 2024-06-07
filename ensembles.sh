@@ -33,6 +33,8 @@ ensemble0() {
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confs="`seq 1010 30 2000`"
+	#confs="1010"
+	confs="${confs//1250/}"
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
 
@@ -172,8 +174,8 @@ ensemble0() {
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
-	gprop_slurm_nodes=3
-	gprop_chroma_geometry="1 1 3 8"
+	gprop_slurm_nodes="${prop_slurm_nodes}"
+	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
 	gprop_file_name() {
@@ -445,7 +447,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased_pdfs/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/unphased_pdfs_new/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 		fi
@@ -458,7 +460,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_pdfs"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_pdfs_new"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -468,16 +470,16 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/chromaform_frontier_rocm5.4"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chromaform="$HOME/scratch/chromaform_rocm5.5"
+chroma="$chromaform/install-rocm5.4/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install_cpu/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas-sp"
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-rocm5.4/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat-pdf-superbblas-sp"
+adat="$chromaform/install-rocm5.4/adat-pdf-superbblas-sp"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
@@ -494,9 +496,9 @@ slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -C nvme"
 
 slurm_script_prologue="
-. $chromaform/env.sh
-. $chromaform/env_extra.sh
-. $chromaform/env_extra_0.sh
+. $chromaform/env_rocm5.4.sh
+. $chromaform/env_extra_rocm5.4.sh
+. $chromaform/env_extra_rocm5.4_0.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 #export SLURM_CPU_BIND=\"cores\"
@@ -529,10 +531,11 @@ export OMP_NUM_THREADS=$slurm_threads_per_proc_cpu
 #
 
 slurm_script_prologue_redstar="
-. $chromaform/env.sh
-. $chromaform/env_extra.sh
+. $chromaform/env_rocm5.4.sh
+. $chromaform/env_extra_rocm5.4.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
+export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 #export SLURM_CPU_BIND=\"cores\"
 #export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "
@@ -542,7 +545,10 @@ export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 #
 
 max_jobs=25 # maximum jobs to be launched
+max_jobs=100 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
+large_max_hours=3
+large_min_nodes=92
 
 #
 # Path options
