@@ -20,13 +20,21 @@ ensemble0() {
 	onthefly_all_tsources_per_job=yes
 	disco_stage=vac
 	disco_stage=""
+	extension=nop
+	doing_2pt=yes
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	[ $extension == yes ] && confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="test$disco_stage"
+	[ $extension == yes ] && tag="test-5162$disco_stage"
+	[ $doing_2pt == yes ] && tag="${tag}_2pt"
 	confs="`seq 1000 10 4500`"
+	#confs="`seq 5170 10 20070`"
+	[ $extension == yes ] && confs="`seq 5170 10 9990`"
+	#confs=5170
 	#confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -36,12 +44,19 @@ ensemble0() {
 	lime_transfer_from_jlab="yes"
 
 	# Colorvecs options
-	max_nvec=128  # colorvecs to compute
+	max_nvec=64  # colorvecs to compute
+	[ $extension == yes ] && max_nvec=128  # colorvecs to compute
 	nvec=64  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
+	colorvec_file_name() {
+		if [ $extension != yes ] ; then
+			echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"
+		else
+			echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n128.mod${cfg}";
+		fi
+	}
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
@@ -52,9 +67,11 @@ ensemble0() {
 	# Props options
 	prop_t_sources="0 16 32 48"
 	prop_t_sources="`seq 0 63`"
+	#prop_t_sources=0
 	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=64
+	[ $extension == yes ] && prop_nvec=96
 	prop_zphases="0.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
@@ -272,6 +289,7 @@ ensemble0() {
 		local n node
 		if [ ${zphase} == 0.00 ]; then
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.absmomz_0_4.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
+			#n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
 		else
 			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
 		fi
@@ -335,7 +353,7 @@ ensemble0() {
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_2pt="nop"
+	redstar_2pt="${doing_2pt}"
 	redstar_2pt_moms="\
 -2 0 2
 0 2 -2
@@ -395,6 +413,7 @@ ensemble0() {
 0 -2 0
 0 -2 2 "
 	redstar_3pt="yes"
+	[ $doing_2pt == yes ] && redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 0 0 0    0 0 0
 0 0 1    0 0 1
@@ -403,8 +422,8 @@ ensemble0() {
 0 0 -1    0 0 -1
 0 0 -2    0 0 -2
 0 0 -3    0 0 -3"
-	redstar_3pt_snkmom_srcmom="\
-0 0 0    0 0 0"
+#	redstar_3pt_snkmom_srcmom="\
+#0 0 0    0 0 0"
 	redstar_2pt_moms="$(
 		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2
@@ -412,6 +431,7 @@ ensemble0() {
 		done | sort -u
 )"
 	redstar_disco="yes"
+	[ $doing_2pt == yes ] && redstar_disco="nop"
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
 	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
@@ -457,7 +477,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_use_disco="`
 		if [ $redstar_3pt == yes -a $redstar_disco == yes ] ; then echo yes ; else echo nop ; fi
 `"
-	redstar_black_list_cnf_tslice="\
+	[ $extension == yes ] && redstar_black_list_cnf_tslice="\
 2000 36
 2010 12
 2010 28
@@ -798,116 +818,74 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 1000 11
 1000 12
 1000 60
-1000 64
-1010 64
 1020 36
 1020 52
 1020 60
-1020 64
 1030 36
 1030 52
 1030 60
-1030 64
-1040 64
 1050 4
 1050 12
 1050 20
-1050 64
 1060 36
-1060 64
 1070 28
 1070 44
 1070 52
 1070 60
-1070 64
-1080 64
 1090 12
-1090 64
 1100 36
-1100 64
 1110 12
 1110 52
 1110 60
-1110 64
 1120 12
 1120 52
-1120 64
 1130 12
-1130 64
 1140 12
 1140 36
-1140 64
 1150 52
 1150 60
-1150 64
 1160 52
 1160 60
-1160 64
 1170 12
 1170 20
 1170 60
-1170 64
 1180 4
 1180 36
-1180 64
 1190 12
 1190 36
 1190 44
 1190 52
 1190 60
-1190 64
 1200 12
 1200 28
-1200 64
 1210 12
 1210 36
-1210 64
 1220 52
 1220 60
-1220 64
-1230 64
 1240 52
-1240 64
 1250 52
-1250 64
-1260 64
 1270 12
-1270 64
 1280 52
 1280 60
-1280 64
 1290 12
 1290 20
 1290 60
-1290 64
 1300 4
 1300 12
-1300 64
 1310 36
-1310 64
 1320 36
-1320 64
 1330 12
 1330 44
-1330 64
 1340 12
 1340 28
 1340 52
 1340 60
-1340 64
 1350 28
 1350 36
-1350 64
-1360 64
-1370 64
-1380 64
 1390 36
 1390 52
-1390 64
-1400 64
 1410 12
 1410 20
-1410 64
 1420 4
 1420 12
 1420 52
@@ -1066,11 +1044,13 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
+		local extra=""
+		[ $redstar_2pt == yes ] && extra=_2pt
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased${disco_stage}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased${disco_stage}${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased${disco_stage}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased${disco_stage}${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
