@@ -30,7 +30,7 @@ for ens in $ensembles; do
 			echo ok $f
 		else
 			echo >> $fail
-			rm -f `bash ${f%.launched} outs` $f
+			#rm -f `bash ${f%.launched} outs` $f
 			echo fail $f
 		fi
 	done
