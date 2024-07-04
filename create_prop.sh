@@ -15,35 +15,23 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		mkdir -p $runpath
 
 		for t_source in $prop_t_sources; do
 		for zphase in $prop_zphases; do
 
 			# Find t_origin
-			perl -e " 
-  srand($cfg);
+			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\\n\"
-" > h
-			t_origin="`cat h | while read a b; do echo \$a; done`"
-			t_offset="`cat h | while read a b; do echo \$b; done`"
-
-			prop_file="`prop_file_name`"
-			mkdir -p `dirname ${prop_file}`
+			prop_file="`prop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${prop_file}`
 
 			#
 			# Propagators creation
 			#
 
-			prop_xml="$runpath/prop_t${t_source}_z${zphase}.xml"
-			mkdir -p `dirname ${prop_xml}`
+			prefix="${runpath}/prop_t${t_source}_z${zphase}"
+			prop_xml="${prefix}.xml"
 			cat << EOF > $prop_xml
 <?xml version="1.0"?>
 
@@ -65,6 +53,8 @@ for ens in $ensembles; do
           <num_tries>-1</num_tries>
           <max_rhs>1</max_rhs>
           <phase>0.00 0.00 $zphase</phase>
+          <use_superb_format>true</use_superb_format>
+          <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         </Contractions>
         <Propagator>
           <version>10</version>
@@ -87,75 +77,7 @@ for ens in $ensembles; do
             </FermState>
           </FermionAction>
             <InvertParam>
-              <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
-              <CloverParams>
-                <Mass>${prop_mass}</Mass>
-                <clovCoeff>${prop_clov}</clovCoeff>
-                <AnisoParam>
-                  <anisoP>false</anisoP>
-                  <t_dir>3</t_dir>
-                  <xi_0>1</xi_0>
-                  <nu>1</nu>
-                </AnisoParam>
-              </CloverParams>
-              <RsdTarget>1e-07</RsdTarget>
-              <Delta>0.1</Delta>
-              <Pipeline>4</Pipeline>
-              <MaxIter>500</MaxIter>
-              <RsdToleranceFactor>8.0</RsdToleranceFactor>
-              <AntiPeriodicT>true</AntiPeriodicT>
-              <SolverType>GCR</SolverType>
-              <Verbose>true</Verbose>
-              <AsymmetricLinop>true</AsymmetricLinop>
-              <CudaReconstruct>RECONS_12</CudaReconstruct>
-              <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
-              <CudaSloppyReconstruct>RECONS_8</CudaSloppyReconstruct>
-              <AxialGaugeFix>false</AxialGaugeFix>
-              <AutotuneDslash>true</AutotuneDslash>
-              <MULTIGRIDParams>
-                <Verbosity>true</Verbosity>
-                <Precision>HALF</Precision>
-                <Reconstruct>RECONS_8</Reconstruct>
-                <Blocking>
-                  <elem>4 4 4 4</elem>
-                  <elem>2 2 2 2</elem>
-                </Blocking>
-                <CoarseSolverType>
-                  <elem>GCR</elem>
-                  <elem>CA_GCR</elem>
-                </CoarseSolverType>
-                <CoarseResidual>0.1 0.1 0.1</CoarseResidual>
-                <MaxCoarseIterations>12 12 8</MaxCoarseIterations>
-                <RelaxationOmegaMG>1.0 1.0 1.0</RelaxationOmegaMG>
-                <SmootherType>
-                  <elem>CA_GCR</elem>
-                  <elem>CA_GCR</elem>
-                  <elem>CA_GCR</elem>
-                </SmootherType>
-                <SmootherTol>0.25 0.25 0.25</SmootherTol>
-                <NullVectors>24 32</NullVectors>
-                <Pre-SmootherApplications>0 0</Pre-SmootherApplications>
-                <Post-SmootherApplications>8 8</Post-SmootherApplications>
-                <SubspaceSolver>
-                  <elem>CG</elem>
-                  <elem>CG</elem>
-                </SubspaceSolver>
-                <RsdTargetSubspaceCreate>5e-06 5e-06</RsdTargetSubspaceCreate>
-                <MaxIterSubspaceCreate>500 500</MaxIterSubspaceCreate>
-                <MaxIterSubspaceRefresh>500 500</MaxIterSubspaceRefresh>
-                <OuterGCRNKrylov>20</OuterGCRNKrylov>
-                <PrecondGCRNKrylov>10</PrecondGCRNKrylov>
-                <GenerateNullspace>true</GenerateNullspace>
-                <GenerateAllLevels>true</GenerateAllLevels>
-                <CheckMultigridSetup>false</CheckMultigridSetup>
-                <CycleType>MG_RECURSIVE</CycleType>
-                <SchwarzType>ADDITIVE_SCHWARZ</SchwarzType>
-                <RelaxationOmegaOuter>1.0</RelaxationOmegaOuter>
-                <SetupOnGPU>1 1</SetupOnGPU>
-              </MULTIGRIDParams>
-              <SubspaceID>mg_subspace</SubspaceID>
-              <SolutionCheckP>true</SolutionCheckP>
-
+              $prop_inv
             </InvertParam>
         </Propagator>
       </Param>
@@ -188,17 +110,20 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-			output="$runpath/prop_t${t_source}_z${zphase}.out"
-			cat << EOF > $runpath/prop_t${t_source}_z${zphase}.sh
+			output="${prefix}.out"
+			script="${prefix}.sh"
+			[ $run_onthefly == yes ] && script="${script}.future"
+			cat << EOF > ${script}
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
 #SBATCH -t $prop_chroma_minutes
-#SBATCH --nodes=$prop_slurm_nodes
+#SBATCH --nodes=$prop_slurm_nodes -n $(( slurm_procs_per_node*prop_slurm_nodes ))  -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J prop-${cfg}-${t_source}-${zphase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
+	mkdir -p `dirname ${prop_file}`
 	rm -f $prop_file
 	srun \$MY_ARGS -n $(( slurm_procs_per_node*prop_slurm_nodes )) -N $prop_slurm_nodes $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
 }
@@ -206,6 +131,14 @@ run() {
 check() {
 	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
+}
+
+blame() {
+	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" ; then
+		echo prop creation failed
+		exit 1
+	fi
+	exit 0
 }
 
 deps() {
@@ -217,8 +150,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo b $prop_chroma_minutes $prop_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo b $prop_chroma_minutes $prop_slurm_nodes 1 0
 }
 
 globus() {

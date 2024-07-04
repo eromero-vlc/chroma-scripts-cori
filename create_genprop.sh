@@ -2,6 +2,11 @@
 
 source ensembles.sh
 
+unpack_moms() {
+	echo $1 $2 $3
+	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
+}
+
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
@@ -9,66 +14,14 @@ for ens in $ensembles; do
 	# Check for running genprops
 	[ $run_gprops != yes ] && continue
 
-	MG_PARAM_FILE="`mktemp`"
-	cat <<EOF > $MG_PARAM_FILE
-AntiPeriodicT                 True
-MGLevels                      3
-Blocking                      4,4,3,3:2,2,2,2
-NullVecs                      24:32
-NullSolverMaxIters            800:800
-NullSolverRsdTarget           5e-6:5e-6
-OuterSolverNKrylov            5
-OuterSolverRsdTarget          1.0e-7
-OuterSolverVerboseP           True
-VCyclePreSmootherMaxIters     0:0
-VCyclePreSmootherRsdTarget    0.0:0.0
-VCyclePostSmootherNKrylov     4:4
-VCyclePostSmootherMaxIters    8:13
-VCyclePostSmootherRsdTarget   0.06:0.06
-VCycleBottomSolverMaxIters    100:100
-VCycleBottomSolverNKrylov     8:8
-VCycleBottomSolverRsdTarget   0.06:0.06
-EOF
-
-	# QUDA
-	cat <<EOF > $MG_PARAM_FILE
-RsdTarget                 1.0e-7
-AntiPeriodicT             True
-SolverType                GCR
-Blocking		  4,4,4,4:2,2,2,2
-NullVectors		  24:32
-SmootherType		  CA_GCR:CA_GCR:CA_GCR
-SmootherTol               0.25:0.25:0.25
-CoarseSolverType	  GCR:CA_GCR
-CoarseResidual            0.1:0.1:0.1
-Pre-SmootherApplications  0:0
-Post-SmootherApplications 8:8
-SubspaceSolver            CG:CG
-RsdTargetSubspaceCreate   5e-06:5e-06
-EOF
-
-	# More genprop crap
-	lowDispBound=8 # EXCLUSIVE!
-	minX=0
-	minY=0
-	#minZ=$(( $lowDispBound + 1 ))
-	minZ=0
-	maxX=0
-	maxY=0
-	maxZ=8
-	threeMom="0,0,0" # momentum transfer
-	gammas="gt g5gz g5gx g5gy g5gt gxgy gxgz gxgt gygz gygt gzgt"
-	disps="+z,$maxZ -z,$maxZ none"
-	gdm=""
-	prettyGDM=""
-	for g in $gammas; do
-		prettyGDM="${prettyGDM}${g}_"
-		for d in $disps; do
-			gdm="$gdm;$g:$d:$threeMom"
-		done
-	done
-	GDM=`echo $gdm | cut -b 2-`
-
+	moms="all"
+	if [ $run_onthefly == yes ]; then
+		moms="`
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+				mom_word $( mom_fly $momij )
+			done | sort -u
+		`"
+	fi
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -79,55 +32,166 @@ EOF
 
 		for t_source in $gprop_t_sources; do
 		for zphase in $gprop_zphases; do
+		[ ${run_onthefly} != yes ] && max_moms_per_job=1
+		k_split $max_moms_per_job $moms | while read mom_group ; do
 
 			# Find t_origin
-			perl -e " 
-  srand($cfg);
+			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-  # Call a few to clear out junk                                                                                                          
-  foreach \$i (1 .. 20)
-  {
-    rand(1.0);
-  }
-  \$t_origin = int(rand($t_size));
-  \$t_offset = ($t_source + \$t_origin) % $t_size;
-  print \"\$t_origin \$t_offset\\n\"
-" > h
-			t_origin="`cat h | while read a b; do echo \$a; done`"
-			t_offset="`cat h | while read a b; do echo \$b; done`"
-
-			t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
-
-			gprop_file="`gprop_file_name`"
-			mkdir -p `dirname ${gprop_file}`
+			gprop_file="`gprop_file_name single`"
+			[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
 
 			#
 			# Genprops creation
 			#
-
-			N_COLOR_FILES=1
-			gprop_xml="$runpath/gprop_t${t_source}_z${zphase}.xml"
-			mkdir -p `dirname ${gprop_xml}`
-			$PYTHON $chroma_python/unsmeared_hadron_node.py  -c 1000 -e ${ensemble} -g flime -n ${gprop_nvec} -f ${N_COLOR_FILES} -v fcolorvec -t ${t_offset} -k ${t_seps_commas} -p fgprop -d "${GDM}" -s MG -a UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB -M ${MG_PARAM_FILE} -i QUDA-MG --phase "0.00 0.00 $zphase" --max-rhs 1 --max_tslices_contractions 16 --genprop5 --genprop4-format | sed "s@flime_1000.lime@${lime_file}@; s@fcolorvec.mod1000@${colorvec_file}@; s@fgprop.sdb1000@${gprop_file}@" > $gprop_xml
-
-			output="$runpath/gprop_t${t_source}_z${zphase}.out"
-			cat << EOF > $runpath/gprop_t${t_source}_z${zphase}.sh
+			if [ $run_onthefly == yes ]; then
+				gprop_moms="$( for mom in $mom_group; do unpack_moms ${mom//_/ }; done )"
+				mom_leader="`take_first $mom_group`"
+				prefix_extra="_mf${mom_leader}"
+			else
+				prefix_extra=""
+			fi
+			prefix="${runpath}/gprop_t${t_source}_z${zphase}${prefix_extra}"
+			gprop_xml="${prefix}.xml"
+			cat << EOF > $gprop_xml
+<?xml version="1.0"?>
+<chroma>
+  <Param>
+    <InlineMeasurements>
+      <elem>
+        <Name>UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB</Name>
+        <Frequency>1</Frequency>
+        <Param>
+          <Displacements>
+`
+	echo "$gprop_insertion_disps" | while read name disp; do
+		[ z$name != z ] && echo "<elem>$disp</elem>"
+	done
+`
+          </Displacements>
+          <Moms>
+`
+	echo "$gprop_moms" | while read mom; do
+		[ "z$mom" != z ] && echo "<elem>$mom</elem>"
+	done
+`
+          </Moms>
+          <LinkSmearing>
+            <version>1</version>
+            <LinkSmearingType>NONE</LinkSmearingType>
+          </LinkSmearing>
+          <SinkSourcePairs>
+`
+	for tsep in ${gprop_t_seps}; do
+	echo "<elem>
+              <t_source>${t_offset}</t_source>
+              <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
+              <Nt_forward>${redstar_t_corr}</Nt_forward>
+              <Nt_backward>0</Nt_backward>
+            </elem>"
+	done
+`
+          </SinkSourcePairs>
+          <Contractions>
+            <num_vecs>${gprop_nvec}</num_vecs>
+            <use_derivP>false</use_derivP>
+            <mass_label>${prop_mass_label}</mass_label>
+            <decay_dir>3</decay_dir>
+            <displacement_length>1</displacement_length>
+            <num_tries>0</num_tries>
+            <phase>0.00 0.00 ${zphase}</phase>
+            <max_rhs>1</max_rhs>
+            <use_multiple_writers>false</use_multiple_writers>
+            <use_genprop4_format>false</use_genprop4_format>
+            <use_genprop5_format>true</use_genprop5_format>
+            <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
+            <max_moms_in_contraction>${gprop_max_mom_in_contraction}</max_moms_in_contraction>
+            <max_tslices_in_contraction>${gprop_max_tslices_in_contraction}</max_tslices_in_contraction>
+          </Contractions>
+          <Propagator>
+            <version>10</version>
+            <quarkSpinType>FULL</quarkSpinType>
+            <obsvP>false</obsvP>
+            <numRetries>1</numRetries>
+            <FermionAction>
+              <FermAct>CLOVER</FermAct>
+              <Mass>${prop_mass}</Mass>
+              <clovCoeff>${prop_clov}</clovCoeff>
+              <AnisoParam>
+                <anisoP>false</anisoP>
+                <t_dir>3</t_dir>
+                <xi_0>1</xi_0>
+                <nu>1</nu>
+              </AnisoParam>
+              <FermState>
+                <Name>STOUT_FERM_STATE</Name>
+                <rho>0.125</rho>
+                <n_smear>1</n_smear>
+                <orthog_dir>-1</orthog_dir>
+                <FermionBC>
+                  <FermBC>SIMPLE_FERMBC</FermBC>
+                  <boundary>1 1 1 -1</boundary>
+                </FermionBC>
+              </FermState>
+            </FermionAction>
+            <InvertParam>
+               $prop_inv
+            </InvertParam>
+          </Propagator>
+        </Param>
+        <NamedObject>
+          <gauge_id>default_gauge_field</gauge_id>
+          <colorvec_files><elem>$colorvec_file</elem></colorvec_files>
+          <dist_op_file>${gprop_file}</dist_op_file>
+        </NamedObject>
+      </elem>
+    </InlineMeasurements>
+    <nrow>$s_size $s_size $s_size $t_size</nrow>
+  </Param>
+  <RNG>
+    <Seed>
+      <elem>2551</elem>
+      <elem>3189</elem>
+      <elem>2855</elem>
+      <elem>707</elem>
+    </Seed>
+  </RNG>
+  <Cfg>
+    <cfg_type>SZINQIO</cfg_type>
+    <cfg_file>${lime_file}</cfg_file>
+    <parallel_io>true</parallel_io>
+  </Cfg>
+</chroma>
+EOF
+			output="${prefix}.out"
+			script="${prefix}.sh"
+			[ $run_onthefly == yes ] && script="${script}.future"
+			cat << EOF > ${script}
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/gprop_t${t_source}_z${zphase}.out0
+#SBATCH -o ${prefix}.out0
 #SBATCH -t $gprop_chroma_minutes
-#SBATCH --nodes=$gprop_slurm_nodes
+#SBATCH --nodes=$gprop_slurm_nodes -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J gprop-${cfg}-${t_source}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
+	mkdir -p `dirname ${gprop_file}`
 	rm -f ${gprop_file}*
 	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
 }
 
+blame() {
+	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" ; then
+		echo gprop creation failed
+		exit 1
+	fi
+	exit 0
+}
+
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
-	exit 1
+	tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" || exit 1
+	exit 0
 }
 
 deps() {
@@ -139,8 +203,8 @@ outs() {
 }
 
 class() {
-	# class max_minutes nodes jobs_per_node
-	echo b $gprop_chroma_minutes $gprop_slurm_nodes 1
+	# class max_minutes nodes jobs_per_node max_concurrent_jobs
+	echo b $gprop_chroma_minutes $gprop_slurm_nodes 1 0
 }
 
 globus() {
@@ -150,6 +214,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
+		done # mom_group
 		done # t_source
 		done # zphase
 	done # cfg
