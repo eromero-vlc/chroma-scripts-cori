@@ -9,10 +9,10 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="nop"
-	run_baryons="nop"
+	run_baryons="yes"
 	run_mesons="nop"
-	run_discos="yes"
-	run_redstar="nop"
+	run_discos="nop"
+	run_redstar="yes"
 
 	run_onthefly="yes"
 	onthefly_chroma_minutes=120
@@ -26,7 +26,7 @@ ensemble0() {
 	confs="`seq 1000 10 4500`"
 	#confs="`seq 2000 10 3000`"
 	#confs="`seq 1000 10 1990`"
-	confs="`seq 1000 10 2000`"
+	#confs="`seq 1000 10 2000`"
 	confs="${confs//1920/}"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -51,6 +51,8 @@ ensemble0() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
+	prop_t_sources="`seq 0 63`"
+	prop_create_if_missing="yes"
 	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=64
@@ -323,7 +325,7 @@ ensemble0() {
 	disco_max_colors=1024
 	disco_max_colors_at_once=256
 	disco_noise_vectors=1
-	disco_t_sources="${prop_t_sources}"
+	disco_t_sources="0 16 32 48"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=120
@@ -425,71 +427,23 @@ $(
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_use_meson="nop"
-	redstar_use_baryon="yes"
-	redstar_use_disco="nop"
-	redstar_2pt="nop"
+	redstar_2pt="yes"
 	redstar_2pt_moms="\
-1 1 4
-0 1 4
-0 0 4
-1 1 6
-1 0 6
-1 0 5
-0 0 5
-0 1 6
-0 0 6
-1 0 4
-2 0 5
-1 1 5
-2 0 4
-2 0 6
-0 1 5
-0 4 -2
--4 -2 3
-3 4 0
--3 1 -4
--5 0 -2
--4 0 1
--1 -5 1
--1 -4 -3
--3 -2 2
--6 1 0
-0 3 4
--3 -2 -5
--3 2 -2
--2 -4 0
-6 1 1
-6 0 -2
-0 3 3
-6 0 2
--1 6 1
--1 0 6
-1 4 3
-0 6 -1
--2 -6 0
-4 3 2
--4 0 3
--2 6 0
--2 0 -5
-0 -2 -4
--3 2 -5
--4 0 0
-3 -3 3
-2 0 -4
--3 -3 0
-3 0 -4
-4 4 2
-3 3 3
-4 2 -4
--3 0 -3
-2 4 -4
-4 4 -2
--3 0 3
--3 3 -3
-0 -4 0
-0 0 -4
-0 4 0 "
+0 0 0
+$(
+	for i in `seq 1 $disco_max_displacement`; do
+		echo $i 0 0
+		echo -$i 0 0
+	done
+	for i in `seq 1 $disco_max_displacement`; do
+		echo 0 $i 0
+		echo 0 -$i 0
+	done
+	for i in `seq 1 $disco_max_displacement`; do
+		echo 0 0 $i
+		echo 0 0 -$i
+	done
+)"
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
@@ -510,12 +464,12 @@ $(
 2 0 4   1 0 4   
 2 0 5   1 0 5   
 2 0 6   1 0 6"
-	redstar_2pt_moms="$(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
-			echo $m0 $m1 $m2
-			echo $m3 $m4 $m5
-		done | sort -u
-)"
+#	redstar_2pt_moms="$(
+#		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+#			echo $m0 $m1 $m2
+#			echo $m3 $m4 $m5
+#		done | sort -u
+#)"
 	redstar_disco="nop" # contracting for disco
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
@@ -567,9 +521,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased_2pt_disco/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased_2pt_disco/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
