@@ -9,12 +9,12 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="nop"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
-	run_discos="nop"
-	run_redstar="yes"
+	run_discos="yes"
+	run_redstar="nop"
 
-	run_onthefly="yes"
+	run_onthefly="nop"
 	onthefly_chroma_minutes=120
 	max_moms_per_job=100
 
@@ -76,7 +76,7 @@ ensemble0() {
                   <nu>1</nu>
                 </AnisoParam>
               </CloverParams>
-              <RsdTarget>1e-07</RsdTarget>
+              <RsdTarget>1e-10</RsdTarget>
               <Delta>0.1</Delta>
               <Pipeline>4</Pipeline>
               <MaxIter>500</MaxIter>
@@ -319,13 +319,13 @@ ensemble0() {
 "
 
 	# Disco options
-	disco_max_displacement=8
+	disco_max_displacement=16
 	disco_probing_displacement=0
-	disco_probing_power=14
-	disco_max_colors=1024
+	disco_probing_power=20
+	disco_max_colors=3325
 	disco_max_colors_at_once=256
 	disco_noise_vectors=1
-	disco_t_sources="0 16 32 48"
+	disco_t_sources="8 24 40 56"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=120
@@ -341,13 +341,13 @@ ensemble0() {
         <use_Aee_prec>true</use_Aee_prec>
         <solver>
           <type>bicgstab</type>
-          <tol>1e-2</tol>
+          <tol>3e-3</tol>
           <max_its>10000</max_its>
           <prefix>eig0</prefix>
           <verbosity>summary</verbosity>
         </solver>
       </solver>
-      <tol>0.1</tol>
+      <tol>0.01</tol>
       <eigensolver>
         <max_block_size>1</max_block_size>
         <max_basis_size>40</max_basis_size>
@@ -366,13 +366,13 @@ ensemble0() {
           <use_Aee_prec>true</use_Aee_prec>
           <solver>
             <type>bicgstab</type>
-            <tol>1e-2</tol>
+            <tol>1e-3</tol>
             <max_its>10000</max_its>
             <prefix>eig1</prefix>
             <verbosity>summary</verbosity>
           </solver>
         </solver>
-        <tol>0.1</tol>
+        <tol>3e-3</tol>
         <eigensolver>
           <max_block_size>1</max_block_size>
           <max_basis_size>40</max_basis_size>
@@ -383,13 +383,13 @@ ensemble0() {
     <proj>
       <type>defl</type>
       <rank>800</rank>
-      <tol>5e-4</tol>
+      <tol>1e-6</tol>
       <solver>
         <type>eo</type>
         <use_Aee_prec>true</use_Aee_prec>
         <solver>
           <type>bicgstab</type>
-          <tol>1e-4</tol>
+          <tol>1e-8</tol>
           <max_its>10000</max_its>
           <prefix>eig2</prefix>
           <verbosity>summary</verbosity>
@@ -405,9 +405,9 @@ ensemble0() {
 "
 	disco_file_name() {
 		if [ $color_part != avg ]; then
-			echo "${confspath}/${confsprefix}/disco/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/disco/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
 		fi
 	}
 	disco_transfer_back="nop"
@@ -551,11 +551,11 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm5.5"
-chroma="$chromaform/install-rocm5.4/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chromaform="$HOME/scratch/chromaform_rocm5.7"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-rocm5.4/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -577,14 +577,16 @@ slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -C nvme"
 
 slurm_script_prologue="
-. $chromaform/env_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4_0.sh
+. $chromaform/env.sh
+. $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
-#export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 export MPICH_GPU_SUPPORT_ENABLED=1
+export QUDA_ENABLE_P2P=0
+export QUDA_ENABLE_GDR=0
+export QUDA_ENABLE_NVSHMEM=0
+export QUDA_ENABLE_MPS=0 
 "
 
 #
@@ -592,8 +594,8 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 #
 
 slurm_script_prologue_redstar="
-. $chromaform/env_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4.sh
+. $chromaform/env.sh
+. $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
