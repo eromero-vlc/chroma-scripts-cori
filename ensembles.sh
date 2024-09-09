@@ -134,6 +134,109 @@ ensemble0() {
               <SubspaceID>mg_subspace</SubspaceID>
               <SolutionCheckP>true</SolutionCheckP>
  "
+	prop_inv="
+              <invType>MGPROTON</invType>
+
+              <type>eo</type>
+              <solver>
+                <type>mr</type>
+                <tol>1e-7</tol>
+                <max_its>20000</max_its>
+                <prefix>l0</prefix>
+                <verbosity>Detailed</verbosity>
+              </solver>
+              <use_Aee_prec>true</use_Aee_prec>
+              <prec_ee>
+                   <type>mg</type>
+                   <num_null_vecs>24</num_null_vecs>
+                   <num_colors>24</num_colors>
+                   <blocking>4 4 4 4</blocking>
+                   <spin_splitting>chirality_splitting</spin_splitting>
+                   <null_vecs>
+                      <solver>
+                        <type>eo</type>
+                        <use_Aee_prec>true</use_Aee_prec>
+                        <solver>
+                          <type>mr</type>
+                          <tol>1e-7</tol>
+                          <max_its>50</max_its>
+                          <error_if_not_converged>false</error_if_not_converged>
+                          <prefix>l0_nv</prefix>
+                          <verbosity>Detailed</verbosity>
+                        </solver>
+                      </solver>
+                   </null_vecs>
+                   <solver_smoother>
+                     <type>eo</type>
+                     <use_Aee_prec>true</use_Aee_prec>
+                     <solver>
+                       <type>mr</type>
+                       <tol>1e-1</tol>
+                       <max_its>8</max_its>
+                       <error_if_not_converged>false</error_if_not_converged>
+                       <verbosity>false</verbosity>
+                       <prefix>s0</prefix>
+                     </solver>
+                   </solver_smoother>
+                   <solver_coarse>
+                     <type>eo</type>
+                     <use_Aee_prec>true</use_Aee_prec>
+                     <solver>
+                       <type>mr</type>
+                       <tol>1e-1</tol>
+                       <max_its>6</max_its>
+                       <error_if_not_converged>false</error_if_not_converged>
+                       <verbosity>false</verbosity>
+                       <prefix>c0</prefix>
+                     </solver>
+                     <prec_ee>
+                          <type>mg</type>
+                          <num_null_vecs>32</num_null_vecs>
+                          <num_colors>32</num_colors>
+                          <blocking>2 2 2 2</blocking>
+                          <spin_splitting>chirality_splitting</spin_splitting>
+                          <null_vecs>
+                             <solver>
+                               <type>eo</type>
+                               <use_Aee_prec>true</use_Aee_prec>
+                               <solver>
+                                 <type>mr</type>
+                                 <tol>1e-7</tol>
+                                 <max_its>50</max_its>
+                                 <error_if_not_converged>false</error_if_not_converged>
+                                 <prefix>l1_nv</prefix>
+                                 <verbosity>Detailed</verbosity>
+                               </solver>
+                             </solver>
+                          </null_vecs>
+                          <solver_smoother>
+                            <type>eo</type>
+                            <use_Aee_prec>true</use_Aee_prec>
+                            <solver>
+                              <type>mr</type>
+                              <tol>1e-1</tol>
+                              <max_its>16</max_its>
+                              <error_if_not_converged>false</error_if_not_converged>
+                              <verbosity>false</verbosity>
+                              <prefix>s1</prefix>
+                            </solver>
+                          </solver_smoother>
+                          <solver_coarse>
+                            <type>eo</type>
+                            <use_Aee_prec>true</use_Aee_prec>
+                            <solver>
+                              <type>mr</type>
+                              <tol>1e-1</tol>
+                              <max_its>13</max_its>
+                              <error_if_not_converged>false</error_if_not_converged>
+                              <verbosity>false</verbosity>
+                              <prefix>c1</prefix>
+                            </solver>
+                          </solver_coarse>
+                     </prec_ee>
+                   </solver_coarse>
+              </prec_ee>
+	"
 
 	# propagator filename
 	prop_file_name() {
@@ -551,8 +654,9 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm5.7"
+chromaform="$HOME/scratch/chromaform_rocm6.1"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
@@ -561,6 +665,7 @@ redstar_npt="$redstar/bin/redstar_npt"
 
 adat="$chromaform/install/adat-pdf-superbblas-sp"
 adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
+adat="$chromaform/install/adat-pdf-superbblas"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -573,20 +678,20 @@ slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
-#SBATCH --gpu-bind=none
+#SBATCH --gpu-bind=closest
 #SBATCH -C nvme"
 
 slurm_script_prologue="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=7
+export OMP_NUM_THREADS=6
 export SB_MPI_GPU=1
+export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
-export QUDA_ENABLE_P2P=0
-export QUDA_ENABLE_GDR=0
-export QUDA_ENABLE_NVSHMEM=0
-export QUDA_ENABLE_MPS=0 
+export SB_MPI_NONBLOCK=0
+export SB_NUM_GPUS_ON_NODE=1
+export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
 "
 
 #
@@ -605,7 +710,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=25 # maximum jobs to be launched
+max_jobs=5 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
 
 #
