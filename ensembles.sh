@@ -19,15 +19,15 @@ ensemble0() {
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 1000 10 4500`"
-	#confs="`seq 2000 10 3000`"
-	#confs="`seq 1000 10 1990`"
-	#confs="`seq 1000 10 2000`"
-	confs="${confs//1920/}"
+	confs="`seq 5170 10 20070`"
+	#confs=5170
+	#confs="`seq 5170 10 5990`"
+	#confs="`seq 6000 10 9990`"
+	#confs="9710 9740"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -41,7 +41,7 @@ ensemble0() {
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
@@ -140,7 +140,7 @@ ensemble0() {
               <type>eo</type>
               <solver>
                 <type>mr</type>
-                <tol>1e-7</tol>
+                <tol>1e-10</tol>
                 <max_its>20000</max_its>
                 <prefix>l0</prefix>
                 <verbosity>Detailed</verbosity>
@@ -148,7 +148,8 @@ ensemble0() {
               <use_Aee_prec>true</use_Aee_prec>
               <prec_ee>
                    <type>mg</type>
-                   <num_null_vecs>24</num_null_vecs>
+                   <num_null_vecs>400</num_null_vecs>
+                   <max_num_null_vecs>80</max_num_null_vecs>
                    <num_colors>24</num_colors>
                    <blocking>4 4 4 4</blocking>
                    <spin_splitting>chirality_splitting</spin_splitting>
@@ -159,7 +160,7 @@ ensemble0() {
                         <solver>
                           <type>mr</type>
                           <tol>1e-7</tol>
-                          <max_its>50</max_its>
+                          <max_its>100</max_its>
                           <error_if_not_converged>false</error_if_not_converged>
                           <prefix>l0_nv</prefix>
                           <verbosity>Detailed</verbosity>
@@ -191,7 +192,8 @@ ensemble0() {
                      </solver>
                      <prec_ee>
                           <type>mg</type>
-                          <num_null_vecs>32</num_null_vecs>
+                          <num_null_vecs>200</num_null_vecs>
+                          <max_num_null_vecs>100</max_num_null_vecs>
                           <num_colors>32</num_colors>
                           <blocking>2 2 2 2</blocking>
                           <spin_splitting>chirality_splitting</spin_splitting>
@@ -202,7 +204,7 @@ ensemble0() {
                                <solver>
                                  <type>mr</type>
                                  <tol>1e-7</tol>
-                                 <max_its>50</max_its>
+                                 <max_its>100</max_its>
                                  <error_if_not_converged>false</error_if_not_converged>
                                  <prefix>l1_nv</prefix>
                                  <verbosity>Detailed</verbosity>
@@ -428,10 +430,11 @@ ensemble0() {
 	disco_max_colors=3325
 	disco_max_colors_at_once=256
 	disco_noise_vectors=1
-	disco_t_sources="8 24 40 56"
+	disco_t_sources="0 16 32 48 8 24 40 56"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=120
+	disco_max_rhs=24
 	disco_proj="
   <projectorType>MGPROTON</projectorType>
   <type>mg</type>
@@ -492,7 +495,7 @@ ensemble0() {
         <use_Aee_prec>true</use_Aee_prec>
         <solver>
           <type>bicgstab</type>
-          <tol>1e-8</tol>
+          <tol>3e-8</tol>
           <max_its>10000</max_its>
           <prefix>eig2</prefix>
           <verbosity>summary</verbosity>
@@ -710,7 +713,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=5 # maximum jobs to be launched
+max_jobs=1 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
 
 #

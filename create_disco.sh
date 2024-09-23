@@ -54,7 +54,7 @@ for ens in $ensembles; do
 	<num_colors>${disco_max_colors_at_once}</num_colors>
         <noise_vectors>${disco_noise_vectors}</noise_vectors>
 	<t_sources>${t_offset}</t_sources>
-        <max_rhs>1</max_rhs>
+        <max_rhs>${disco_max_rhs}</max_rhs>
         <Propagator>
           <version>10</version>
           <quarkSpinType>FULL</quarkSpinType>
