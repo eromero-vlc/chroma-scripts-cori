@@ -9,13 +9,13 @@ ensemble0() {
 	run_eigs="nop"
 	run_props="nop"
 	run_gprops="nop"
-	run_baryons="nop"
+	run_baryons="yes"
 	run_mesons="nop"
-	run_discos="yes"
-	run_redstar="nop"
+	run_discos="nop"
+	run_redstar="yes"
 
-	run_onthefly="nop"
-	onthefly_chroma_minutes=120
+	run_onthefly="yes"
+	onthefly_chroma_minutes=10
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -24,10 +24,10 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 5170 10 20070`"
-	#confs=5170
 	#confs="`seq 5170 10 5990`"
 	#confs="`seq 6000 10 9990`"
-	#confs="9710 9740"
+	confs="`seq 5170 10 9990`"
+	confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -37,7 +37,7 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=64  # colorvecs to use
+	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
@@ -52,10 +52,10 @@ ensemble0() {
 	# Props options
 	prop_t_sources="0 16 32 48"
 	prop_t_sources="`seq 0 63`"
-	prop_create_if_missing="yes"
-	prop_t_fwd=16
+	prop_create_if_missing="nop"
+	prop_t_fwd=32
 	prop_t_back=0
-	prop_nvec=64
+	prop_nvec=128
 	prop_zphases="0.00 2.00 -2.00"
 	prop_zphases="0.00"
 	prop_mass="-0.2350"
@@ -63,7 +63,8 @@ ensemble0() {
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
-	prop_chroma_minutes=120
+	prop_chroma_minutes=20
+	prop_max_rhs=8
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -76,7 +77,7 @@ ensemble0() {
                   <nu>1</nu>
                 </AnisoParam>
               </CloverParams>
-              <RsdTarget>1e-10</RsdTarget>
+              <RsdTarget>1e-07</RsdTarget>
               <Delta>0.1</Delta>
               <Pipeline>4</Pipeline>
               <MaxIter>500</MaxIter>
@@ -148,8 +149,8 @@ ensemble0() {
               <use_Aee_prec>true</use_Aee_prec>
               <prec_ee>
                    <type>mg</type>
-                   <num_null_vecs>400</num_null_vecs>
-                   <max_num_null_vecs>80</max_num_null_vecs>
+                   <num_null_vecs>100</num_null_vecs>
+                   <max_num_null_vecs>100</max_num_null_vecs>
                    <num_colors>24</num_colors>
                    <blocking>4 4 4 4</blocking>
                    <spin_splitting>chirality_splitting</spin_splitting>
@@ -193,7 +194,7 @@ ensemble0() {
                      <prec_ee>
                           <type>mg</type>
                           <num_null_vecs>200</num_null_vecs>
-                          <max_num_null_vecs>100</max_num_null_vecs>
+                          <max_num_null_vecs>200</max_num_null_vecs>
                           <num_colors>32</num_colors>
                           <blocking>2 2 2 2</blocking>
                           <spin_splitting>chirality_splitting</spin_splitting>
@@ -370,8 +371,8 @@ ensemble0() {
 	baryon_nvec=$nvec
 	baryon_zphases="${prop_zphases}"
 	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
-	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_chroma_max_vecs=2 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
+	baryon_chroma_max_vecs=32 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
 	baryon_chroma_minutes=120
@@ -530,22 +531,23 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=16 # Number of time slices
+	redstar_t_corr=32 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_2pt="yes"
+	redstar_2pt_max_mom=3
 	redstar_2pt_moms="\
 0 0 0
 $(
-	for i in `seq 1 $disco_max_displacement`; do
+	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo $i 0 0
 		echo -$i 0 0
 	done
-	for i in `seq 1 $disco_max_displacement`; do
+	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 $i 0
 		echo 0 -$i 0
 	done
-	for i in `seq 1 $disco_max_displacement`; do
+	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 0 $i
 		echo 0 0 -$i
 	done
@@ -662,13 +664,13 @@ chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-h
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-redstar/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
 adat="$chromaform/install/adat-pdf-superbblas-sp"
 adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install/adat-pdf-superbblas"
+adat="$chromaform/install-redstar/adat-pdf-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -703,7 +705,7 @@ export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
 
 slurm_script_prologue_redstar="
 . $chromaform/env.sh
-. $chromaform/env_extra.sh
+. $chromaform/env_extra0.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
@@ -713,7 +715,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=1 # maximum jobs to be launched
+max_jobs=25 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
 
 #
