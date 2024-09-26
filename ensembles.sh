@@ -7,27 +7,23 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
-	run_gprops="nop"
+	run_props="yes"
+	run_gprops="yes"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=30
+	onthefly_chroma_minutes=120
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 5170 10 20070`"
-	#confs="`seq 5170 10 5990`"
-	#confs="`seq 6000 10 9990`"
-	confs="`seq 5170 10 9990`"
-	confs="`seq 5170 10 6990`"
+	confs="`seq 1000 10 4500`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -37,11 +33,11 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=128  # colorvecs to use
+	nvec=64  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
@@ -51,13 +47,11 @@ ensemble0() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
-	prop_t_sources="`seq 0 63`"
 	prop_create_if_missing="nop"
-	prop_t_fwd=32
+	prop_t_fwd=16
 	prop_t_back=0
-	prop_nvec=128
+	prop_nvec=96
 	prop_zphases="0.00 2.00 -2.00"
-	prop_zphases="0.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -278,7 +272,7 @@ ensemble0() {
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
-	localpath="/mnt/bb/$USER"
+	localpath="/tmp"
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		local n node
@@ -389,7 +383,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "${n}.part_$node"
+					echo "afs:${n}.part_$node"
 				done
 			fi
 		else
@@ -399,24 +393,37 @@ ensemble0() {
 	baryon_transfer_back="nop"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
+	redstar_op_bases=1
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
+
+	$( [ $redstar_op_bases == 1 -o $redstar_op_bases == all ] && echo "
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>" )
+	$( [ $redstar_op_bases == all ] && echo "
+          <elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3</right></elem>
+          <elem><left>0</left><middle>1</middle><right>1</right></elem>
+          <elem><left>0</left><middle>1</middle><right>2</right></elem>
+          <elem><left>0</left><middle>1</middle><right>3</right></elem>
+          <elem><left>0</left><middle>2</middle><right>2</right></elem>
+          <elem><left>0</left><middle>2</middle><right>3</right></elem>
+          <elem><left>0</left><middle>3</middle><right>3</right></elem>" )
         </displacement_list>
 "
 
 	# Disco options
-	disco_max_displacement=16
+	disco_max_displacement=8
 	disco_probing_displacement=0
 	disco_probing_power=20
 	disco_max_colors=3325
@@ -522,28 +529,69 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=20 # Number of time slices
+	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_2pt="yes"
-	redstar_2pt_max_mom=3
+	redstar_2pt="nop"
 	redstar_2pt_moms="\
-0 0 0
-$(
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo $i 0 0
-		echo -$i 0 0
-	done
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 $i 0
-		echo 0 -$i 0
-	done
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 0 $i
-		echo 0 0 -$i
-	done
-)"
-	redstar_3pt="nop"
+-2 0 2
+0 2 -2
+-1 2 2
+2 2 1
+-1 0 3
+-3 0 1
+0 -1 3
+3 0 1
+1 1 1
+-1 -1 1
+-1 1 1
+0 1 -2
+-2 0 1
+-1 0 2
+0 -1 2
+1 -2 0
+-1 1 2
+-1 -2 1
+-1 0 0
+0 -1 0
+0 1 1
+-1 0 1
+0 -1 1
+-2 0 0
+1 3 1
+-2 -1 1
+1 -1 0
+-2 -2 1
+2 -2 0
+1 -1 2
+-1 3 1
+0 -2 -2
+-2 1 -1
+0 -1 -1
+-1 -2 -1
+-3 -1 -1
+-2 -2 0
+2 -1 2
+-1 1 0
+1 3 -1
+-3 0 -1
+1 -2 -2
+1 3 0
+0 -3 0
+-2 2 0
+1 -1 -1
+-1 3 -1
+-1 -3 1
+1 -3 -1
+1 -1 -3
+0 2 0
+2 2 0
+-1 1 -1
+-1 -1 -1
+1 -1 1
+0 -2 0
+0 -2 2 "
+	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
 0 1 4   0 0 4   
@@ -563,19 +611,30 @@ $(
 2 0 4   1 0 4   
 2 0 5   1 0 5   
 2 0 6   1 0 6"
-#	redstar_2pt_moms="$(
-#		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
-#			echo $m0 $m1 $m2
-#			echo $m3 $m4 $m5
-#		done | sort -u
-#)"
+	redstar_2pt_moms="$(
+		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+			echo $m0 $m1 $m2
+			echo $m3 $m4 $m5
+		done | sort -u
+)"
 	redstar_disco="nop" # contracting for disco
-	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
-	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
-	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
-	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
-	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
-	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
+	if [ $redstar_op_bases == 1 ]; then
+		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
+		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
+		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1"
+		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
+		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
+	elif [ $redstar_op_bases == 3 ]; then
+		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
+		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
+		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
+		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
+		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
+	else
+		echo "too lazy"; return -1
+	fi
 	redstar_insertion_operators="\
 pion_pionxDX__J0_A1
 pion_pion_2xDX__J0_A1
@@ -620,15 +679,15 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased_2pt_disco/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased_2pt_disco/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
@@ -655,13 +714,11 @@ chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-h
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-redstar-nompi/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
 adat="$chromaform/install/adat-pdf-superbblas-sp"
-adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install-redstar-nompi/adat-pdf-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
