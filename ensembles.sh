@@ -15,7 +15,7 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=10
+	onthefly_chroma_minutes=30
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -27,7 +27,7 @@ ensemble0() {
 	#confs="`seq 5170 10 5990`"
 	#confs="`seq 6000 10 9990`"
 	confs="`seq 5170 10 9990`"
-	confs="5170"
+	confs="`seq 5170 10 6990`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -403,24 +403,15 @@ ensemble0() {
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
-          <!-- elem><left>0</left><middle>0</middle><right>1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
           <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
           <elem><left>0</left><middle>0</middle><right>3 2</right></elem>
-          <elem><left>0</left><middle>1</middle><right>1</right></elem>
-          <elem><left>0</left><middle>1</middle><right>2</right></elem>
-          <elem><left>0</left><middle>1</middle><right>3</right></elem>
-          <elem><left>0</left><middle>2</middle><right>2</right></elem>
-          <elem><left>0</left><middle>2</middle><right>3</right></elem>
-          <elem><left>0</left><middle>3</middle><right>3</right></elem -->
+          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
         </displacement_list>
 "
 
@@ -531,7 +522,7 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=32 # Number of time slices
+	redstar_t_corr=20 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_2pt="yes"
@@ -579,12 +570,12 @@ $(
 #		done | sort -u
 #)"
 	redstar_disco="nop" # contracting for disco
-	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
-	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
-	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
-	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1"
-	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
-	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
+	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
+	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
+	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
+	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
+	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
+	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
 	redstar_insertion_operators="\
 pion_pionxDX__J0_A1
 pion_pion_2xDX__J0_A1
@@ -664,13 +655,13 @@ chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-h
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-redstar/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-redstar-nompi/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
 adat="$chromaform/install/adat-pdf-superbblas-sp"
 adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install-redstar/adat-pdf-superbblas-sp"
+adat="$chromaform/install-redstar-nompi/adat-pdf-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
