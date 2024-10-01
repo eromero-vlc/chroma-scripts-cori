@@ -420,7 +420,6 @@ for ens in $ensembles; do
 	rm -f ${redstar_files}*
 
 	k_split $max_moms_per_job $mom_groups | while read mom_group ; do
-		echo mom group $mom_group
 		mom_leader="`take_first $mom_group`"
 		if [ ${redstar_2pt} == yes ]; then
 			all_insert_ops="_2pt_"
@@ -497,7 +496,7 @@ EOF
 
 			for t_source in $prop_t_sources; do
 				for zphase in $prop_zphases; do
-					corr_file="`mom=${mom_leader} insertion_op=${combo_line} corr_file_name`"
+					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} corr_file_name`"
 					mkdir -p `dirname ${corr_file}`
 					prefix="t${t_source}_insop${combo_line}_z${zphase}_mf${mom_leader}"
 					redstar_xml="redstar_${prefix}.xml"

@@ -24,9 +24,9 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 5170 10 20070`"
-	#confs=5170
 	#confs="`seq 10010 10 20070`"
 	#confs="`seq 5170 10 10000`"
+	#confs="`seq 5170 10 8000`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -54,7 +54,7 @@ ensemble0() {
 	prop_t_back=0
 	prop_nvec=64
 	prop_zphases="0.00 2.00 -2.00"
-	prop_zphases="2.00"
+	prop_zphases="0.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -398,24 +398,11 @@ ensemble0() {
 0 -2 2 "
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
-1 0 5   0 0 5   
-0 1 4   0 0 4   
-0 1 5   0 0 5   
-0 1 6   0 0 6   
-1 0 4   0 0 4   
-1 1 5   0 0 5   
-1 0 6   0 0 6   
-1 1 4   0 0 4   
-1 1 4   0 1 4   
-1 1 4   1 0 4   
-1 1 6   1 0 6   
-1 1 5   0 1 5   
-1 1 5   1 0 5   
-1 1 6   0 0 6   
-1 1 6   0 1 6   
-2 0 4   1 0 4   
-2 0 5   1 0 5   
-2 0 6   1 0 6"
+0 0 0   0 0 0   
+1 -1 0  -1 1 0
+0 2 1   2 0 1
+0 2 2   1 0 0
+1 0 -1  2 2 1" 
 	redstar_2pt_moms="$(
 		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2
@@ -446,16 +433,34 @@ z3 3 3 3
 z4 3 3 3 3
 z5 3 3 3 3 3
 z6 3 3 3 3 3 3
-z7 3 3 3 3 3 3 3
-z8 3 3 3 3 3 3 3 3
 zn1 -3
 zn2 -3 -3
 zn3 -3 -3 -3
 zn4 -3 -3 -3 -3
 zn5 -3 -3 -3 -3 -3
 zn6 -3 -3 -3 -3 -3 -3
-zn7 -3 -3 -3 -3 -3 -3 -3
-zn8 -3 -3 -3 -3 -3 -3 -3 -3"
+a0 -1 -1 -1 -1 -1
+a0 -1 -1 -1 -1 -2 -2 -2
+a0 -2 -2 -2 -1 -1 -1 -1
+a0 -1 -2 -1 -2 -1 -2 -1
+a0 -2 -1 -1 -2 -1 -1 -2
+a0 -1 -1 -1 -1 -3 -3 -3
+a0 -3 -3 -3 -1 -1 -1 -1
+a0 -1 -3 -1 -3 -1 -3 -1
+a0 -3 -1 -1 -3 -1 -1 -3
+a0 -1 -1 -1 -1 2 2 2
+a0 2 2 2 -1 -1 -1 -1
+a0 -1 2 -1 2 -1 2 -1
+a0 -1 -1 -1 -2 -2 -2 -2
+a0 -2 -2 -2 -2 -1 -1 -1
+a0 -2 -1 -2 -1 -2 -1 -2
+a0 -1 -1 -1 -3 -3 -3 -3
+a0 -3 -3 -3 -3 -1 -1 -1
+a0 -3 -1 -3 -1 -3 -1 -3
+a0 -2 -2 -2 -2 -3 -3 -3
+a0 -3 -3 -3 -2 -2 -2 -2
+a0 -3 -3 -3 -3 -3
+a0 -1 -1 -1 "
 	gprop_insertion_disps="${redstar_insertion_disps}"
 	rename_moms() {
 		[ $# == 3 ] && echo "mom$1.$2.$3"
@@ -463,12 +468,16 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			if [ $t_source == avg ]; then
+				echo "${confspath}/${confsprefix}/corr/unphased_extra_3pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			else
+				echo "${confspath}/${confsprefix}/corr/unphased_extra_3pt/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}_extra/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}_extra/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
@@ -480,7 +489,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/z2.00"
+	globus_check_dirs="${confspath}/${confsprefix}/corr/z2.00_extra"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -526,7 +535,7 @@ slurm_script_prologue="
 . $chromaform/env_extra_rocm5.4_0.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
-#export SLURM_CPU_BIND=\"cores\"
+export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 export MPICH_GPU_SUPPORT_ENABLED=1
 "
@@ -559,6 +568,7 @@ slurm_script_prologue_redstar="
 . $chromaform/env_rocm5.4.sh
 . $chromaform/env_extra_rocm5.4.sh
 export OPENBLAS_NUM_THREADS=1
+export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 "
