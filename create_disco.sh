@@ -14,39 +14,47 @@ for ens in $ensembles; do
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
-		disco_file="`disco_file_name`"
 		[ -f $lime_file ] || continue
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
 		mkdir -p $runpath
+
+		num_color_parts="$(( (disco_max_colors + disco_max_colors_at_once-1) / disco_max_colors_at_once ))"
 		
-		#
-		# Basis creation
-		#
+		for t_source in $disco_t_sources; do
+		for color_part in `seq 0 $(( num_color_parts-1 ))`; do
+			disco_file="`disco_file_name`"
+
+			# Find t_origin
+			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 		
-		cat << EOF > $runpath/disco.xml
+			prefix="$runpath/disco_t${t_source}_p${color_part}"
+			cat << EOF > ${prefix}.xml
 <?xml version="1.0"?>
 <chroma>
- <Param>
+<Param>
   <InlineMeasurements>
    <elem>
-    <Name>DISCO_PROBING_DEFLATION_SUPERB</Name>
+    <Name>DISCO_PROBING_3D_DEFLATION_SUPERB</Name>
       <Param>
-        <max_path_length>${disco_max_z_displacement}</max_path_length>
+        <Displacements>
+`
+	echo "$disco_insertions" | while read name disp; do
+		[ x$name != x ] && echo "<elem>$disp</elem>"
+	done
+`
+        </Displacements>
         <mom_list>
            <elem>0 0 0</elem>
-           <elem>0 0 1</elem>
-           <elem>0 0 -1</elem>
-           <elem>0 0 2</elem>
-           <elem>0 0 -2</elem>
-           <elem>0 0 3</elem>
-           <elem>0 0 -3</elem>
         </mom_list>
         <mass_label>${prop_mass_label}</mass_label>
         <probing_distance>${disco_probing_displacement}</probing_distance>
         <probing_power>${disco_probing_power}</probing_power>
+	<first_color>$(( color_part*disco_max_colors_at_once ))</first_color>
+	<num_colors>${disco_max_colors_at_once}</num_colors>
         <noise_vectors>${disco_noise_vectors}</noise_vectors>
-        <max_rhs>1</max_rhs>
+	<t_sources>${t_offset}</t_sources>
+        <max_rhs>${disco_max_rhs}</max_rhs>
         <Propagator>
           <version>10</version>
           <quarkSpinType>FULL</quarkSpinType>
@@ -68,76 +76,11 @@ for ens in $ensembles; do
             </FermState>
           </FermionAction>
             <InvertParam>
-              <invType>MG_PROTO_QPHIX_EO_CLOVER_INVERTER</invType>
-              <CloverParams>
-                <Mass>${prop_mass}</Mass>
-                <clovCoeff>${prop_clov}</clovCoeff>
-              </CloverParams>
-              <AntiPeriodicT>true</AntiPeriodicT>
-              <MGLevels>3</MGLevels>
-              <Blocking>
-                <elem>4 4 4 4</elem>
-                <elem>2 2 2 2</elem>
-              </Blocking>
-              <NullVecs>24 32</NullVecs>
-              <NullSolverMaxIters>100 100</NullSolverMaxIters>
-              <NullSolverRsdTarget>5e-8 5e-8</NullSolverRsdTarget>
-              <NullSolverVerboseP>0 0</NullSolverVerboseP>
-              <OuterSolverNKrylov>10</OuterSolverNKrylov>
-              <OuterSolverRsdTarget>1.0e-7</OuterSolverRsdTarget>
-              <OuterSolverMaxIters>300</OuterSolverMaxIters>
-              <OuterSolverVerboseP>true</OuterSolverVerboseP>
-              <VCyclePreSmootherMaxIters>0 0</VCyclePreSmootherMaxIters>
-              <VCyclePreSmootherRsdTarget>0.1 0.1</VCyclePreSmootherRsdTarget>
-              <VCyclePreSmootherRelaxOmega>1.1 1.1</VCyclePreSmootherRelaxOmega>
-              <VCyclePreSmootherVerboseP>0 0</VCyclePreSmootherVerboseP>
-              <VCyclePostSmootherMaxIters>8 13</VCyclePostSmootherMaxIters>
-              <VCyclePostSmootherRsdTarget>0.06 0.06</VCyclePostSmootherRsdTarget>
-              <VCyclePostSmootherRelaxOmega>1.1 1.1</VCyclePostSmootherRelaxOmega>
-              <VCyclePostSmootherVerboseP>0 0</VCyclePostSmootherVerboseP>
-              <VCycleBottomSolverMaxIters>100 100</VCycleBottomSolverMaxIters>
-              <VCycleBottomSolverRsdTarget>0.06 0.06</VCycleBottomSolverRsdTarget>
-              <VCycleBottomSolverNKrylov>8 8</VCycleBottomSolverNKrylov>
-              <VCycleBottomSolverVerboseP>0 0</VCycleBottomSolverVerboseP>
-              <VCycleMaxIters>1 1</VCycleMaxIters>
-              <VCycleRsdTarget>0.1 0.1</VCycleRsdTarget>
-              <VCycleVerboseP>0 0</VCycleVerboseP>
-              <SubspaceId>foo_eo</SubspaceId>
+              $prop_inv
             </InvertParam>
         </Propagator>
         <Projector>
-              <projectorType>MG_PROTO_QPHIX_CLOVER_PROJECTOR</projectorType>
-              <CloverParams>
-                <Mass>${prop_mass}</Mass>
-                <clovCoeff>${prop_clov}</clovCoeff>
-                <AnisoParam>
-                  <anisoP>false</anisoP>
-                  <t_dir>3</t_dir>
-                  <xi_0>1</xi_0>
-                  <nu>1</nu>
-                </AnisoParam>
-              </CloverParams>
-              <AntiPeriodicT>true</AntiPeriodicT>
-              <MGLevels>3</MGLevels>
-              <Blocking>
-                <elem>4 4 4 4</elem>
-                <elem>2 2 2 2</elem>
-              </Blocking>
-              <NullVecs>24 32</NullVecs>
-              <NullSolverMaxIters>800 800</NullSolverMaxIters>
-              <NullSolverRsdTarget>-0.002 -0.0002</NullSolverRsdTarget>
-              <NullSolverVerboseP>0 0</NullSolverVerboseP>
-              <EigenSolverBlockSize>1</EigenSolverBlockSize>
-              <EigenSolverMaxRestartSize>32</EigenSolverMaxRestartSize>
-              <EigenSolverMaxRank>1600</EigenSolverMaxRank>
-              <EigenSolverRsdTarget>1.0e-3</EigenSolverRsdTarget>
-              <EigenSolverMaxIters>0</EigenSolverMaxIters>
-              <EigenSolverVerboseP>true</EigenSolverVerboseP>
-              <BottomSolverNKrylov>40</BottomSolverNKrylov>
-              <BottomSolverRsdTarget>1.0e-4</BottomSolverRsdTarget>
-              <BottomSolverMaxIters>10000</BottomSolverMaxIters>
-              <BottomSolverVerboseP>false</BottomSolverVerboseP>
-              <SubspaceId>foo_eo_caca</SubspaceId>
+          $disco_proj
         </Projector>
         <use_ferm_state_link>true</use_ferm_state_link>
       </Param>
@@ -151,9 +94,9 @@ for ens in $ensembles; do
   </Param>
   <RNG>
     <Seed>
-      <elem>2551</elem>
-      <elem>3189</elem>
-      <elem>2855</elem>
+      <elem>11</elem>
+      <elem>11</elem>
+      <elem>${t_source}</elem>
       <elem>$cfg</elem>
     </Seed>
   </RNG>
@@ -165,25 +108,34 @@ for ens in $ensembles; do
 </chroma>
 EOF
 
-		output="$runpath/disco.out"
-		cat << EOF > $runpath/disco.sh
-$slurm_sbatch_prologue_cpu
-#SBATCH -o $runpath/disco.out0
+		output="${prefix}.out"
+		cat << EOF > ${prefix}.sh
+$slurm_sbatch_prologue
+#SBATCH -o ${prefix}.out0
 #SBATCH -t $disco_chroma_minutes
-#SBATCH --nodes=$disco_slurm_nodes -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node_cpu ))
-#SBATCH -J disco-${cfg}
+#SBATCH --nodes=$disco_slurm_nodes -n $(( slurm_procs_per_node*disco_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
+#SBATCH -J disco-${cfg}-${color_part}
 
 run() {
-	$slurm_script_prologue_cpu
+	$slurm_script_prologue
 	
 	cd $runpath
-	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node_cpu*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma_cpu -i $runpath/disco.xml -geom $disco_chroma_geometry $chroma_extra_args_cpu &> $output
+	mkdir -p `dirname ${disco_file}`
+	rm -f $disco_file
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
 	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
+}
+
+blame() {
+	if ! tail -n 3000 ${output} 2> /dev/null | grep -q "CHROMA: ran successfully" ; then
+		echo disco creation failed
+		exit 1
+	fi
+	exit 0
 }
 
 deps() {
@@ -205,5 +157,7 @@ globus() {
 
 eval "\${1:-run}"
 EOF
+		done # color_part
+		done # t_source
 	done # cfg
 done # ens

@@ -24,6 +24,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			prop_file="`prop_file_name single`"
+			[ ${run_onthefly} != yes -a ${prop_create_if_missing} == yes -a -f ${prop_file} ] && continue
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${prop_file}`
 
 			#
@@ -51,7 +52,7 @@ for ens in $ensembles; do
           <Nt_backward>$prop_t_back</Nt_backward>
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
-          <max_rhs>1</max_rhs>
+          <max_rhs>${prop_max_rhs}</max_rhs>
           <phase>0.00 0.00 $zphase</phase>
           <use_superb_format>true</use_superb_format>
           <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
