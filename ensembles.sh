@@ -399,7 +399,7 @@ ensemble0() {
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
 
-	$( [ $redstar_op_bases == 1 -o $redstar_op_bases == all ] && echo "
+	$( [ $redstar_op_bases == 3 -o $redstar_op_bases == all ] && echo "
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
           <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
@@ -612,7 +612,7 @@ $(
 2 0 5   1 0 5   
 2 0 6   1 0 6"
 	redstar_2pt_moms="$(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2
 			echo $m3 $m4 $m5
 		done | sort -u
