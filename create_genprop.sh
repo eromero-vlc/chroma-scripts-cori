@@ -100,7 +100,7 @@ for ens in $ensembles; do
             <displacement_length>1</displacement_length>
             <num_tries>0</num_tries>
             <phase>0.00 0.00 ${zphase}</phase>
-            <max_rhs>1</max_rhs>
+            <max_rhs>${gprop_max_rhs}</max_rhs>
             <use_multiple_writers>false</use_multiple_writers>
             <use_genprop4_format>false</use_genprop4_format>
             <use_genprop5_format>true</use_genprop5_format>

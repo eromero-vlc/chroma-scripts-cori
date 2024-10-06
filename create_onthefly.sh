@@ -69,11 +69,11 @@ run() {
 	fi
 
 	$slurm_script_prologue_redstar
-	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash -l -c '
+	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash -c '
 `
 	i=0
 	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
-		echo "[ \\\$SLURM_PROCID == $i ] && bash -l $j run"
+		echo "[ \\\$SLURM_PROCID == $i ] && bash $j run"
 		i="$((i+1))"
 	done
 `

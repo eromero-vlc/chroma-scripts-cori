@@ -49,11 +49,39 @@ get_ops() {
 	echo "${!varname}"
 }
 
+# | Operator Name          | Isospin | Gamma Structure | flavor/twoI | irmom/row
+# |----------------------- |---------|-----------------|-------------| ---------
+# | fl_a0xDX__J0_A1        |       0 |               1 |     0       |    1
+# | a_a0xDX__J0_A1         |       1 |               1 |     2       |    1
+# | omegal_rhoxDX__J1_T1   |       0 |             g_k |     0       |  1 2 3
+# | rho_rhoxDX__J1_T1      |       1 |             g_k |     2       |  1 2 3
+# | hl_b1xDX__J1_T1        |       0 |         g_i g_j |     0       |  1 2 3
+# | b_b1xDX__J1_T1         |       1 |         g_i g_j |     2       |  1 2 3
+# | etal_pion_2xDX__J0_A1  |       0 |         g_5 g_4 |     0       |    1
+# | pion_pion_2xDX__J0_A1  |       1 |         g_5 g_4 |     2       |    1
+# | hl_b0xDX__J0_A1        |       0 |             g_4 |     0       |    1
+# | b_b0xDX__J0_A1         |       1 |             g_4 |     2       |    1
+# | omegal_rho_2xDX__J1_T1 |       0 |         g_k g_4 |     0       |  1 2 3
+# | rho_rho_2xDX__J1_T1    |       1 |         g_k g_4 |     2       |  1 2 3
+# | fl_a1xDX__J1_T1        |       0 |         g_k g_5 |     0       |  1 2 3
+# | a_a1xDX__J1_T1         |       1 |         g_k g_5 |     2       |  1 2 3
+# | etal_pionxDX__J0_A1    |       0 |             g_5 |     0       |    1
+# | pion_pionxDX__J0_A1    |       1 |             g_5 |     2       |    1
+
 operator_rows() {
 	case $1 in
-		pion*|b_b0*|a_a0*) echo 1 ;;
-		rho_rho*|b_b1*|a_a1*) echo 1 2 3 ;;
+		etal_*|pion*|hl_b0*|b_b0*|fl_a0*|a_a0*|hc_b0*) echo 1 ;;
+		omegal_*|rho_*|hl_b1*|b_b1*|fl_a1*|a_a1*) echo 1 2 3 ;;
 		*) echo "operator_rows: $1 ?" >&2; exit 1;;
+	esac
+}
+
+operator_twoI() {
+	case $1 in
+		hc_b0*) echo 0 ;;
+		etal*|hl_b0*|fl_a0*|omegal_rho*|hl_b1*|fl_a1*) echo 0 ;;
+		pion*|b_b0*|a_a0*|rho_rho*|b_b1*|a_a1*) echo 2 ;;
+		*) echo "operator_twoI: $1 ?" >&2; exit 1;;
 	esac
 }
 
@@ -177,7 +205,7 @@ npoint_3pt() {
                  <creation_op>true</creation_op>
                  <smearedP>false</smearedP>
                  <flavor>
-                   <twoI>2</twoI>
+                   <twoI>$( operator_twoI $operatork )</twoI>
                    <threeY>0</threeY>
                    <twoI_z>0</twoI_z>
                  </flavor>
@@ -241,13 +269,13 @@ corr_graph() {
   <Param>
     <version>12</version>
     <diagnostic_level>0</diagnostic_level>
-    <autoIrrepCG>false</autoIrrepCG>
+    <autoIrrepCG>true</autoIrrepCG>
     <rephaseIrrepCG>false</rephaseIrrepCG>
     <Nt_corr>${redstar_t_corr}</Nt_corr>
     <convertUDtoL>true</convertUDtoL>
     <convertUDtoS>false</convertUDtoS>
     <average_1pt_diagrams>true</average_1pt_diagrams>
-    <zeroUnsmearedGraphsP>false</zeroUnsmearedGraphsP>
+    <zeroUnsmearedGraphsP>$( if [ $redstar_disco == yes ]; then echo false ; else echo true ; fi )</zeroUnsmearedGraphsP>
     <t_origin>$t_origin</t_origin>
     <bc_spec>-1</bc_spec>
     <Layout>
@@ -297,7 +325,7 @@ corr_graph() {
       <FlavorToMass>
         <elem>
           <flavor>c</flavor>
-          <mass>U0.20</mass>
+          <mass>U${prop_mass}</mass>
         </elem>
         <elem>
           <flavor>e</flavor>
@@ -370,7 +398,7 @@ corr_graph() {
       </hadron2pt_discoblock_dbs>
       <unsmeared_genprop4_dbs>
 `
-	if [ $redstar_3pt == yes ]; then
+	if [ $redstar_use_gprops == yes ]; then
 		for i in $( gprop_file_name ); do
 			echo "<elem>$i</elem>"
 		done
@@ -395,8 +423,8 @@ for ens in $ensembles; do
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
 
-	if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
-		echo "Unsupported to compute 2pt and 3pt on the fly at once"
+	if [ ${redstar_2pt} == yes -a ${redstar_disco} == yes ] ; then
+		echo "Unsupported to compute 2pt and disco correlation functions"
 		exit 1
 	fi
 	mom_groups="`
@@ -420,7 +448,6 @@ for ens in $ensembles; do
 	rm -f ${redstar_files}*
 
 	k_split $max_moms_per_job $mom_groups | while read mom_group ; do
-		echo mom group $mom_group
 		mom_leader="`take_first $mom_group`"
 		if [ ${redstar_2pt} == yes ]; then
 			all_insert_ops="_2pt_"
@@ -497,7 +524,7 @@ EOF
 
 			for t_source in $prop_t_sources; do
 				for zphase in $prop_zphases; do
-					corr_file="`mom=${mom_leader} insertion_op=${combo_line} corr_file_name`"
+					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} corr_file_name`"
 					mkdir -p `dirname ${corr_file}`
 					prefix="t${t_source}_insop${combo_line}_z${zphase}_mf${mom_leader}"
 					redstar_xml="redstar_${prefix}.xml"
@@ -543,7 +570,7 @@ deps() {
 	[ $redstar_use_meson == yes ] && echo echo $( meson_file_name | tr '\n' ' ' )
 	[ $redstar_use_baryon == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
 	[ $run_onthefly != yes -o $run_props != yes ] && echo echo $( prop_file_name | tr '\n' ' ' )
-	[ $redstar_3pt == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_use_gprops == yes ] && [ $run_onthefly != yes -o $run_gprops != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }
@@ -594,7 +621,7 @@ t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash -l \$t
+	bash \$t
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -602,7 +629,7 @@ elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
 elif [ x\$1 == xrun ]; then
-	bash -l \$t \$@
+	bash \$t \$@
 	r="\$?"
 	rm -f \$t
 	exit \$r

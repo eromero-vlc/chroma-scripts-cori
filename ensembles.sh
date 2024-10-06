@@ -16,16 +16,7 @@ ensemble0() {
 
 	run_onthefly="yes"
 	onthefly_chroma_minutes=120
-	max_moms_per_job=2
-
-	#run_eigs="nop"
-	#run_props="yes"
-	#run_gprops="nop"
-	#run_baryons="nop"
-	#run_mesons="nop"
-	#run_discos="nop"
-	#run_redstar="nop"
-	#run_onthefly="nop"
+	max_moms_per_job=100
 
 	# Ensemble properties
 	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
@@ -33,7 +24,7 @@ ensemble0() {
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confs="`seq 1010 30 2000`"
-	#confs="1010"
+	confs="1010"
 	confs="${confs//1250/}"
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
@@ -58,6 +49,7 @@ ensemble0() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
+	prop_create_if_missing="nop"
 	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=128
@@ -69,6 +61,7 @@ ensemble0() {
 	prop_slurm_nodes=3
 	prop_chroma_geometry="1 1 3 8"
 	prop_chroma_minutes=120
+	prop_max_rhs=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -139,6 +132,111 @@ ensemble0() {
               <SubspaceID>mg_subspace</SubspaceID>
               <SolutionCheckP>true</SolutionCheckP>
  "
+	prop_inv_nop="
+              <invType>MGPROTON</invType>
+
+              <type>eo</type>
+              <solver>
+                <type>mr</type>
+                <tol>1e-8</tol>
+                <max_its>20000</max_its>
+                <prefix>l0</prefix>
+                <verbosity>Detailed</verbosity>
+              </solver>
+              <use_Aee_prec>true</use_Aee_prec>
+              <prec_ee>
+                   <type>mg</type>
+                   <num_null_vecs>100</num_null_vecs>
+                   <max_num_null_vecs>100</max_num_null_vecs>
+                   <num_colors>24</num_colors>
+                   <blocking>4 4 4 4</blocking>
+                   <spin_splitting>chirality_splitting</spin_splitting>
+                   <null_vecs>
+                      <solver>
+                        <type>eo</type>
+                        <use_Aee_prec>true</use_Aee_prec>
+                        <solver>
+                          <type>mr</type>
+                          <tol>1e-7</tol>
+                          <max_its>100</max_its>
+                          <error_if_not_converged>false</error_if_not_converged>
+                          <prefix>l0_nv</prefix>
+                          <verbosity>Detailed</verbosity>
+                        </solver>
+                      </solver>
+                   </null_vecs>
+                   <solver_smoother>
+                     <type>eo</type>
+                     <use_Aee_prec>true</use_Aee_prec>
+                     <solver>
+                       <type>mr</type>
+                       <tol>1e-1</tol>
+                       <max_its>8</max_its>
+                       <error_if_not_converged>false</error_if_not_converged>
+                       <verbosity>false</verbosity>
+                       <prefix>s0</prefix>
+                     </solver>
+                   </solver_smoother>
+                   <solver_coarse>
+                     <type>eo</type>
+                     <use_Aee_prec>true</use_Aee_prec>
+                     <solver>
+                       <type>mr</type>
+                       <tol>1e-1</tol>
+                       <max_its>6</max_its>
+                       <error_if_not_converged>false</error_if_not_converged>
+                       <verbosity>false</verbosity>
+                       <prefix>c0</prefix>
+                     </solver>
+                     <prec_ee>
+                          <type>mg</type>
+                          <num_null_vecs>200</num_null_vecs>
+                          <max_num_null_vecs>200</max_num_null_vecs>
+                          <num_colors>32</num_colors>
+                          <blocking>2 2 2 2</blocking>
+                          <spin_splitting>chirality_splitting</spin_splitting>
+                          <null_vecs>
+                             <solver>
+                               <type>eo</type>
+                               <use_Aee_prec>true</use_Aee_prec>
+                               <solver>
+                                 <type>mr</type>
+                                 <tol>1e-7</tol>
+                                 <max_its>100</max_its>
+                                 <error_if_not_converged>false</error_if_not_converged>
+                                 <prefix>l1_nv</prefix>
+                                 <verbosity>Detailed</verbosity>
+                               </solver>
+                             </solver>
+                          </null_vecs>
+                          <solver_smoother>
+                            <type>eo</type>
+                            <use_Aee_prec>true</use_Aee_prec>
+                            <solver>
+                              <type>mr</type>
+                              <tol>1e-1</tol>
+                              <max_its>16</max_its>
+                              <error_if_not_converged>false</error_if_not_converged>
+                              <verbosity>false</verbosity>
+                              <prefix>s1</prefix>
+                            </solver>
+                          </solver_smoother>
+                          <solver_coarse>
+                            <type>eo</type>
+                            <use_Aee_prec>true</use_Aee_prec>
+                            <solver>
+                              <type>mr</type>
+                              <tol>1e-1</tol>
+                              <max_its>13</max_its>
+                              <error_if_not_converged>false</error_if_not_converged>
+                              <verbosity>false</verbosity>
+                              <prefix>c1</prefix>
+                            </solver>
+                          </solver_coarse>
+                     </prec_ee>
+                   </solver_coarse>
+              </prec_ee>
+	"
 
 	# propagator filename
 	prop_file_name() {
@@ -167,11 +265,12 @@ ensemble0() {
 
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
-	gprop_t_seps="4 6 8 10 12 14"
+	gprop_t_seps="4 6 8 10 12 14 16"
 	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
+	gprop_max_rhs=$prop_max_rhs
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
 	gprop_slurm_nodes="${prop_slurm_nodes}"
@@ -182,9 +281,9 @@ ensemble0() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		local n node
 		if [ $zphase == 0.00 ]; then
-			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
+			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
 		else
-			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.Gamma_gt_g5gz_g5gx_g5gy_g5gt_gxgy_gxgz_gxgt_gygz_gygt_gzgt.absDisp000-008.qXYZ_0,0,0.sdb${cfg}"
+			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
 		fi
 		if [ $run_onthefly == yes -a $run_gprops == yes ] ; then
 			n="${localpath}/${n//\//_}"
@@ -268,10 +367,10 @@ ensemble0() {
 
 	# Baryon options
 	baryon_nvec=$nvec
-	baryon_zphases="0.00"
+	baryon_zphases="${prop_zphases}"
 	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
-	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_chroma_max_vecs=2 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
+	baryon_chroma_max_vecs=32 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=3
 	baryon_chroma_geometry="1 1 3 8"
 	baryon_chroma_minutes=120
@@ -298,13 +397,13 @@ ensemble0() {
 	baryon_transfer_back="nop"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
+	redstar_op_bases=3
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
-          <!-- elem><left>0</left><middle>0</middle><right>1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>2</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3</right></elem>
+
+	$( [ $redstar_op_bases == 3 -o $redstar_op_bases == all ] && echo "
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
           <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
@@ -313,38 +412,130 @@ ensemble0() {
           <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
           <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
-          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>" )
+	$( [ $redstar_op_bases == all ] && echo "
+          <elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3</right></elem>
           <elem><left>0</left><middle>1</middle><right>1</right></elem>
           <elem><left>0</left><middle>1</middle><right>2</right></elem>
           <elem><left>0</left><middle>1</middle><right>3</right></elem>
           <elem><left>0</left><middle>2</middle><right>2</right></elem>
           <elem><left>0</left><middle>2</middle><right>3</right></elem>
-          <elem><left>0</left><middle>3</middle><right>3</right></elem -->
+          <elem><left>0</left><middle>3</middle><right>3</right></elem>" )
         </displacement_list>
 "
 
 	# Disco options
-	disco_max_z_displacement=8
-	disco_probing_displacement=6
-	disco_probing_power=10
+	disco_max_displacement=8
+	disco_probing_displacement=0
+	disco_probing_power=20
+	disco_max_colors=3325
+	disco_max_colors_at_once=256
 	disco_noise_vectors=1
-	disco_slurm_nodes=2
-	disco_chroma_geometry="1 2 2 4"
-	disco_chroma_minutes=600
+	disco_t_sources="0 16 32 48 8 24 40 56"
+	disco_slurm_nodes=1
+	disco_chroma_geometry="1 2 2 2"
+	disco_chroma_minutes=120
+	disco_max_rhs=24
+	disco_proj="
+  <projectorType>MGPROTON</projectorType>
+  <type>mg</type>
+  <prolongator>
+    <num_null_vecs>24</num_null_vecs>
+    <blocking>4 4 4 4</blocking>
+    <null_vecs>
+      <solver>
+        <type>eo</type>
+        <use_Aee_prec>true</use_Aee_prec>
+        <solver>
+          <type>bicgstab</type>
+          <tol>3e-3</tol>
+          <max_its>10000</max_its>
+          <prefix>eig0</prefix>
+          <verbosity>summary</verbosity>
+        </solver>
+      </solver>
+      <tol>0.01</tol>
+      <eigensolver>
+        <max_block_size>1</max_block_size>
+        <max_basis_size>40</max_basis_size>
+        <verbosity>VeryDetailed</verbosity>
+      </eigensolver>
+    </null_vecs>
+  </prolongator>
+  <proj>
+    <type>mg</type>
+    <prolongator>
+      <num_null_vecs>32</num_null_vecs>
+      <blocking>2 2 2 2</blocking>
+      <null_vecs>
+        <solver>
+          <type>eo</type>
+          <use_Aee_prec>true</use_Aee_prec>
+          <solver>
+            <type>bicgstab</type>
+            <tol>1e-3</tol>
+            <max_its>10000</max_its>
+            <prefix>eig1</prefix>
+            <verbosity>summary</verbosity>
+          </solver>
+        </solver>
+        <tol>3e-3</tol>
+        <eigensolver>
+          <max_block_size>1</max_block_size>
+          <max_basis_size>40</max_basis_size>
+          <verbosity>VeryDetailed</verbosity>
+        </eigensolver>
+      </null_vecs>
+    </prolongator>
+    <proj>
+      <type>defl</type>
+      <rank>800</rank>
+      <tol>1e-6</tol>
+      <solver>
+        <type>eo</type>
+        <use_Aee_prec>true</use_Aee_prec>
+        <solver>
+          <type>bicgstab</type>
+          <tol>3e-8</tol>
+          <max_its>10000</max_its>
+          <prefix>eig2</prefix>
+          <verbosity>summary</verbosity>
+        </solver>
+      </solver>
+      <eigensolver>
+        <max_block_size>8</max_block_size>
+        <max_basis_size>80</max_basis_size>
+        <verbosity>VeryDetailed</verbosity>
+      </eigensolver>
+    </proj>
+  </proj>
+"
 	disco_file_name() {
-		echo "${confspath}/${confsprefix}/disco/${confsname}.disco.sdb${cfg}"
+		if [ $color_part != avg ]; then
+			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
+		else
+			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
+		fi
 	}
-	disco_transfer_back="yes"
+	disco_transfer_back="nop"
 	disco_delete_after_transfer_back="nop"
 	disco_transfer_from_jlab="nop"
+	disco_insertions="\
+z
+$(
+	for ldir in 1 2 3 ; do for dir in 1 -1 ; do for dist in $( seq 1 $disco_max_displacement ) ; do
+		echo -n z
+		for i in $( seq 1 $dist ); do echo -n " $(( ldir*dir ))" ; done
+		echo
+	done; done; done
+)"
 
 	# Redstar options
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_use_meson="nop"
-	redstar_use_baryon="yes"
-	redstar_use_disco="nop"
 	redstar_2pt="nop"
 	redstar_2pt_moms="\
 -2 0 2
@@ -406,50 +597,86 @@ ensemble0() {
 0 -2 2 "
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="$( for (( z=-3 ; z<=3 ; ++z )) do echo "0 0 $z 0 0 $z" ; done )"
-	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
-	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
-	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
-	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1"
-	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
-	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
+	redstar_2pt_moms="$(
+		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
+			echo $m0 $m1 $m2
+			echo $m3 $m4 $m5
+		done | sort -u
+)"
+	redstar_disco="nop" # contracting for disco
+	if [ $redstar_op_bases == 1 ]; then
+		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
+		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E"
+		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1"
+		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
+		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
+	elif [ $redstar_op_bases == 3 ]; then
+		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
+		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
+		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
+		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
+		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
+	else
+		echo "too lazy"; return -1
+	fi
 	redstar_insertion_operators="\
-pion_pionxDX__J0_A1
-pion_pion_2xDX__J0_A1
-rho_rhoxDX__J1_T1
-rho_rho_2xDX__J1_T1
-b_b1xDX__J1_T1
-b_b0xDX__J0_A1
-a_a1xDX__J1_T1
+fl_a0xDX__J0_A1
 a_a0xDX__J0_A1
+omegal_rhoxDX__J1_T1
+rho_rhoxDX__J1_T1
+hl_b1xDX__J1_T1
+b_b1xDX__J1_T1
+etal_pion_2xDX__J0_A1
+pion_pion_2xDX__J0_A1
+hl_b0xDX__J0_A1
+b_b0xDX__J0_A1
+omegal_rho_2xDX__J1_T1
+rho_rho_2xDX__J1_T1
+fl_a1xDX__J1_T1
+a_a1xDX__J1_T1
+etal_pionxDX__J0_A1
+pion_pionxDX__J0_A1
 " # use for 3pt correlation functions
 	redstar_insertion_disps="\
 z0 
-z1 3
-z2 3 3
-z3 3 3 3
-z4 3 3 3 3
-z5 3 3 3 3 3
-z6 3 3 3 3 3 3
-z7 3 3 3 3 3 3 3
-z8 3 3 3 3 3 3 3 3
-zn1 -3
-zn2 -3 -3
-zn3 -3 -3 -3
-zn4 -3 -3 -3 -3
-zn5 -3 -3 -3 -3 -3
-zn6 -3 -3 -3 -3 -3 -3
-zn7 -3 -3 -3 -3 -3 -3 -3
-zn8 -3 -3 -3 -3 -3 -3 -3 -3"
+$(
+	for (( n=1 ; n<=12 ; ++n )) do
+		echo -n z$n
+		for (( z=0 ; z<n ; ++z )) do echo -n " 3"; done
+		echo
+		echo -n zn$n
+		for (( z=0 ; z<n ; ++z )) do echo -n " -3"; done
+		echo
+	done
+)"
 	gprop_insertion_disps="${redstar_insertion_disps}"
+	redstar_use_meson="nop"
+	redstar_use_baryon="yes"
+	redstar_use_gprops="`
+		if [ $redstar_3pt == yes -a $redstar_disco != yes ] ; then echo yes ; else echo nop ; fi
+`"
+	redstar_use_disco="`
+		if [ $redstar_3pt == yes -a $redstar_disco == yes ] ; then echo yes ; else echo nop ; fi
+`"
 	rename_moms() {
 		[ $# == 3 ] && echo "mom$1.$2.$3"
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
-			echo "${confspath}/${confsprefix}/corr/unphased_pdfs_new/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			if [ $t_source == avg ]; then
+				echo "${confspath}/${confsprefix}/corr/unphased_pdfs_new/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			else
+				echo "${confspath}/${confsprefix}/corr/unphased_pdfs_new/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			fi
 		else
-			echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			if [ $t_source == avg ]; then
+				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			else
+				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+			fi
 		fi
 	}
 	redstar_slurm_nodes=3
@@ -460,7 +687,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr/unphased_pdfs_new"
+	globus_check_dirs="${confspath}/${confsprefix}/corr-none"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -470,21 +697,21 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm5.5"
-chroma="$chromaform/install-rocm5.4/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+chromaform="$HOME/scratch/chromaform_rocm6.1"
+chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
-redstar="$chromaform/install_cpu/redstar-pdf-colorvec-pdf-hadron-cpu-adat-pdf-superbblas-sp"
-redstar="$chromaform/install-rocm5.4/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-redstar/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install-rocm5.4/adat-pdf-superbblas-sp"
+adat="$chromaform/install-redstar/adat-pdf-superbblas-sp"
+dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
+dbavg_disco="$adat/bin/dbavg_disco"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
-
-anarchofs="$chromaform/install/anarchofs/anarchofs"
 
 slurm_procs_per_node=8
 slurm_cores_per_node=56
@@ -496,34 +723,21 @@ slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -C nvme"
 
 slurm_script_prologue="
-. $chromaform/env_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4_0.sh
+. $chromaform/env.sh
+. $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=7
-#export SLURM_CPU_BIND=\"cores\"
+export OMP_NUM_THREADS=6
+export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
+export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
-"
-
-#
-# SLURM configuration for disco
-#
-
-chromaform_cpu="$SCRATCH/chromaform-perlmutter-cpu-sp"
-chroma_cpu="$chromaform_cpu/install/chroma-sp-mgproto-qphix-qdpxx-double-nd4-avx512-superbblas-cpu-next/bin/chroma"
-slurm_threads_per_proc_cpu=10
-chroma_extra_args_cpu="-by 4 -bz 4 -pxy 0 -pxyz 0 -c $slurm_threads_per_proc_cpu -sy 1 -sz 1 -minct 1 -poolsize 1"
-
-slurm_procs_per_node_cpu=4
-slurm_sbatch_prologue_cpu="#!/bin/bash
-#SBATCH --account=qjs@cpu
-#SBATCH --ntasks-per-node=$slurm_procs_per_node_cpu # number of tasks per node"
-
-slurm_script_prologue_cpu="
-. $chromaform_cpu/env.sh
-export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=$slurm_threads_per_proc_cpu
+export SB_MPI_NONBLOCK=0
+#export SB_NUM_GPUS_ON_NODE=1
+export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+export QUDA_ENABLE_P2P=0
+export QUDA_ENABLE_GDR=0
+export QUDA_ENABLE_NVSHMEM=0
+export QUDA_ENABLE_MPS=0
 "
 
 #
@@ -531,13 +745,12 @@ export OMP_NUM_THREADS=$slurm_threads_per_proc_cpu
 #
 
 slurm_script_prologue_redstar="
-. $chromaform/env_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4.sh
+. $chromaform/env.sh
+. $chromaform/env_extra0.sh
 export OPENBLAS_NUM_THREADS=1
+export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
-#export SLURM_CPU_BIND=\"cores\"
-#export ROCR_VISIBLE_DEVICES=\"\${MY_JOB_INDEX:-0}\"
 "
 
 #
@@ -545,10 +758,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 #
 
 max_jobs=25 # maximum jobs to be launched
-max_jobs=100 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
-large_max_hours=3
-large_min_nodes=92
 
 #
 # Path options
@@ -556,7 +766,6 @@ large_min_nodes=92
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
 confspath="$HOME/scratch"
-this_ep="ef1a9560-7ca1-11e5-992c-22000b96db58:scratch/"  # frontier
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"

@@ -2,6 +2,10 @@
 
 source ensembles.sh
 
+redstar_dat_mom() {
+	echo "${1}${2}${3}"
+}
+
 redstar_dat_mom_snk() {
 	echo "${1}${2}${3}"
 }
@@ -28,6 +32,7 @@ for ens in $ensembles; do
 
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
+	[ ${redstar_2pt} != yes -a ${redstar_3pt} != yes ] && continue
 
 	if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
 		echo "Unsupported to compute 2pt and 3pt on the fly at once"
@@ -51,7 +56,7 @@ for ens in $ensembles; do
 
 	num_insertion_operators=1
 	[ $redstar_3pt == yes ] && num_insertion_operators="$( num_args $redstar_insertion_operators)"
-	num_mom_leaders="$( num_args $mom_leaders )"
+	num_mom_leaders="$( num_args $mom_groups )"
 	max_combo_lines="$(( num_insertion_operators*num_mom_leaders ))"
 	max_combo_lines="$(( max_combo_lines > slurm_procs_per_node*redstar_slurm_nodes ? slurm_procs_per_node*redstar_slurm_nodes : max_combo_lines ))"
 	num_t_sources="`num_args $prop_t_sources`"
@@ -60,8 +65,7 @@ for ens in $ensembles; do
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
 			for momw in $mom_leaders; do
-				mom="${momw}" # Fix in general
-				corr_file_name
+				mom="${momw//_/ }" corr_file_name
 			done # momw
 		done # insertion_op
 	done > $redstar_files  # zphase
@@ -73,7 +77,7 @@ for ens in $ensembles; do
 			echo Excluding $cfg >&2
 			continue
 		fi
-		file="$( for t_source in $prop_t_sources ; do
+		files="$( for t_source in $prop_t_sources ; do
 			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
 		done )"
 		if ls $files &> /dev/null ; then
@@ -87,7 +91,7 @@ for ens in $ensembles; do
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
 			for momw in $mom_leaders; do
-				mom="${momw}" # Fix in general
+				mom="${momw//_/ }"
 
 				for t_source in $prop_t_sources ; do
 					cfg_number=0
@@ -108,9 +112,7 @@ for ens in $ensembles; do
 				echo creating final $corr_file_avg
 				mkdir -p `dirname $corr_file_avg`
 				rm -f $corr_file_avg
-				factor="$( echo "1" "/" "$(num_args $prop_t_sources)" | bc -l )"
-				# NOTE: don't use dbavgsrc, it won't average the times sourcs, that's a UI bug!
-				$dbavg $corr_file_avg $( for t_source in $prop_t_sources ; do echo $( cfg= corr_file_name | sed 's/sdb/edb/g' ) $factor ; done )
+				$dbavgsrc $corr_file_avg $( for t_source in $prop_t_sources ; do echo $( cfg= corr_file_name | sed 's/sdb/edb/g' ) ; done )
 
 				# Extract the content
 				(
@@ -118,7 +120,15 @@ for ens in $ensembles; do
 					rm $tmp_dat_dir/*
 					$dbutil $corr_file_avg keysxml $keys
 					$dbutil $corr_file_avg get $keys
-					if [ ${redstar_3pt} == yes ] ; then
+					if [ ${redstar_2pt} == yes ] ; then
+						echo "$redstar_2pt_moms" | while read mom ; do
+							[ $( num_args $mom ) -ne 3 ] && continue
+							proper_corr_file_avg="`cfg= t_source=avg corr_file_name`"
+							new_dat_files_dir="`dirname $proper_corr_file_avg`"
+							mkdir -p $new_dat_files_dir
+							mv *,$( redstar_dat_mom $mom ),*,$( redstar_dat_mom $mom ),*.dat $new_dat_files_dir
+						done
+					elif [ ${redstar_3pt} == yes ] ; then
 						echo "$redstar_3pt_snkmom_srcmom" | while read snk_src_mom ; do
 							[ $( num_args $snk_src_mom ) -ne 6 ] && continue
 							proper_corr_file_avg="`cfg= t_source=avg mom="$snk_src_mom" corr_file_name`"
