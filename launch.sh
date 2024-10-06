@@ -78,10 +78,10 @@ done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max
 			cat << EOF > $wrapup_job
 #!/bin/bash -l
 . $first_job environ
-srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=closest -K0 -k -W0  bash -l -c "$(
+srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=closest -K0 -k -W0  bash $BASH_INVOCATION_OPTIONS -c "$(
 			j="0"
 			for job in $first_job $jobs_in_a_node; do
-				echo -n "[ \\\$SLURM_PROCID == $j ] && MY_JOB_INDEX=$j bash -l $job run; "
+				echo -n "[ \\\$SLURM_PROCID == $j ] && MY_JOB_INDEX=$j bash $BASH_INVOCATION_OPTIONS $job run; "
 				j="$(( j+1 ))"
 			done
 )"
@@ -118,7 +118,7 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash -l $job run"
+				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash $BASH_INVOCATION_OPTIONS $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
@@ -157,7 +157,7 @@ $slurm_sbatch_prologue
 	[ x$dep_jobs != x ] && echo "#SBATCH -d afterok:$dep_jobs"
 `
 
-bash -l $runpath/run_${jobtag}_script.sh
+bash $BASH_INVOCATION_OPTIONS $runpath/run_${jobtag}_script.sh
 exit 0 # always return ok no matter the actual result
 EOF
 

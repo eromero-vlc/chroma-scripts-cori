@@ -49,10 +49,29 @@ get_ops() {
 	echo "${!varname}"
 }
 
+# | Operator Name          | Isospin | Gamma Structure | flavor/twoI | irmom/row
+# |----------------------- |---------|-----------------|-------------| ---------
+# | fl_a0xDX__J0_A1        |       0 |               1 |     0       |    1
+# | a_a0xDX__J0_A1         |       1 |               1 |     2       |    1
+# | omegal_rhoxDX__J1_T1   |       0 |             g_k |     0       |  1 2 3
+# | rho_rhoxDX__J1_T1      |       1 |             g_k |     2       |  1 2 3
+# | hl_b1xDX__J1_T1        |       0 |         g_i g_j |     0       |  1 2 3
+# | b_b1xDX__J1_T1         |       1 |         g_i g_j |     2       |  1 2 3
+# | etal_pion_2xDX__J0_A1  |       0 |         g_5 g_4 |     0       |    1
+# | pion_pion_2xDX__J0_A1  |       1 |         g_5 g_4 |     2       |    1
+# | hl_b0xDX__J0_A1        |       0 |             g_4 |     0       |    1
+# | b_b0xDX__J0_A1         |       1 |             g_4 |     2       |    1
+# | omegal_rho_2xDX__J1_T1 |       0 |         g_k g_4 |     0       |  1 2 3
+# | rho_rho_2xDX__J1_T1    |       1 |         g_k g_4 |     2       |  1 2 3
+# | fl_a1xDX__J1_T1        |       0 |         g_k g_5 |     0       |  1 2 3
+# | a_a1xDX__J1_T1         |       1 |         g_k g_5 |     2       |  1 2 3
+# | etal_pionxDX__J0_A1    |       0 |             g_5 |     0       |    1
+# | pion_pionxDX__J0_A1    |       1 |             g_5 |     2       |    1
+
 operator_rows() {
 	case $1 in
-		pion*|b_b0*|a_a0*|hc_b0*) echo 1 ;;
-		rho_rho*|b_b1*|a_a1*) echo 1 2 3 ;;
+		etal_*|pion*|hl_b0*|b_b0*|fl_a0*|a_a0*|hc_b0*) echo 1 ;;
+		omegal_*|rho_*|hl_b1*|b_b1*|fl_a1*|a_a1*) echo 1 2 3 ;;
 		*) echo "operator_rows: $1 ?" >&2; exit 1;;
 	esac
 }
@@ -60,6 +79,7 @@ operator_rows() {
 operator_twoI() {
 	case $1 in
 		hc_b0*) echo 0 ;;
+		etal*|hl_b0*|fl_a0*|omegal_rho*|hl_b1*|fl_a1*) echo 0 ;;
 		pion*|b_b0*|a_a0*|rho_rho*|b_b1*|a_a1*) echo 2 ;;
 		*) echo "operator_twoI: $1 ?" >&2; exit 1;;
 	esac
@@ -255,7 +275,7 @@ corr_graph() {
     <convertUDtoL>true</convertUDtoL>
     <convertUDtoS>false</convertUDtoS>
     <average_1pt_diagrams>true</average_1pt_diagrams>
-    <zeroUnsmearedGraphsP>false</zeroUnsmearedGraphsP>
+    <zeroUnsmearedGraphsP>$( if [ $redstar_disco == yes ]; then echo false ; else echo true ; fi )</zeroUnsmearedGraphsP>
     <t_origin>$t_origin</t_origin>
     <bc_spec>-1</bc_spec>
     <Layout>
@@ -601,7 +621,7 @@ t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash -l \$t
+	bash $BASH_INVOCATION_OPTIONS \$t
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -609,7 +629,7 @@ elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
 elif [ x\$1 == xrun ]; then
-	bash -l \$t \$@
+	bash $BASH_INVOCATION_OPTIONS \$t \$@
 	r="\$?"
 	rm -f \$t
 	exit \$r

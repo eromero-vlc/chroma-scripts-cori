@@ -58,7 +58,7 @@ ensemble0() {
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=20
-	prop_max_rhs=8
+	prop_max_rhs=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -129,13 +129,14 @@ ensemble0() {
               <SubspaceID>mg_subspace</SubspaceID>
               <SolutionCheckP>true</SolutionCheckP>
  "
+	prop_max_rhs=8
 	prop_inv="
               <invType>MGPROTON</invType>
 
               <type>eo</type>
               <solver>
                 <type>mr</type>
-                <tol>1e-10</tol>
+                <tol>1e-8</tol>
                 <max_its>20000</max_its>
                 <prefix>l0</prefix>
                 <verbosity>Detailed</verbosity>
@@ -267,6 +268,7 @@ ensemble0() {
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
+	gprop_max_rhs=$prop_max_rhs
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
 	gprop_slurm_nodes=1
@@ -628,7 +630,7 @@ $(
 	elif [ $redstar_op_bases == 3 ]; then
 		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
 		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
-		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
 		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
 		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
 		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
@@ -636,14 +638,22 @@ $(
 		echo "too lazy"; return -1
 	fi
 	redstar_insertion_operators="\
-pion_pionxDX__J0_A1
-pion_pion_2xDX__J0_A1
-rho_rhoxDX__J1_T1
-rho_rho_2xDX__J1_T1
-b_b1xDX__J1_T1
-b_b0xDX__J0_A1
-a_a1xDX__J1_T1
+fl_a0xDX__J0_A1
 a_a0xDX__J0_A1
+omegal_rhoxDX__J1_T1
+rho_rhoxDX__J1_T1
+hl_b1xDX__J1_T1
+b_b1xDX__J1_T1
+etal_pion_2xDX__J0_A1
+pion_pion_2xDX__J0_A1
+hl_b0xDX__J0_A1
+b_b0xDX__J0_A1
+omegal_rho_2xDX__J1_T1
+rho_rho_2xDX__J1_T1
+fl_a1xDX__J1_T1
+a_a1xDX__J1_T1
+etal_pionxDX__J0_A1
+pion_pionxDX__J0_A1
 " # use for 3pt correlation functions
 	redstar_insertion_disps="\
 z0 
@@ -763,6 +773,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
+BASH_INVOCATION_OPTIONS=
 max_jobs=25 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
 
