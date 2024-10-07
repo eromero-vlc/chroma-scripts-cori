@@ -20,10 +20,8 @@ echo "$slurm_script_prologue_redstar" > $redstar_env_file
 . $redstar_env_file
 
 redstar_files="`mktemp`"
-merge_files="`mktemp`"
 merge_cfgs="`mktemp`"
 err="`mktemp`"
-keys="`mktemp`"
 tmp_dat_dir="`mktemp -d`"
 
 for ens in $ensembles; do
@@ -90,6 +88,7 @@ for ens in $ensembles; do
 
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
+			merge_files="`mktemp`"
 			for momw in $mom_leaders; do
 				mom="${momw//_/ }"
 
@@ -101,6 +100,7 @@ for ens in $ensembles; do
 					done > ${merge_files}
 					corr_file_avg="`cfg= corr_file_name | sed 's/sdb/edb/g'`"
 					echo creating $corr_file_avg
+					rm -f $corr_file_avg
 					echo ">" $dbmerge $corr_file_avg $merge_files 4000
 					cat $merge_files
 					mkdir -p `dirname $corr_file_avg`
@@ -116,8 +116,10 @@ for ens in $ensembles; do
 
 				# Extract the content
 				(
-					cd $tmp_dat_dir
-					rm $tmp_dat_dir/*
+					mkdir -p $tmp_dat_dir/$insertion_op
+					cd $tmp_dat_dir/$insertion_op
+					rm $tmp_dat_dir/$insertion_op/*
+					keys=$tmp_dat_dir/$insertion_op/k
 					$dbutil $corr_file_avg keysxml $keys
 					$dbutil $corr_file_avg get $keys
 					if [ ${redstar_2pt} == yes ] ; then
@@ -138,7 +140,8 @@ for ens in $ensembles; do
 						done
 					fi
 				)
-			done # momw
+			done & # momw
 		done # insertion_op
+		wait
 	done # zphase
 done # ens

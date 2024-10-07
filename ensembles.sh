@@ -8,14 +8,14 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
-	run_gprops="yes"
+	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=60
+	onthefly_chroma_minutes=10
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -27,7 +27,7 @@ ensemble0() {
 	#confs="`seq 10010 10 20070`"
 	#confs="`seq 5170 10 10000`"
 	#confs="`seq 5170 10 8000`"
-	#confs=5170
+	#confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -52,7 +52,7 @@ ensemble0() {
 	# Props options
 	prop_t_sources="0 16 32 48"
 	prop_create_if_missing="nop"
-	prop_t_fwd=13
+	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=64
 	prop_zphases="0.00 2.00 -2.00"
@@ -63,7 +63,7 @@ ensemble0() {
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=20
-	prop_max_rhs=8
+	prop_max_rhs=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -533,12 +533,12 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=12 # Number of time slices
+	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_2pt="nop"
+	redstar_2pt="yes"
 	redstar_2pt_moms=""
-	redstar_3pt="yes"
+	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 0 0 0   0 0 0
 1 0 5   0 0 5
@@ -560,7 +560,7 @@ $(
 1 1 4   1 0 4
 1 1 6   0 1 6"
 	redstar_2pt_moms="$(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2
 			echo $m3 $m4 $m5
 		done | sort -u
@@ -617,9 +617,9 @@ z0 "
 			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}_local/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}_local_2pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}_local/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}_local_2pt/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
@@ -701,7 +701,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=1 # maximum jobs to be launched
+max_jobs=20 # maximum jobs to be launched
 max_hours=1 # maximum hours for a single job
 
 #

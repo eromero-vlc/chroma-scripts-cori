@@ -118,7 +118,7 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash -l $job run"
+				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
@@ -157,7 +157,7 @@ $slurm_sbatch_prologue
 	[ x$dep_jobs != x ] && echo "#SBATCH -d afterok:$dep_jobs"
 `
 
-bash -l $runpath/run_${jobtag}_script.sh
+bash $runpath/run_${jobtag}_script.sh
 exit 0 # always return ok no matter the actual result
 EOF
 

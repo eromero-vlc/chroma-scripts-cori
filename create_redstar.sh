@@ -601,7 +601,7 @@ t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash -l \$t
+	bash \$t
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -609,7 +609,7 @@ elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
 elif [ x\$1 == xrun ]; then
-	bash -l \$t \$@
+	bash \$t \$@
 	r="\$?"
 	rm -f \$t
 	exit \$r
