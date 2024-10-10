@@ -438,10 +438,12 @@ for ens in $ensembles; do
 
 	[ ${run_onthefly} != yes ] && max_moms_per_job=1
 
-	corr_runpath="$PWD/${tag}/redstar_corr_graph"
+	corr_runpath="$PWD/${tag}/redstar_corr_graph-${ens}"
+	rm -rf $corr_runpath
 	mkdir -p $corr_runpath
 
-	template_runpath="$PWD/${tag}/redstar_template"
+	template_runpath="$PWD/${tag}/redstar_template-${ens}"
+	rm -rf ${template_runpath}
 	mkdir -p ${template_runpath}
 	cfg="@CFG"
 	runpath="$PWD/${tag}/conf_${cfg}"

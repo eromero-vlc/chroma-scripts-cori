@@ -2,9 +2,19 @@
 
 . common.sh
 
-ensembles="ensemble0"
+ensembles="ensemble0 ensemble1"
 
 ensemble0() {
+	prop_zphases=0.00
+	ensemble_gen
+}
+
+ensemble1() {
+	prop_zphases=2.00
+	ensemble_gen
+}
+
+ensemble_gen() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
@@ -15,15 +25,19 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=120
+	onthefly_chroma_minutes=30
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 1000 10 4500`"
+	confs="`seq 5170 10 20070`"
+	#confs="`seq 10010 10 20070`"
+	confs="`seq 5170 10 10000`"
+	#confs="`seq 5170 10 8000`"
+	confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -33,11 +47,11 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=64  # colorvecs to use
+	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
 	eigs_slurm_nodes=2
 	eigs_chroma_geometry="1 2 2 4"
 	eigs_chroma_minutes=600
@@ -50,8 +64,8 @@ ensemble0() {
 	prop_create_if_missing="nop"
 	prop_t_fwd=16
 	prop_t_back=0
-	prop_nvec=96
-	prop_zphases="0.00 2.00 -2.00"
+	prop_nvec=128
+	#prop_zphases="0.00 2.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -129,8 +143,8 @@ ensemble0() {
               <SubspaceID>mg_subspace</SubspaceID>
               <SolutionCheckP>true</SolutionCheckP>
  "
-	prop_max_rhs=8
-	prop_inv="
+	prop_max_rhs_nop=8
+	prop_inv_nop="
               <invType>MGPROTON</invType>
 
               <type>eo</type>
@@ -274,7 +288,7 @@ ensemble0() {
 	gprop_slurm_nodes=1
 	gprop_chroma_geometry="1 1 2 4"
 	gprop_chroma_minutes=120
-	localpath="/tmp"
+	localpath="/mnt/bb/$USER"
 	gprop_file_name() {
 		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
 		local n node
@@ -385,7 +399,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<baryon_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "afs:${n}.part_$node"
+					echo "${n}.part_$node"
 				done
 			fi
 		else
@@ -395,12 +409,11 @@ ensemble0() {
 	baryon_transfer_back="nop"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
-	redstar_op_bases=1
+	redstar_op_bases=3
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
           <elem><left>0</left><middle>0</middle><right>0</right></elem>
-
 	$( [ $redstar_op_bases == 3 -o $redstar_op_bases == all ] && echo "
           <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
           <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
@@ -535,84 +548,16 @@ $(
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_2pt="nop"
-	redstar_2pt_moms="\
--2 0 2
-0 2 -2
--1 2 2
-2 2 1
--1 0 3
--3 0 1
-0 -1 3
-3 0 1
-1 1 1
--1 -1 1
--1 1 1
-0 1 -2
--2 0 1
--1 0 2
-0 -1 2
-1 -2 0
--1 1 2
--1 -2 1
--1 0 0
-0 -1 0
-0 1 1
--1 0 1
-0 -1 1
--2 0 0
-1 3 1
--2 -1 1
-1 -1 0
--2 -2 1
-2 -2 0
-1 -1 2
--1 3 1
-0 -2 -2
--2 1 -1
-0 -1 -1
--1 -2 -1
--3 -1 -1
--2 -2 0
-2 -1 2
--1 1 0
-1 3 -1
--3 0 -1
-1 -2 -2
-1 3 0
-0 -3 0
--2 2 0
-1 -1 -1
--1 3 -1
--1 -3 1
-1 -3 -1
-1 -1 -3
-0 2 0
-2 2 0
--1 1 -1
--1 -1 -1
-1 -1 1
-0 -2 0
-0 -2 2 "
+	redstar_2pt_moms=""
 	redstar_3pt="yes"
-	redstar_3pt_snkmom_srcmom="\
-1 0 5   0 0 5   
-0 1 4   0 0 4   
-0 1 5   0 0 5   
-0 1 6   0 0 6   
-1 0 4   0 0 4   
-1 1 5   0 0 5   
-1 0 6   0 0 6   
-1 1 4   0 0 4   
-1 1 4   0 1 4   
-1 1 4   1 0 4   
-1 1 6   1 0 6   
-1 1 5   0 1 5   
-1 1 5   1 0 5   
-1 1 6   0 0 6   
-1 1 6   0 1 6   
-2 0 4   1 0 4   
-2 0 5   1 0 5   
-2 0 6   1 0 6"
+	redstar_3pt_snkmom_srcmom="$(
+		if [ $prop_zphases == 0.00 ]; then
+			for (( z=-3 ; z<=3 ; ++z )) do echo "0 0 $z 0 0 $z" ; done
+		else
+			for (( z=-6 ; z<=-4 ; ++z )) do echo "0 0 $z 0 0 $z" ; done
+			for (( z=4 ; z<=6 ; ++z )) do echo "0 0 $z 0 0 $z" ; done
+		fi
+)"
 	redstar_2pt_moms="$(
 		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2
@@ -657,22 +602,16 @@ pion_pionxDX__J0_A1
 " # use for 3pt correlation functions
 	redstar_insertion_disps="\
 z0 
-z1 3
-z2 3 3
-z3 3 3 3
-z4 3 3 3 3
-z5 3 3 3 3 3
-z6 3 3 3 3 3 3
-z7 3 3 3 3 3 3 3
-z8 3 3 3 3 3 3 3 3
-zn1 -3
-zn2 -3 -3
-zn3 -3 -3 -3
-zn4 -3 -3 -3 -3
-zn5 -3 -3 -3 -3 -3
-zn6 -3 -3 -3 -3 -3 -3
-zn7 -3 -3 -3 -3 -3 -3 -3
-zn8 -3 -3 -3 -3 -3 -3 -3 -3"
+$(
+        for (( n=1 ; n<=12 ; ++n )) do
+                echo -n z$n
+                for (( z=0 ; z<n ; ++z )) do echo -n " 3"; done
+                echo
+                echo -n zn$n
+                for (( z=0 ; z<n ; ++z )) do echo -n " -3"; done
+                echo
+        done
+)"
 	gprop_insertion_disps="${redstar_insertion_disps}"
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
@@ -687,17 +626,18 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
+		local extra=_new_3pt
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
@@ -720,15 +660,15 @@ PYTHON=python3
 #
 
 chromaform="$HOME/scratch/chromaform_rocm6.1"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
-redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-redstar/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat-pdf-superbblas-sp"
+adat="$chromaform/install-redstar/adat-pdf-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -741,7 +681,7 @@ slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
-#SBATCH --gpu-bind=closest
+#SBATCH --gpu-bind=none
 #SBATCH -C nvme"
 
 slurm_script_prologue="
@@ -749,12 +689,17 @@ slurm_script_prologue="
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=6
+export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
-export SB_NUM_GPUS_ON_NODE=1
+#export SB_NUM_GPUS_ON_NODE=1
 export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+export QUDA_ENABLE_P2P=0
+export QUDA_ENABLE_GDR=0
+export QUDA_ENABLE_NVSHMEM=0
+export QUDA_ENABLE_MPS=0
 "
 
 #
@@ -765,6 +710,7 @@ slurm_script_prologue_redstar="
 . $chromaform/env.sh
 . $chromaform/env_extra0.sh
 export OPENBLAS_NUM_THREADS=1
+export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 "
