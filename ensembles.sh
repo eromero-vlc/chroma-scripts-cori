@@ -7,7 +7,7 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
+	run_props="yes"
 	run_gprops="yes"
 	run_baryons="yes"
 	run_mesons="nop"
@@ -50,7 +50,7 @@ ensemble0() {
 	# Props options
 	prop_t_sources="0 16 32 48"
 	prop_create_if_missing="nop"
-	prop_t_fwd=16
+	prop_t_fwd=18
 	prop_t_back=0
 	prop_nvec=128
 	prop_zphases="0.00 2.00 -2.00"
@@ -74,7 +74,7 @@ ensemble0() {
                   <nu>1</nu>
                 </AnisoParam>
               </CloverParams>
-              <RsdTarget>1e-07</RsdTarget>
+              <RsdTarget>1e-7</RsdTarget>
               <Delta>0.1</Delta>
               <Pipeline>4</Pipeline>
               <MaxIter>500</MaxIter>
@@ -266,8 +266,9 @@ ensemble0() {
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
 	gprop_t_seps="4 6 8 10 12 14 16"
+	max_tseps_per_job=4
 	gprop_zphases="${prop_zphases}"
-	gprop_nvec=$nvec
+	gprop_nvec=$prop_nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
 	gprop_max_rhs=$prop_max_rhs
@@ -278,7 +279,7 @@ ensemble0() {
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
 	gprop_file_name() {
-		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
+		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
 		if [ $zphase == 0.00 ]; then
 			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
@@ -303,7 +304,7 @@ ensemble0() {
 	gprop_transfer_from_jlab="nop"
 
 	# Meson options
-	meson_nvec=$nvec
+	meson_nvec=$prop_nvec
 	meson_zphases="0.00 2.00"
 	meson_slurm_nodes=2
 	meson_chroma_max_tslices_in_contraction="1" # as large as possible
@@ -366,7 +367,7 @@ ensemble0() {
 "
 
 	# Baryon options
-	baryon_nvec=$nvec
+	baryon_nvec=$prop_nvec
 	baryon_zphases="${prop_zphases}"
 	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
 	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
@@ -534,7 +535,7 @@ $(
 
 	# Redstar options
 	redstar_t_corr=16 # Number of time slices
-	redstar_nvec=$nvec
+	redstar_nvec=$prop_nvec
 	redstar_tag="."
 	redstar_2pt="nop"
 	redstar_2pt_moms="\
@@ -665,19 +666,15 @@ $(
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
-		if [ ${zphase} == 0.00 ]; then
-			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased_pdfs_new/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			else
-				echo "${confspath}/${confsprefix}/corr/unphased_pdfs_new/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			fi
-		else
-			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			fi
-		fi
+		local prefix_path="z${zphase}"
+		[ ${zphase} == 0.00 ] && prefix_path="unphased"
+		local prefix_path_extra="_2pt"
+		[ ${redstar_3pt} == yes ] && prefix_path_extra="_3pt"
+		local tsep_extra=""
+		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
+		local ins_path=""
+		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}${tsep_extra}.sdb${cfg}"
 	}
 	redstar_slurm_nodes=3
 	redstar_minutes=30
@@ -726,7 +723,7 @@ slurm_script_prologue="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 export SB_CACHEGB_GPU=60
@@ -749,7 +746,7 @@ slurm_script_prologue_redstar="
 . $chromaform/env_extra0.sh
 export OPENBLAS_NUM_THREADS=1
 export SLURM_CPU_BIND=\"cores\"
-export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
+export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 2))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 "
 

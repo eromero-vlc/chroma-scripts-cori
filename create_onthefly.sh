@@ -23,6 +23,15 @@ for ens in $ensembles; do
 		done | sort -u
 	`"
 
+	if [ ${redstar_3pt} == yes ] ; then
+		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
+		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
+		
+	else
+		tsep_groups=0
+		max_tseps_per_job=1
+	fi
+
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		[ -f $lime_file ] || continue
@@ -33,17 +42,19 @@ for ens in $ensembles; do
 		for t_source in $gprop_t_sources; do
 		for zphase in $gprop_zphases; do
 		k_split $max_moms_per_job $moms | while read mom_group ; do
+		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
 			mom_leader="`take_first $mom_group`"
+			tsep_leader="`take_first $tsep_group`"
 			baryon_script="${runpath}/baryon_${zphase}_t0_${t_source}_mf${mom_leader}.sh.future"
-			gprop_script="${runpath}/gprop_t${t_source}_z${zphase}_mf${mom_leader}.sh.future"
+			gprop_script="${runpath}/gprop_t${t_source}_z${zphase}_mf${mom_leader}_tsep${tsep_leader}.sh.future"
 			prop_script="${runpath}/prop_t${t_source}_z${zphase}.sh.future"
 
-			redstar_tasks="$( ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom_leader}.sh.future )"
+			redstar_tasks="$( ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom_leader}_tsep${tsep_leader}.sh.future )"
 			num_redstar_tasks="$( num_args $redstar_tasks )"
 			[ $num_redstar_tasks == 0 ] && continue
 
-			prefix="onthfly_t${t_source}_z${zphase}_mf${mom_leader}"
+			prefix="onthfly_t${t_source}_z${zphase}_mf${mom_leader}_tsep${tsep_leader}"
 			output="$runpath/${prefix}.out"
 			cat << EOF > $runpath/${prefix}.sh
 $slurm_sbatch_prologue
@@ -140,6 +151,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
+		done # tsep_group
 		done # mom_group
 		done # t_source
 		done # zphase
