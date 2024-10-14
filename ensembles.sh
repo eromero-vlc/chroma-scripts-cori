@@ -27,7 +27,7 @@ ensemble0() {
 	#confs="`seq 5170 10 5990`"
 	#confs="`seq 6000 10 9990`"
 	confs="`seq 5170 10 9990`"
-	confs="`seq 5170 10 6990`"
+	#confs="`seq 5170 10 6990`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -706,8 +706,8 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=25 # maximum jobs to be launched
-max_hours=2 # maximum hours for a single job
+max_jobs=20 # maximum jobs to be launched
+max_hours=1 # maximum hours for a single job
 
 #
 # Path options
