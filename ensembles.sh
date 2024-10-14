@@ -25,7 +25,7 @@ ensemble_gen() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=30
+	onthefly_chroma_minutes=90
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -37,7 +37,7 @@ ensemble_gen() {
 	#confs="`seq 10010 10 20070`"
 	confs="`seq 5170 10 10000`"
 	#confs="`seq 5170 10 8000`"
-	confs="5170"
+	#confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -278,6 +278,7 @@ ensemble_gen() {
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
 	gprop_t_seps="4 6 8 10 12 14"
+	max_tseps_per_job=3
 	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
@@ -285,12 +286,12 @@ ensemble_gen() {
 	gprop_max_rhs=$prop_max_rhs
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
-	gprop_slurm_nodes=1
-	gprop_chroma_geometry="1 1 2 4"
+	gprop_slurm_nodes="${prop_slurm_nodes}"
+	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
 	localpath="/mnt/bb/$USER"
 	gprop_file_name() {
-		local t_seps_commas="`echo $gprop_t_seps | xargs | tr ' ' ,`"
+		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
 		if [ $zphase == 0.00 ]; then
 			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
@@ -303,7 +304,7 @@ ensemble_gen() {
 				echo $n
 			else
 				for (( node=0 ; node<gprop_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "afs:${n}.part_$node"
+					echo "${n}.part_$node"
 				done
 			fi
 		else
@@ -626,20 +627,16 @@ $(
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
-		local extra=_new_3pt
-		if [ ${zphase} == 0.00 ]; then
-			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			else
-				echo "${confspath}/${confsprefix}/corr/unphased${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			fi
-		else
-			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
-			fi
-		fi
+		local prefix_path="z${zphase}"
+		[ ${zphase} == 0.00 ] && prefix_path="unphased"
+		local prefix_path_extra="_2pt"
+		[ ${redstar_3pt} == yes ] && prefix_path_extra="_3pt"
+		prefix_path_extra+="_new_3ops"
+		local tsep_extra=""
+		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
+		local ins_path=""
+		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}${tsep_extra}.sdb${cfg}"
 	}
 	redstar_slurm_nodes=1
 	redstar_minutes=30
@@ -688,7 +685,7 @@ slurm_script_prologue="
 . $chromaform/env.sh
 . $chromaform/env_extra.sh
 export OPENBLAS_NUM_THREADS=1
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 export SB_CACHEGB_GPU=60
@@ -711,8 +708,9 @@ slurm_script_prologue_redstar="
 . $chromaform/env_extra0.sh
 export OPENBLAS_NUM_THREADS=1
 export SLURM_CPU_BIND=\"cores\"
-export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
+export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 2))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
+export SB_CACHEGB_CPU=5
 "
 
 #
@@ -720,8 +718,9 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 #
 
 BASH_INVOCATION_OPTIONS=
-max_jobs=25 # maximum jobs to be launched
+max_jobs=4 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
+slurm_max_bundled_jobs=1000 # maximum bundled jobs in a slurm job
 
 #
 # Path options

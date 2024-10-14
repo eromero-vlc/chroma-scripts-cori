@@ -97,15 +97,15 @@ EOF
 	# Max sequential jobs in a SLURM job
 	max_jobs_in_seq="$(( max_hours*60 / minutes_per_job ))"
 	# minimum number of jobs to run
+	max_concurrent_jobs="$(( max_concurrent_jobs == 0 ? slurm_max_bundled_jobs : ( max_concurrent_jobs < slurm_max_bundled_jobs ? max_concurrent_jobs : slurm_max_bundled_jobs ) ))"
 	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
 	# total SLURM jobs to launch
-	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
-	num_bundle_jobs="$(( num_bundle_jobs < min_slurm_jobs ? min_slurm_jobs : num_bundle_jobs ))"
-	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? num_bundle_jobs : num_bundle_jobs / min_slurm_jobs ))"
+	num_slurm_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
+	num_slurm_jobs="$(( num_slurm_jobs < min_slurm_jobs ? min_slurm_jobs : num_slurm_jobs ))"
 	# maximum number of jobs running on a single SLURM job
-	max_jobs_in_bundle="$(( (num_jobs+num_bundle_jobs-1)/num_bundle_jobs ))"
+	max_jobs_in_bundle="$(( (num_jobs+num_slurm_jobs-1)/num_slurm_jobs ))"
 	# maximum number of parallel jobs inside a SLURM job
-	bundle_size="$(( (max_jobs_in_bundle*minutes_per_job + max_hours*60-1)/(max_hours*60) ))"
+	bundle_size="$(( (max_jobs_in_bundle + max_jobs_in_seq-1)/max_jobs_in_seq ))"
 	# maximum number of jobs executed one after another in a SLURM job
 	max_jobs_in_seq="$(( (max_jobs_in_bundle + bundle_size-1) / bundle_size ))"
 	cat << EOF > $runpath/run_${jobtag}_script.sh
@@ -139,7 +139,7 @@ $slurm_sbatch_prologue
 #SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) # number of cores per task
 #SBATCH --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) ))
 #SBATCH -J batch-${tag}
-#SBATCH --array=0-$((num_bundle_jobs-1))%${max_concurrent_slurm_jobs}
+#SBATCH --array=0-$((num_slurm_jobs-1))
 `
 	dep_jobs="$(
 		# Update the queued jobs
