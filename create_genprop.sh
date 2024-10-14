@@ -22,6 +22,10 @@ for ens in $ensembles; do
 			done | sort -u
 		`"
 	fi
+
+	tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
+	[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
+
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -34,11 +38,12 @@ for ens in $ensembles; do
 		for zphase in $gprop_zphases; do
 		[ ${run_onthefly} != yes ] && max_moms_per_job=1
 		k_split $max_moms_per_job $moms | while read mom_group ; do
+		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-			gprop_file="`gprop_file_name single`"
+			gprop_file="`tseps="${tsep_group}" gprop_file_name single`"
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
 
 			#
@@ -47,7 +52,8 @@ for ens in $ensembles; do
 			if [ $run_onthefly == yes ]; then
 				gprop_moms="$( for mom in $mom_group; do unpack_moms ${mom//_/ }; done )"
 				mom_leader="`take_first $mom_group`"
-				prefix_extra="_mf${mom_leader}"
+				tsep_leader="`take_first $tsep_group`"
+				prefix_extra="_mf${mom_leader}_tsep${tsep_leader}"
 			else
 				prefix_extra=""
 			fi
@@ -82,7 +88,7 @@ for ens in $ensembles; do
           </LinkSmearing>
           <SinkSourcePairs>
 `
-	for tsep in ${gprop_t_seps}; do
+	for tsep in ${tsep_group}; do
 	echo "<elem>
               <t_source>${t_offset}</t_source>
               <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
@@ -214,6 +220,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
+		done # tsep_group
 		done # mom_group
 		done # t_source
 		done # zphase
