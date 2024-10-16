@@ -6,10 +6,10 @@ ensembles="ensemble0"
 
 ensemble0() {
 	# Tasks to run
-	run_eigs="nop"
-	run_props="yes"
-	run_gprops="nop"
-	run_baryons="yes"
+	run_eigs="yes"
+	run_props="nop"
+	run_gprops="yes"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
 	run_redstar="yes"
@@ -19,13 +19,13 @@ ensemble0() {
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_72_192_b6p5_m0p2070_m0p1750" # ensemble path after $confspath
-	ensemble="cl21_72_192_b6p5_m0p2070_m0p1750" # ensemble name for chroma_python
-	confsname="cl21_72_192_b6p5_m0p2070_m0p1750" # ensemble name prefixing files
-	tag="cl21_72_192_b6p5_m0p2070_m0p1750" # directory name for storing jobs and xmls
-	confs="`seq 1000 10 1200`"   # configuration numbers to work with
-	confs="680"   # configuration numbers to work with
-	s_size=72 # lattice spatial size
+	confsprefix="cl21_96_192_b6p7_m0p18498_m0p16641" # ensemble path after $confspath
+	ensemble="cl21_96_192_b6p7_m0p18498_m0p16641" # ensemble name for chroma_python
+	confsname="cl21_96_192_b6p7_m0p18498_m0p16641" # ensemble name prefixing files
+	tag="cl21_96_192_b6p7_m0p18498_m0p16641" # directory name for storing jobs and xmls
+	confs="`seq 10 10 490`"   # configuration numbers to work with
+	confs="100"   # configuration numbers to work with
+	s_size=96 # lattice spatial size
 	t_size=192 # lattice temporal size
 
 	# configuration filename
@@ -39,26 +39,26 @@ ensemble0() {
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
-	eigs_slurm_nodes=2
-	eigs_chroma_geometry="1 1 1 16"
+	eigs_slurm_nodes=$(( 192/8/2 ))
+	eigs_chroma_geometry="1 1 1 $(( 192/2 ))"
 	eigs_chroma_minutes=120
-	eigs_transfer_back="yes"
+	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="nop"
 
 	# Props options
 	prop_t_sources="0 48 96 144"
 	prop_t_sources="0"
-	prop_t_fwd=25
-	prop_t_back=25
-	prop_nvec=128
+	prop_t_fwd=16
+	prop_t_back=16
+	prop_nvec=32
 	prop_zphases="0.00 4.00 -4.00"
 	prop_zphases="0.00"
-	prop_mass="-0.2070"
-	prop_clov="1.170082389372972"
+	prop_mass="-0.18498"
+	prop_clov="1.14272664055312"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=12
-	prop_chroma_geometry="2 4 3 4"
+	prop_slurm_nodes=8
+	prop_chroma_geometry="2 4 2 4"
 	prop_chroma_minutes=120
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
@@ -128,7 +128,7 @@ ensemble0() {
                 <SetupOnGPU>1 1</SetupOnGPU>
               </MULTIGRIDParams>
               <SubspaceID>mg_subspace</SubspaceID>
-              <SolutionCheckP>true</SolutionCheckP>
+              <SolutionCheckP>false</SolutionCheckP>
  "
 
 	# propagator filename
@@ -160,11 +160,11 @@ ensemble0() {
 	gprop_t_sources="${prop_t_sources}"
 	gprop_t_seps="4 6 8 10 12 14"
 	gprop_zphases="${prop_zphases}"
-	gprop_nvec=$nvec
+	gprop_nvec=64
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
 	gprop_max_tslices_in_contraction=1
-	gprop_max_mom_in_contraction=1
+	gprop_max_mom_in_contraction=2
 	gprop_slurm_nodes="${prop_slurm_nodes}"
 	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
@@ -330,17 +330,17 @@ ensemble0() {
 	disco_transfer_from_jlab="nop"
 
 	# Redstar options
-	redstar_t_corr=25 # Number of time slices
+	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
 	redstar_use_disco="nop"
-	redstar_2pt="yes"
+	redstar_2pt="nop"
 	redstar_2pt_moms="\
 0 0 0
 $( for i in `seq 1 12`; do echo 0 0 $i; echo 0 0 -$i; done )"
-	redstar_3pt="nop"
+	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
 0 1 4   0 0 4   
@@ -408,9 +408,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	corr_file_name() {
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr_3pt/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr_3pt/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
