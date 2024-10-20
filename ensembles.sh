@@ -23,8 +23,8 @@ ensemble0() {
 	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
-	confs="`seq 1010 30 2000`"
-	confs="1010"
+	confs="`seq 1010 30 4990`"
+	#confs="1010"
 	confs="${confs//1250/}"
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
@@ -266,7 +266,7 @@ ensemble0() {
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
 	gprop_t_seps="4 6 8 10 12 14 16"
-	max_tseps_per_job=4
+	max_tseps_per_job=3
 	gprop_zphases="${prop_zphases}"
 	gprop_nvec=$prop_nvec
 	gprop_moms="0 0 0"
@@ -748,14 +748,17 @@ export OPENBLAS_NUM_THREADS=1
 export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 2))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
+#export SB_CACHEGB_CACHE=5
 "
 
 #
 # Options for launch
 #
 
-max_jobs=25 # maximum jobs to be launched
+BASH_INVOCATION_OPTIONS=
+max_jobs=4 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
+slurm_max_bundled_jobs=1000 # maximum bundled jobs in a slurm job
 
 #
 # Path options
