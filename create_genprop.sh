@@ -2,26 +2,12 @@
 
 source ensembles.sh
 
-unpack_moms() {
-	echo $1 $2 $3
-	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
-}
-
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
 	# Check for running genprops
 	[ $run_gprops != yes ] && continue
-
-	moms="all"
-	if [ $run_onthefly == yes ]; then
-		moms="`
-			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-				mom_word $( mom_fly $momij )
-			done | sort -u
-		`"
-	fi
 
 	tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
 	[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
@@ -35,8 +21,15 @@ for ens in $ensembles; do
 		mkdir -p $runpath
 
 		for t_source in $gprop_t_sources; do
-		for zphase in $gprop_zphases; do
+		for phase in $( get_all_phases ); do
+
 		[ ${run_onthefly} != yes ] && max_moms_per_job=1
+		moms="`
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+				[ $( mom_word $( mom_auto_phase $momij ) ) == $phase ] && mom_word $( mom_fly $momij ) 
+			done | sort -u
+		`"
+		[ $( num_args $moms ) == 0 ] && continue
 		k_split $max_moms_per_job $moms | while read mom_group ; do
 		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
@@ -49,15 +42,12 @@ for ens in $ensembles; do
 			#
 			# Genprops creation
 			#
-			if [ $run_onthefly == yes ]; then
-				gprop_moms="$( for mom in $mom_group; do unpack_moms ${mom//_/ }; done )"
-				mom_leader="`take_first $mom_group`"
-				tsep_leader="`take_first $tsep_group`"
-				prefix_extra="_mf${mom_leader}_tsep${tsep_leader}"
-			else
-				prefix_extra=""
-			fi
-			prefix="${runpath}/gprop_t${t_source}_z${zphase}${prefix_extra}"
+			gprop_moms="$( for mom in $mom_group; do echo ${mom//_/ }; done )"
+			mom_leader="`take_first $mom_group`"
+			tsep_leader="`take_first $tsep_group`"
+			phase_snk="$( get_sink ${phase//_/ } )"
+			phase_src="$( get_source ${phase//_/ } )"
+			prefix="${runpath}/gprop_t${t_source}_phase${phase}_mf${mom_leader}_tsep${tsep_leader}"
 			gprop_xml="${prefix}.xml"
 			cat << EOF > $gprop_xml
 <?xml version="1.0"?>
@@ -105,7 +95,8 @@ for ens in $ensembles; do
             <decay_dir>3</decay_dir>
             <displacement_length>1</displacement_length>
             <num_tries>0</num_tries>
-            <phase>0.00 0.00 ${zphase}</phase>
+            <quarkPhase>${phase_src}</quarkPhase>
+            <aQuarkPhase>${phase_snk}</aQuarkPhase>
             <max_rhs>${gprop_max_rhs}</max_rhs>
             <use_multiple_writers>false</use_multiple_writers>
             <use_genprop4_format>false</use_genprop4_format>
@@ -223,6 +214,6 @@ EOF
 		done # tsep_group
 		done # mom_group
 		done # t_source
-		done # zphase
+		done # phase
 	done # cfg
 done # ens

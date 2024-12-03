@@ -14,15 +14,6 @@ for ens in $ensembles; do
 	[ $run_props == yes -a $onthefly_slurm_nodes -lt $prop_slurm_nodes ] && onthefly_slurm_nodes="$prop_slurm_nodes"
 	[ $run_gprops == yes -a $onthefly_slurm_nodes -lt $gprop_slurm_nodes ] && onthefly_slurm_nodes="$gprop_slurm_nodes"
 
-	moms="`
-		(
-			[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
-			[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
-		) | while read momij; do
-			[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
-		done | sort -u
-	`"
-
 	if [ ${redstar_3pt} == yes ] ; then
 		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
 		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
@@ -40,21 +31,22 @@ for ens in $ensembles; do
 		mkdir -p $runpath
 
 		for t_source in $gprop_t_sources; do
-		for zphase in $gprop_zphases; do
-		k_split $max_moms_per_job $moms | while read mom_group ; do
+		for phase in $( get_all_phases ) ; do
+
+		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
 		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
 			mom_leader="`take_first $mom_group`"
 			tsep_leader="`take_first $tsep_group`"
-			baryon_script="${runpath}/baryon_${zphase}_t0_${t_source}_mf${mom_leader}.sh.future"
-			gprop_script="${runpath}/gprop_t${t_source}_z${zphase}_mf${mom_leader}_tsep${tsep_leader}.sh.future"
-			prop_script="${runpath}/prop_t${t_source}_z${zphase}.sh.future"
+			baryon_script="$runpath/baryon_ph${phase}_t0_${t_source}_mf${mom_leader}.sh.future"
+			gprop_script="${runpath}/gprop_t${t_source}_phase${phase}_mf${mom_leader}_tsep${tsep_leader}.sh.future"
+			prop_script="${runpath}/prop_t${t_source}_phase${phase}.sh.future"
 
-			redstar_tasks="$( ls $runpath/redstar_t${t_source}_*_z${zphase}_mf${mom_leader}_tsep${tsep_leader}.sh.future )"
+			redstar_tasks="$( ls $runpath/redstar_t${t_source}_ph${phase}_insop*_mf${mom_leader}_tsep${tsep_leader}.sh.future )"
 			num_redstar_tasks="$( num_args $redstar_tasks )"
 			[ $num_redstar_tasks == 0 ] && continue
 
-			prefix="onthfly_t${t_source}_z${zphase}_mf${mom_leader}_tsep${tsep_leader}"
+			prefix="onthfly_t${t_source}_ph${phase}_mf${mom_leader}_tsep${tsep_leader}"
 			output="$runpath/${prefix}.out"
 			cat << EOF > $runpath/${prefix}.sh
 $slurm_sbatch_prologue
@@ -66,7 +58,7 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	if [ $run_gprops == yes ] ; then
+	if [ $run_gprops == yes -a -f $gprop_script ] ; then
 		bash $gprop_script run
 		sleep 30
 	fi
@@ -154,6 +146,6 @@ EOF
 		done # tsep_group
 		done # mom_group
 		done # t_source
-		done # zphase
+		done # phase
 	done # cfg
 done # ens

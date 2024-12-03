@@ -2,19 +2,9 @@
 
 . common.sh
 
-ensembles="ensemble0 ensemble1"
+ensembles="ensemble"
 
-ensemble0() {
-	prop_zphases=0.00
-	ensemble_gen
-}
-
-ensemble1() {
-	prop_zphases=2.00
-	ensemble_gen
-}
-
-ensemble_gen() {
+ensemble() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
@@ -37,7 +27,7 @@ ensemble_gen() {
 	#confs="`seq 10010 10 20070`"
 	confs="`seq 5170 10 10000`"
 	#confs="`seq 5170 10 8000`"
-	#confs="5170"
+	confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -47,7 +37,7 @@ ensemble_gen() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=128  # colorvecs to use
+	nvec=64  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
@@ -65,7 +55,6 @@ ensemble_gen() {
 	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=128
-	#prop_zphases="0.00 2.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -253,11 +242,7 @@ ensemble_gen() {
 	# propagator filename
 	prop_file_name() {
 		local n node
-		if [ ${zphase} == 0.00 ]; then
-			n="${confspath}/${confsprefix}/prop_db/${confsname}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
-		else
-			n="${confspath}/${confsprefix}/phased/prop_db/d001_${zphase}/${cfg}/${confsname}.phased_${zphase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
-		fi
+		n="${confspath}/${confsprefix}/prop_db/phased_${phase}/${cfg}/${confsname}.phased_${phase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_props == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -277,9 +262,8 @@ ensemble_gen() {
 
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
-	gprop_t_seps="4 6 8 10 12 14"
-	max_tseps_per_job=3
-	gprop_zphases="${prop_zphases}"
+	gprop_t_seps="6 7 8 9 10 11 12"
+	max_tseps_per_job=10
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
@@ -293,11 +277,7 @@ ensemble_gen() {
 	gprop_file_name() {
 		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
-		if [ $zphase == 0.00 ]; then
-			n="${confspath}/${confsprefix}/unsmeared_meson_dbs/t0_${t_source}/unsmeared_meson.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
-		else
-			n="${confspath}/${confsprefix}/phased/unsmeared_meson_dbs/d001_${zphase}/t0_${t_source}/unsmeared_meson.phased_d001_${zphase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
-		fi
+		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase}/t0_${t_source}/unsmeared_meson.phased_${phase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_gprops == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -317,7 +297,6 @@ ensemble_gen() {
 
 	# Meson options
 	meson_nvec=$nvec
-	meson_zphases="0.00 2.00"
 	meson_slurm_nodes=2
 	meson_chroma_max_tslices_in_contraction="1" # as large as possible
 	meson_chroma_geometry="1 2 2 4"
@@ -380,7 +359,6 @@ ensemble_gen() {
 
 	# Baryon options
 	baryon_nvec=$nvec
-	baryon_zphases="${prop_zphases}"
 	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
 	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
 	baryon_chroma_max_vecs=32 # as large as possible (zero means do all eigenvectors are contracted at once)
@@ -389,11 +367,7 @@ ensemble_gen() {
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
-		if [ ${zphase} == 0.00 ]; then
-			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).sdb${cfg}"
-		else
-			n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.m2_0_0.baryon.colorvec.t_0_$((t_size-1)).phased_${zphase}.sdb${cfg}"
-		fi
+		n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.baryon.colorvec.t_0_$((t_size-1)).phased_${phase}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_baryons == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -410,7 +384,7 @@ ensemble_gen() {
 	baryon_transfer_back="nop"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
-	redstar_op_bases=3
+	redstar_op_bases=1
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -548,23 +522,64 @@ $(
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_2pt="nop"
+	redstar_2pt="yes"
 	redstar_2pt_moms=""
 	redstar_3pt="yes"
-	redstar_3pt_snkmom_srcmom="$(
-		if [ $prop_zphases == 0.00 ]; then
-			for (( z=-3 ; z<=3 ; ++z )) do echo "0 0 $z 0 0 $z" ; done
-		else
-			for (( z=-6 ; z<=-4 ; ++z )) do echo "0 0 $z 0 0 $z" ; done
-			for (( z=4 ; z<=6 ; ++z )) do echo "0 0 $z 0 0 $z" ; done
-		fi
-)"
+	redstar_3pt_snkmom_srcmom="\
+-5 0 -1 -4 0 1
+-2 -2 -6 0 0 -5
+-2 -2 -5 0 0 -4
+-2 -2 -4 -1 0 -6
+-2 0 -5 -1 0 -1
+-1 -1 -6 0 0 -5
+-1 -1 -6 0 1 -6
+-1 -1 -6 0 1 -5
+-1 -1 -6 1 1 -6
+-1 -1 -6 1 1 -5
+-1 -1 -5 0 0 -4
+-1 -1 -5 0 1 -5
+-1 -1 -5 0 1 -4
+-1 -1 -5 1 1 -5
+-1 -1 -4 0 0 -6
+-1 -1 -4 0 1 -4
+-1 -1 -4 1 1 -4
+-1 -1 -2 0 0 -5
+-1 -1 -2 0 0 -4
+-1 0 -6 -2 -2 -5
+-1 0 -6 0 0 -5
+-1 0 -6 0 0 -4
+-1 0 -6 0 0 -2
+-1 0 -6 1 0 -6
+-1 0 -6 1 0 -5
+-1 0 -6 1 0 -4
+-1 0 -6 1 1 -4
+-1 0 -5 0 0 -4
+-1 0 -5 0 0 -2
+-1 0 -5 1 0 -5
+-1 0 -5 1 0 -4
+-1 0 -5 1 0 -2
+-1 0 -4 0 0 -2
+-1 0 -4 0 0 -1
+-1 0 -4 1 0 -4
+-1 0 -4 1 0 -2
+-1 0 -4 1 1 -2
+-1 0 -2 0 0 -6
+-1 0 -2 0 0 -5
+-1 0 -1 0 0 -4
+-1 0 4 -2 0 1
+-1 0 4 -1 -1 2
+-1 1 -6 -2 2 -5
+-1 1 -5 -2 2 -4
+-1 1 -4 -2 0 -6
+-1 2 -2 0 2 -5"
 	redstar_2pt_moms="$(
 		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2
 			echo $m3 $m4 $m5
 		done | sort -u
 )"
+	redstar_auto_phasing_4plus=2
+	redstar_auto_phasing_3=0
 	redstar_disco="nop" # contracting for disco
 	if [ $redstar_op_bases == 1 ]; then
 		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
@@ -627,16 +642,13 @@ $(
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
-		local prefix_path="z${zphase}"
-		[ ${zphase} == 0.00 ] && prefix_path="unphased"
-		local prefix_path_extra="_2pt"
-		[ ${redstar_3pt} == yes ] && prefix_path_extra="_3pt"
-		prefix_path_extra+="_new_3ops"
+		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
+		prefix_path_extra="_mix_phasing"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		local ins_path=""
 		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
-		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}${tsep_extra}.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${prefix_path}${tsep_extra}.sdb${cfg}"
 	}
 	redstar_slurm_nodes=1
 	redstar_minutes=30
@@ -661,11 +673,11 @@ chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/c
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
-redstar="$chromaform/install-redstar/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-redstar/redstar-pdf-next-colorvec-pdf-next-hadron-hip-adat-pdf-next-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install-redstar/adat-pdf-superbblas-sp"
+adat="$chromaform/install-redstar/adat-pdf-next-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
