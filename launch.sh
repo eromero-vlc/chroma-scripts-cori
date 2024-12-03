@@ -78,10 +78,10 @@ done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max
 			cat << EOF > $wrapup_job
 #!/bin/bash -l
 . $first_job environ
-srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=closest -K0 -k -W0  bash -l -c "$(
+srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=closest -K0 -k -W0  bash $BASH_INVOCATION_OPTIONS -c "$(
 			j="0"
 			for job in $first_job $jobs_in_a_node; do
-				echo -n "[ \\\$SLURM_PROCID == $j ] && MY_JOB_INDEX=$j bash -l $job run; "
+				echo -n "[ \\\$SLURM_PROCID == $j ] && MY_JOB_INDEX=$j bash $BASH_INVOCATION_OPTIONS $job run; "
 				j="$(( j+1 ))"
 			done
 )"
@@ -95,17 +95,17 @@ EOF
 	num_jobs="`echo $jobs | wc -w`"
 	[ $num_jobs == 0 ] && continue
 	# Max sequential jobs in a SLURM job
-	max_jobs_in_seq="$(( max_hours*60 / minutes_per_job ))"
+	max_jobs_in_seq="$(( max_minutes / minutes_per_job ))"
 	# minimum number of jobs to run
+	max_concurrent_jobs="$(( max_concurrent_jobs == 0 ? slurm_max_bundled_jobs : ( max_concurrent_jobs < slurm_max_bundled_jobs ? max_concurrent_jobs : slurm_max_bundled_jobs ) ))"
 	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
 	# total SLURM jobs to launch
-	num_bundle_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
-	num_bundle_jobs="$(( num_bundle_jobs < min_slurm_jobs ? min_slurm_jobs : num_bundle_jobs ))"
-	max_concurrent_slurm_jobs="$(( min_slurm_jobs == 0 ? num_bundle_jobs : num_bundle_jobs / min_slurm_jobs ))"
+	num_slurm_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"
+	num_slurm_jobs="$(( num_slurm_jobs < min_slurm_jobs ? min_slurm_jobs : num_slurm_jobs ))"
 	# maximum number of jobs running on a single SLURM job
-	max_jobs_in_bundle="$(( (num_jobs+num_bundle_jobs-1)/num_bundle_jobs ))"
+	max_jobs_in_bundle="$(( (num_jobs+num_slurm_jobs-1)/num_slurm_jobs ))"
 	# maximum number of parallel jobs inside a SLURM job
-	bundle_size="$(( (max_jobs_in_bundle*minutes_per_job + max_hours*60-1)/(max_hours*60) ))"
+	bundle_size="$(( (max_jobs_in_bundle + max_jobs_in_seq-1)/max_jobs_in_seq ))"
 	# maximum number of jobs executed one after another in a SLURM job
 	max_jobs_in_seq="$(( (max_jobs_in_bundle + bundle_size-1) / bundle_size ))"
 	cat << EOF > $runpath/run_${jobtag}_script.sh
@@ -118,7 +118,7 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash -l $job run"
+				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash $BASH_INVOCATION_OPTIONS $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
@@ -139,7 +139,7 @@ $slurm_sbatch_prologue
 #SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) # number of cores per task
 #SBATCH --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) ))
 #SBATCH -J batch-${tag}
-#SBATCH --array=0-$((num_bundle_jobs-1))%${max_concurrent_slurm_jobs}
+#SBATCH --array=0-$((num_slurm_jobs-1))
 `
 	dep_jobs="$(
 		# Update the queued jobs
@@ -157,7 +157,7 @@ $slurm_sbatch_prologue
 	[ x$dep_jobs != x ] && echo "#SBATCH -d afterok:$dep_jobs"
 `
 
-bash -l $runpath/run_${jobtag}_script.sh
+bash $BASH_INVOCATION_OPTIONS $runpath/run_${jobtag}_script.sh
 exit 0 # always return ok no matter the actual result
 EOF
 
