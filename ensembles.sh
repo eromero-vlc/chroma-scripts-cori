@@ -7,7 +7,7 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
+	run_props="yes"
 	run_gprops="nop"
 	run_baryons="yes"
 	run_mesons="nop"
@@ -15,7 +15,7 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=30
+	onthefly_chroma_minutes=45
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -28,6 +28,7 @@ ensemble0() {
 	#confs="`seq 6000 10 9990`"
 	confs="`seq 5170 10 9990`"
 	#confs="`seq 5170 10 6990`"
+	#confs=5170
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -57,14 +58,14 @@ ensemble0() {
 	prop_t_back=0
 	prop_nvec=128
 	prop_zphases="0.00 2.00 -2.00"
-	prop_zphases="0.00"
+	prop_zphases="2.00"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=20
-	prop_max_rhs=8
+	prop_max_rhs=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -135,7 +136,7 @@ ensemble0() {
               <SubspaceID>mg_subspace</SubspaceID>
               <SolutionCheckP>true</SolutionCheckP>
  "
-	prop_inv="
+	prop_inv_new="
               <invType>MGPROTON</invType>
 
               <type>eo</type>
@@ -530,15 +531,15 @@ $(
 	redstar_2pt_moms="\
 0 0 0
 $(
-	for i in `seq 1 $redstar_2pt_max_mom`; do
+	for i in 4 5 6; do
 		echo $i 0 0
 		echo -$i 0 0
 	done
-	for i in `seq 1 $redstar_2pt_max_mom`; do
+	for i in 4 5 6; do
 		echo 0 $i 0
 		echo 0 -$i 0
 	done
-	for i in `seq 1 $redstar_2pt_max_mom`; do
+	for i in 4 5 6; do
 		echo 0 0 $i
 		echo 0 0 -$i
 	done
@@ -572,7 +573,7 @@ $(
 	redstar_disco="nop" # contracting for disco
 	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
 	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
-	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
+	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
 	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
 	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
 	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
@@ -626,9 +627,9 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt_disco/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}-2pt_disco/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
@@ -651,9 +652,9 @@ PYTHON=python3
 #
 
 chromaform="$HOME/scratch/chromaform_rocm6.1"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
 redstar="$chromaform/install-redstar-nompi/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
@@ -674,7 +675,7 @@ slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -A NPH122
 #SBATCH -p batch
-#SBATCH --gpu-bind=closest
+#SBATCH --gpu-bind=none
 #SBATCH -C nvme"
 
 slurm_script_prologue="
@@ -688,6 +689,10 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 export SB_NUM_GPUS_ON_NODE=1
 export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+export QUDA_ENABLE_P2P=0
+export QUDA_ENABLE_GDR=0
+export QUDA_ENABLE_NVSHMEM=0
+export QUDA_ENABLE_MPS=0
 "
 
 #
@@ -706,8 +711,10 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=20 # maximum jobs to be launched
-max_hours=1 # maximum hours for a single job
+BASH_INVOCATION_OPTIONS=
+max_jobs=4 # maximum jobs to be launched
+max_minutes=45 # maximum hours for a single job
+slurm_max_bundled_jobs=500 # maximum bundled jobs in a slurm job
 
 #
 # Path options
