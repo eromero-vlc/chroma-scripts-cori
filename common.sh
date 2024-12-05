@@ -18,40 +18,74 @@ take_first() {
 mom_word() {
 	[ $# == 3 ] && echo ${1}_${2}_${3}
 	[ $# == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
+	[ $# == 7 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}_${7}
+	[ $# == 9 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}_${7}_${8}_${9}
+}
+
+mom_auto_phase() {
+	for i in ${@//-/}; do
+		echo -n $(( i >= 4 ? redstar_auto_phasing_4plus : ( i == 3 ? redstar_auto_phasing_3 : 0) )) ""
+	done
+	echo
 }
 
 # mom_fly momx0 momy0 momz0 [momx1 momy1 momz1]
-# Return a canonical direction of mom0 - mom1
+# Return a canonical direction of mom0 - mom1 and the phasing
 
 mom_fly() {
 	if [ $# == 3 ]; then
-		if [ $1 -gt 0 -o $2 -gt 0 -o $3 -ge 0 ]; then
-			echo $1 $2 $3
-		else
-			echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
-		fi
+		echo $1 $2 $3
 	else
-		if [ $1 -gt $4 ] || [ $1 -eq $4 -a $2 -gt $5 ] || [ $1 -eq $4 -a $2 -eq $5 -a $3 -ge $6 ]; then
-			echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
-		else
-			echo $(( $4-$1 )) $(( $5-$2 )) $(( $6-$3 ))
-		fi
+		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
 	fi
 }
 
-# mom_split momx0 momy0 momz0 [momx1 momy1 momz1]
-# Return all momenta needed for a canonical momentum
+# Return a list of correlation functions as follows:
+# phased_snk phased_src mom_snk mom_src [2pt|3pt]
 
-mom_split() {
-	if [ $# == 3 ]; then
-		echo $1 $2 $3
-		echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
-	else
-		echo $1 $2 $3
-		echo $4 $5 $6
-		echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
-		echo $(( -$4 )) $(( -$5 )) $(( -$6 ))
+get_all_corr() {
+	[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+		echo $( mom_auto_phase $momij ) $momij 3pt
+	done | sort -u
+	[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms" | while read momij; do
+		echo $( mom_auto_phase $momij ) $( mom_auto_phase $momij ) $momij $momij 2pt
+	done | sort -u
+}
+
+get_phase_from_corr_line() {
+	echo ${1} ${2} ${3} ${4} ${5} ${6}
+}
+
+get_mom_from_corr_line() {
+	echo ${7} ${8} ${9} ${10} ${11} ${12}
+}
+
+get_type_from_corr_line() {
+	echo ${13}
+}
+
+get_all_phases() {
+	local l
+	get_all_corr | while read l ; do
+		[ $(num_args $l ) -gt 0 ] && echo $( mom_word $( get_phase_from_corr_line $l ) )
+	done | sort -u
+}
+
+get_fly_moms() {
+	local l
+	get_all_corr | while read l ; do
+		if [ $(num_args $l ) -gt 0 -a $( mom_word $( get_phase_from_corr_line $l ) ) == $1 ] ; then
+			 echo $( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )
 	fi
+	done | sort -u
+}
+
+get_sink() {
+	echo $1 $2 $3
+}
+
+get_source() {
+		echo $4 $5 $6
 }
 
 # shuffle_t_source cfg [t_size t_source]

@@ -49,8 +49,21 @@ for ens in $ensembles; do
 
 	mom_leaders="$(
 		k_split $max_moms_per_job $mom_groups | while read mom_group ; do
-			mom_leader="$( take_first $mom_group )"
-			echo $mom_leader
+			take_first $mom_group
+		done
+	)"
+
+	if [ ${redstar_3pt} == yes ] ; then
+		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
+		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
+	else
+		tsep_groups=0
+		max_tseps_per_job=1
+	fi
+
+	tsep_leaders="$(
+		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
+			take_first $tsep_group
 		done
 	)"
 
@@ -65,7 +78,9 @@ for ens in $ensembles; do
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
 			for momw in $mom_leaders; do
+				for tsep in $tsep_leaders; do
 				mom="${momw//_/ }" corr_file_name
+				done # tsep
 			done # momw
 		done # insertion_op
 	done > $redstar_files  # zphase
@@ -90,6 +105,7 @@ for ens in $ensembles; do
 
 	for zphase in $prop_zphases; do
 		for (( insertion_op=0 ; insertion_op < max_combo_lines ; ++insertion_op )) ; do
+			for tsep in $tsep_leaders; do
 			for momw in $mom_leaders; do
 				mom="${momw//_/ }"
 
@@ -139,6 +155,7 @@ for ens in $ensembles; do
 					fi
 				)
 			done # momw
+			done # tsep
 		done # insertion_op
 	done # zphase
 done # ens
