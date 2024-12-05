@@ -16,7 +16,7 @@ ensemble() {
 
 	run_onthefly="yes"
 	onthefly_chroma_minutes=90
-	max_moms_per_job=100
+	max_moms_per_job=10
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
