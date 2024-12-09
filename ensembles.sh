@@ -15,7 +15,7 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=15
+	onthefly_chroma_minutes=30
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -542,6 +542,7 @@ $(
 )"
 	redstar_auto_phasing_4plus=2
 	redstar_auto_phasing_3=0
+	redstar_auto_phasing_sign="yes"
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
@@ -642,7 +643,7 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		local ins_path=""
 		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
-		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${prefix_path}${tsep_extra}.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 	}
 	redstar_slurm_nodes=1
 	redstar_minutes=30
