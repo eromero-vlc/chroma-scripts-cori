@@ -24,10 +24,12 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 4500`"
+	#confs="`seq 1000 10 1100`"
 	#confs="`seq 2000 10 3000`"
 	#confs="`seq 1000 10 1990`"
-	#confs="`seq 1000 10 2000`"
+	confs="`seq 1000 10 2000`"
 	confs="${confs//1920/}"
+	#confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -58,12 +60,14 @@ ensemble0() {
 	prop_nvec=64
 	prop_zphases="0.00 2.00 -2.00"
 	prop_zphases="0.00"
-	prop_mass="-0.2350"
+	prop_mass="-0.2350" # light
+	prop_mass="-0.2050" # heavy
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=120
+	prop_max_rhs=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -134,13 +138,14 @@ ensemble0() {
               <SubspaceID>mg_subspace</SubspaceID>
               <SolutionCheckP>true</SolutionCheckP>
  "
-	prop_inv="
+	prop_max_rhs=24
+	prop_inv_nop="
               <invType>MGPROTON</invType>
 
               <type>eo</type>
               <solver>
                 <type>mr</type>
-                <tol>1e-7</tol>
+                <tol>1e-10</tol>
                 <max_its>20000</max_its>
                 <prefix>l0</prefix>
                 <verbosity>Detailed</verbosity>
@@ -148,7 +153,8 @@ ensemble0() {
               <use_Aee_prec>true</use_Aee_prec>
               <prec_ee>
                    <type>mg</type>
-                   <num_null_vecs>24</num_null_vecs>
+                   <num_null_vecs>100</num_null_vecs>
+                   <max_num_null_vecs>100</max_num_null_vecs>
                    <num_colors>24</num_colors>
                    <blocking>4 4 4 4</blocking>
                    <spin_splitting>chirality_splitting</spin_splitting>
@@ -159,7 +165,7 @@ ensemble0() {
                         <solver>
                           <type>mr</type>
                           <tol>1e-7</tol>
-                          <max_its>50</max_its>
+                          <max_its>100</max_its>
                           <error_if_not_converged>false</error_if_not_converged>
                           <prefix>l0_nv</prefix>
                           <verbosity>Detailed</verbosity>
@@ -191,7 +197,8 @@ ensemble0() {
                      </solver>
                      <prec_ee>
                           <type>mg</type>
-                          <num_null_vecs>32</num_null_vecs>
+                          <num_null_vecs>200</num_null_vecs>
+                          <max_num_null_vecs>200</max_num_null_vecs>
                           <num_colors>32</num_colors>
                           <blocking>2 2 2 2</blocking>
                           <spin_splitting>chirality_splitting</spin_splitting>
@@ -202,7 +209,7 @@ ensemble0() {
                                <solver>
                                  <type>mr</type>
                                  <tol>1e-7</tol>
-                                 <max_its>50</max_its>
+                                 <max_its>100</max_its>
                                  <error_if_not_converged>false</error_if_not_converged>
                                  <prefix>l1_nv</prefix>
                                  <verbosity>Detailed</verbosity>
@@ -368,8 +375,8 @@ ensemble0() {
 	baryon_nvec=$nvec
 	baryon_zphases="${prop_zphases}"
 	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
-	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_chroma_max_vecs=2 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
+	baryon_chroma_max_vecs=32 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=1
 	baryon_chroma_geometry="1 1 1 8"
 	baryon_chroma_minutes=120
@@ -422,16 +429,16 @@ ensemble0() {
 "
 
 	# Disco options
-	disco_max_displacement=16
 	disco_probing_displacement=0
 	disco_probing_power=20
 	disco_max_colors=3325
-	disco_max_colors_at_once=256
+	disco_max_colors_at_once=1663
 	disco_noise_vectors=1
-	disco_t_sources="8 24 40 56"
+	disco_t_sources="0 16 32 48 8 24 40 56"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
-	disco_chroma_minutes=120
+	disco_chroma_minutes=400
+	disco_max_rhs=$prop_max_rhs
 	disco_proj="
   <projectorType>MGPROTON</projectorType>
   <type>mg</type>
@@ -500,7 +507,7 @@ ensemble0() {
       </solver>
       <eigensolver>
         <max_block_size>8</max_block_size>
-        <max_basis_size>80</max_basis_size>
+        <max_basis_size>160</max_basis_size>
         <verbosity>VeryDetailed</verbosity>
       </eigensolver>
     </proj>
@@ -513,36 +520,150 @@ ensemble0() {
 			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
 		fi
 	}
+	disco_trace_file_name() {
+		echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.trace.sdb${cfg}"
+	}
 	disco_transfer_back="nop"
 	disco_delete_after_transfer_back="nop"
 	disco_transfer_from_jlab="nop"
-	disco_insertions="\
+	disco_max_displacement=16
+	disco_groupx_moms="\
+0 0 0
+0 1 0
+0 1 1
+0 1 -1
+0 1 -2
+0 1 2
+1 0 0
+1 1 0
+1 1 1
+1 1 -1
+1 1 -2
+1 1 2
+2 0 1
+2 0 -1
+2 0 -2
+2 0 2
+-2 -2 0
+1 0 -1
+-2 0 -2
+-2 0 0
+-2 0 2
+-2 0 1
+-2 0 -1
+-2 1 -2
+-2 1 -1
+-2 2 1
+-1 0 1
+-1 -2 1
+-1 -2 0
+-1 -2 -1
+-2 -2 -1
+-1 -2 2
+-1 -1 -2
+-1 0 0
+-1 -1 0
+3 0 0
+0 2 2
+-1 2 1
+-1 0 -2
+-1 -1 -1
+-2 -1 0
+-1 0 -1
+-1 -1 1
+-1 0 2
+-1 -1 2
+0 2 0
+-2 1 0
+-1 1 -2
+-1 1 -1
+-1 1 2
+-1 2 -1
+2 -2 0
+1 0 -2
+1 0 2
+1 0 1
+2 2 1"
+	mom_rot() {
+		local r="$1"
+		shift
+		local m=( "$@" )
+		echo ${m[$(( (3-r+3+0)%3 ))]} ${m[$(( (3-r+3+1)%3 ))]} ${m[$(( (3-r+3+2)%3 ))]}
+	}
+	mom_flip() {
+		if [ $1 == 1 ] ; then
+			echo $2 $3 $4
+		else
+			echo $(( -${2} )) $(( -${3} )) $(( -${4} ))
+		fi	
+	}
+	local groupid=1
+	for ldir in 1 2 3 ; do for dir in 1 -1 ; do
+		declare -g disco_group${groupid}_insertions="\
 z
 $(
-	for ldir in 1 2 3 ; do for dir in 1 -1 ; do for dist in $( seq 1 $disco_max_displacement ) ; do
+	for dist in $( seq 1 $disco_max_displacement ) ; do
 		echo -n z
 		for i in $( seq 1 $dist ); do echo -n " $(( ldir*dir ))" ; done
 		echo
-	done; done; done
+	done
 )"
+		declare -g disco_group${groupid}_moms="$(
+	echo "$disco_groupx_moms" | while read mom ; do
+		mom_flip $dir $( mom_rot $ldir $mom )
+	done
+)"
+		groupid="$(( groupid+1 ))"
+	done; done
+	disco_group0_insertions="\
+$(
+	# staples:
+	#  (---) d
+	#       <----* -
+	#            | | b
+	#  ----------* -
+	#  (---------) m
+	for z in 1 2 3 ; do
+	for x in 1 2 3 ; do
+		[ $x == $z ] && continue
+		for dirz in 1 -1 ; do
+		for dirx in 1 -1 ; do
+			for d in 0 1 2 3 ; do
+				for m in 4 8 12 16 20 ; do
+					for b in 2 4 6 8 ; do
+						echo -n z
+						for ((i=0 ; i<m ; ++i )) ; do echo -n " $(( z*dirz ))" ; done
+						for ((i=0 ; i<b ; ++i )) ; do echo -n " $(( x*dirx ))" ; done
+						for ((i=0 ; i<m-d ; ++i )) ; do echo -n " $(( -z*dirz ))" ; done
+						echo
+					done
+				done
+			done
+		done
+		done
+	done
+	done
+)"
+	disco_group0_moms="0 0 0"
 
 	# Redstar options
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	redstar_2pt="yes"
+	redstar_2pt_max_mom=3
 	redstar_2pt_moms="\
 0 0 0
 $(
-	for i in `seq 1 $disco_max_displacement`; do
+	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo $i 0 0
 		echo -$i 0 0
 	done
-	for i in `seq 1 $disco_max_displacement`; do
+	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 $i 0
 		echo 0 -$i 0
 	done
-	for i in `seq 1 $disco_max_displacement`; do
+	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 0 $i
 		echo 0 0 -$i
 	done
@@ -654,10 +775,10 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm6.1"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chromaform="/lus/work/CT5/cpt1504/zafeiro/chromaform1"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
@@ -675,11 +796,13 @@ dbutil="$adat/bin/dbutil"
 slurm_procs_per_node=8
 slurm_cores_per_node=56
 slurm_gpus_per_node=8
+srun_extra_args="--cpu-bind=none --gpus-per-task=1"
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A NPH122
-#SBATCH -p batch
-#SBATCH --gpu-bind=closest
-#SBATCH -C nvme"
+#SBATCH --account=cpt1504
+#SBATCH --constraint=MI250
+#SBATCH --threads-per-core=1
+#SBATCH --exclusive
+#SBATCH --gpu-bind=none"
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -690,8 +813,13 @@ export SB_MPI_GPU=1
 export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
-export SB_NUM_GPUS_ON_NODE=1
-export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+export SB_NUM_GPUS_ON_NODE=8
+#export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+export QUDA_ENABLE_P2P=0
+export QUDA_ENABLE_GDR=0
+export QUDA_ENABLE_NVSHMEM=0
+export QUDA_ENABLE_MPS=0
+ulimit -c 0
 "
 
 #
@@ -710,15 +838,15 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=5 # maximum jobs to be launched
-max_hours=2 # maximum hours for a single job
+max_jobs=300 # maximum jobs to be launched
+max_hours=5 # maximum hours for a single job
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$HOME/scratch"
+confspath="/lus/work/CT5/cpt1504/zafeiro"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"

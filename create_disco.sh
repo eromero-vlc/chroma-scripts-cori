@@ -24,6 +24,7 @@ for ens in $ensembles; do
 		for t_source in $disco_t_sources; do
 		for color_part in `seq 0 $(( num_color_parts-1 ))`; do
 			disco_file="`disco_file_name`"
+			disco_trace_file="`disco_trace_file_name`"
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
@@ -37,16 +38,27 @@ for ens in $ensembles; do
    <elem>
     <Name>DISCO_PROBING_3D_DEFLATION_SUPERB</Name>
       <Param>
-        <Displacements>
-`
-	echo "$disco_insertions" | while read name disp; do
-		[ x$name != x ] && echo "<elem>$disp</elem>"
+	<combos>
+$(
+	for (( group=0 ; group<9 ; ++group )) ; do
+		var_ins="disco_group${group}_insertions"
+		var_moms="disco_group${group}_moms"
+		[ $(num_args ${!var_ins}) -eq 0 ] && break
+		echo "<elem>"
+		echo "  <Displacements>"
+		echo "${!var_ins}" | while read name disp; do
+			[ x$name != x ] && echo "<elem>$disp</elem>"
+		done
+        	echo " </Displacements>"
+        	echo " <mom_list>"
+		echo "${!var_moms}" | while read mom; do
+			[ $(num_args $mom) -gt 0 ] && echo "<elem>$mom</elem>"
+		done
+        	echo " </mom_list>"
+		echo "</elem>"
 	done
-`
-        </Displacements>
-        <mom_list>
-           <elem>0 0 0</elem>
-        </mom_list>
+)
+	</combos>
         <mass_label>${prop_mass_label}</mass_label>
         <probing_distance>${disco_probing_displacement}</probing_distance>
         <probing_power>${disco_probing_power}</probing_power>
@@ -54,7 +66,7 @@ for ens in $ensembles; do
 	<num_colors>${disco_max_colors_at_once}</num_colors>
         <noise_vectors>${disco_noise_vectors}</noise_vectors>
 	<t_sources>${t_offset}</t_sources>
-        <max_rhs>1</max_rhs>
+        <max_rhs>${disco_max_rhs}</max_rhs>
         <Propagator>
           <version>10</version>
           <quarkSpinType>FULL</quarkSpinType>
@@ -87,6 +99,7 @@ for ens in $ensembles; do
       <NamedObject>
         <gauge_id>default_gauge_field</gauge_id>
         <sdb_file>${disco_file}</sdb_file>
+        <defl_sdb_file>${disco_trace_file}</defl_sdb_file>
       </NamedObject>
     </elem>
   </InlineMeasurements>
@@ -121,8 +134,10 @@ run() {
 	
 	cd $runpath
 	mkdir -p `dirname ${disco_file}`
-	rm -f $disco_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &> $output
+	rm -f $disco_file $disco_trace_file
+	lscpu > $output
+	rocm-smi >> $output
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*disco_slurm_nodes )) -N $disco_slurm_nodes $srun_extra_args $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &>> $output
 }
 
 check() {
