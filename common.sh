@@ -23,9 +23,18 @@ mom_word() {
 }
 
 mom_auto_phase() {
+	if [ ${redstar_auto_phasing_sign} != yes ] ; then
 	for i in ${@//-/}; do
 		echo -n $(( i >= 4 ? redstar_auto_phasing_4plus : ( i == 3 ? redstar_auto_phasing_3 : 0) )) ""
 	done
+	else
+		for i in ${@}; do
+			echo -n $(( i <= -4 ? -redstar_auto_phasing_4plus :
+					( i == -3 ? -redstar_auto_phasing_3 :
+					( i <= 2 ? i :
+					( i == 3 ? redstar_auto_phasing_3 : redstar_auto_phasing_4plus))) )) ""
+		done
+	fi
 	echo
 }
 

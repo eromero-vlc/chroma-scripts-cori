@@ -25,9 +25,9 @@ ensemble() {
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 5170 10 20070`"
 	#confs="`seq 10010 10 20070`"
-	confs="`seq 5170 10 10000`"
+	#confs="`seq 5170 10 10000`"
 	#confs="`seq 5170 10 8000`"
-	confs="5170"
+	#confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -580,6 +580,7 @@ $(
 )"
 	redstar_auto_phasing_4plus=2
 	redstar_auto_phasing_3=0
+	redstar_auto_phasing_sign="nop"
 	redstar_disco="nop" # contracting for disco
 	if [ $redstar_op_bases == 1 ]; then
 		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"
@@ -648,7 +649,7 @@ $(
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		local ins_path=""
 		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
-		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${prefix_path}${tsep_extra}.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 	}
 	redstar_slurm_nodes=1
 	redstar_minutes=30
@@ -668,7 +669,7 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm6.1"
+chromaform="/lustre/orion/nph122/scratch/eromero/chromaform_rocm6.1"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
@@ -732,14 +733,14 @@ export SB_CACHEGB_CPU=5
 BASH_INVOCATION_OPTIONS=
 max_jobs=4 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
-slurm_max_bundled_jobs=1000 # maximum bundled jobs in a slurm job
+slurm_max_bundled_jobs=500 # maximum bundled jobs in a slurm job
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$HOME/scratch"
+confspath="/lustre/orion/nph122/scratch/eromero"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"

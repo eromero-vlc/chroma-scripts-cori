@@ -30,11 +30,10 @@ for ens in $ensembles; do
 		runpath="$PWD/${tag}/conf_${cfg}"
 		mkdir -p $runpath
 
-		for t_source in $gprop_t_sources; do
 		for phase in $( get_all_phases ) ; do
-
 		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
 		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
+		for t_source in $gprop_t_sources; do
 
 			mom_leader="`take_first $mom_group`"
 			tsep_leader="`take_first $tsep_group`"
@@ -45,6 +44,8 @@ for ens in $ensembles; do
 			redstar_tasks="$( ls $runpath/redstar_t${t_source}_ph${phase}_insop*_mf${mom_leader}_tsep${tsep_leader}.sh.future )"
 			num_redstar_tasks="$( num_args $redstar_tasks )"
 			[ $num_redstar_tasks == 0 ] && continue
+			redstar_procs="$(( num_redstar_tasks < slurm_procs_per_node*onthefly_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*onthefly_slurm_nodes ))"
+			redstar_nodes="$(( num_redstar_tasks < onthefly_slurm_nodes ? num_redstar_tasks : onthefly_slurm_nodes ))"
 
 			prefix="onthfly_t${t_source}_ph${phase}_mf${mom_leader}_tsep${tsep_leader}"
 			output="$runpath/${prefix}.out"
@@ -72,7 +73,7 @@ run() {
 	fi
 
 	$slurm_script_prologue_redstar
-	srun -n $(( slurm_procs_per_node*onthefly_slurm_nodes )) -N $onthefly_slurm_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS -c '
+	srun -n $redstar_procs -N $redstar_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS -c '
 `
 	i=0
 	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
@@ -143,9 +144,9 @@ globus() {
 eval "\${1:-run}"
 EOF
 
+		done # t_source
 		done # tsep_group
 		done # mom_group
-		done # t_source
 		done # phase
 	done # cfg
 done # ens
