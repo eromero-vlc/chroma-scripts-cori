@@ -651,6 +651,13 @@ $(
 		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 	}
+	corr_tmp_file_name() {
+		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
+		prefix_path_extra="_mix_phasing"
+		#echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.${redstar_tag}.${prefix_path}_t0_${t_source}.edb"
+		echo "${localpath}/avg/${confsname}.nuc_local.n${redstar_nvec}.${redstar_tag}.${prefix_path}_t0_${t_source}.edb"
+	}
+
 	redstar_slurm_nodes=1
 	redstar_minutes=30
 	redstar_jobs_per_node=8 # use for computing corr graphs
