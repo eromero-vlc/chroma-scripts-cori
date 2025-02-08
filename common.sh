@@ -31,7 +31,7 @@ mom_auto_phase() {
 		for i in ${@}; do
 			echo -n $(( i <= -4 ? -redstar_auto_phasing_4plus :
 					( i == -3 ? -redstar_auto_phasing_3 :
-					( i <= 2 ? i :
+					( i <= 2 ? 0 :
 					( i == 3 ? redstar_auto_phasing_3 : redstar_auto_phasing_4plus))) )) ""
 		done
 	fi
