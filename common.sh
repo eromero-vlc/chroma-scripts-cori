@@ -31,7 +31,7 @@ mom_auto_phase() {
 		for i in ${@}; do
 			echo -n $(( i <= -4 ? -redstar_auto_phasing_4plus :
 					( i == -3 ? -redstar_auto_phasing_3 :
-					( i <= 2 ? i :
+					( i <= 2 ? 0 :
 					( i == 3 ? redstar_auto_phasing_3 : redstar_auto_phasing_4plus))) )) ""
 		done
 	fi
@@ -87,6 +87,33 @@ get_fly_moms() {
 			 echo $( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )
 	fi
 	done | sort -u
+}
+
+mom_word_esp() {
+	echo ${1}~${2}~${3}~${4}~${5}~${6}~${7}
+}
+
+get_corr_lines() {
+	local phase="$1"
+	shift
+	local l
+	local m
+	get_all_corr | while read l ; do
+		[ $(num_args $l ) == 0 -o $( mom_word $( get_phase_from_corr_line $l ) ) != $phase ] && continue
+		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
+		for m in $@ ; do
+			if [ $this_mom == $m ] ; then
+				if [ $( get_type_from_corr_line $l) == 2pt ] ; then
+					mom_word_esp $( get_mom_from_corr_line $l ) 2pt
+				else
+					for ins in $redstar_insertion_operators ; do
+						mom_word_esp $( get_mom_from_corr_line $l ) $ins
+					done
+				fi
+				break
+			fi
+		done
+	done
 }
 
 get_sink() {
