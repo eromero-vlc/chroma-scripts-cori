@@ -73,7 +73,7 @@ run() {
 	fi
 
 	$slurm_script_prologue_redstar
-	srun -n $redstar_procs -N $redstar_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS -c '
+	srun -n $redstar_procs -N $redstar_nodes \$MY_ARGS --gpus-per-task=1 --gpu-bind=closest -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS -c '
 `
 	i=0
 	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do

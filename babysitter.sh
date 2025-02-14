@@ -6,7 +6,7 @@ while true; do
 	squeue -u $USER
 	echo "Checking..."
 	bash check.sh
-	bash launch.sh
+	#bash launch.sh
 	date
 	echo "Going to sleep"
 	sleep $(( 60*30 ))

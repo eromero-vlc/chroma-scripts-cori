@@ -26,9 +26,10 @@ ensemble0() {
 	confs="`seq 5170 10 20070`"
 	#confs="`seq 5170 10 5990`"
 	#confs="`seq 6000 10 9990`"
-	confs="`seq 5170 10 9990`"
+	confs="`seq 10000 10 20100`"
+	confs="`seq 10000 10 10990`"
 	#confs="`seq 5170 10 6990`"
-	#confs=5170
+	#confs=10000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -63,7 +64,7 @@ ensemble0() {
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=20
-	prop_max_rhs=1
+	prop_max_rhs=8
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -273,7 +274,7 @@ ensemble0() {
 	gprop_slurm_nodes="${prop_slurm_nodes}"
 	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
-	localpath="/mnt/bb/$USER"
+	localpath="/tmp"
 	gprop_file_name() {
 		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
@@ -384,7 +385,7 @@ ensemble0() {
 	baryon_transfer_back="nop"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
-	redstar_op_bases=1
+	redstar_op_bases=3
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -527,15 +528,15 @@ $(
 	redstar_2pt_moms="\
 0 0 0
 $(
-	for i in 4 5 6; do
+	for i in 1 2 3 4 5 6; do
 		echo $i 0 0
 		echo -$i 0 0
 	done
-	for i in 4 5 6; do
+	for i in 1 2 3 4 5 6; do
 		echo 0 $i 0
 		echo 0 -$i 0
 	done
-	for i in 4 5 6; do
+	for i in 1 2 3 4 5 6; do
 		echo 0 0 $i
 		echo 0 0 -$i
 	done
@@ -663,12 +664,11 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm6.1"
-chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
+chromaform="/pfs/lustrep3/scratch/project_465001522/chromaform"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /opt/rocm-6.0.0/llvm/lib"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512" # -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
-redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-colorvec-pdf-next-hadron-hip-adat-pdf-next-superbblas-sp"
+redstar="$chromaform/install-redstar/redstar-pdf-next-colorvec-pdf-next-hadron-hip-adat-pdf-next-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -683,10 +683,10 @@ slurm_procs_per_node=8
 slurm_cores_per_node=56
 slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A NPH122
-#SBATCH -p batch
-#SBATCH --gpu-bind=none
-#SBATCH -C nvme"
+#SBATCH -A project_465001522
+#SBATCH -p standard-g
+#SBATCH --gpus-per-task=1
+#SBATCH --gpu-bind=none"
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -699,7 +699,7 @@ export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
-export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+#export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
 export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
 export QUDA_ENABLE_NVSHMEM=0
@@ -725,9 +725,10 @@ export SB_CACHEGB_CPU=5
 #
 
 BASH_INVOCATION_OPTIONS=
-max_jobs=4 # maximum jobs to be launched
+max_jobs=100 # maximum jobs to be launched
 max_minutes=30 # maximum hours for a single job
-slurm_max_bundled_jobs=500 # maximum bundled jobs in a slurm job
+slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
+slurm_max_jobs=80 # maximum bundled jobs in a slurm job
 
 #
 # Path options

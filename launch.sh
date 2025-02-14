@@ -66,9 +66,9 @@ sort $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jo
 	echo -n " $job"
 done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max_concurrent_jobs jobs; do
 	# Remove the tracking for all files that are going to be created
-	for j in $jobs; do
-		rm -f $( for f in `bash $j outs`; do echo ${f}.launched; done )
-	done
+	#for j in $jobs; do
+	#	rm -f $( for f in `bash $j outs`; do echo ${f}.launched; done )
+	#done
 
 	# Wrap jobs that need a fraction of a node into full node jobs
 	actual_jobs="$jobs"
@@ -108,6 +108,7 @@ EOF
 	bundle_size="$(( (max_jobs_in_bundle + max_jobs_in_seq-1)/max_jobs_in_seq ))"
 	# maximum number of jobs executed one after another in a SLURM job
 	max_jobs_in_seq="$(( (max_jobs_in_bundle + bundle_size-1) / bundle_size ))"
+	num_slurm_jobs="$(( num_slurm_jobs <= slurm_max_jobs ? num_slurm_jobs : slurm_max_jobs ))"
 	cat << EOF > $runpath/run_${jobtag}_script.sh
 `
 	bundle_id=0
@@ -145,9 +146,10 @@ $slurm_sbatch_prologue
 		# Update the queued jobs
 		squeue -u $USER --array > $sq
 		for j in $actual_jobs; do
-			for f in $( bash $j deps ); do
-				echo $f
-			done
+			#for f in $( bash $j deps ); do
+			#	echo $f
+			#done
+			echo -n
 		done | sort -u | while read f; do
 			[ -f ${f}.launched ] && cat ${f}.launched
 		done | sort -u | while read slurm_job; do
@@ -169,7 +171,8 @@ EOF
 	sbatch_job_id="`awk '/Submitted/ {print $4}' $runpath/run_${jobtag}.sh.launched`"
 	ji="0"
 	for j in $actual_jobs; do
-		for f in $j $( bash $j outs ); do
+		for f in $j ; do
+		#for f in $j $( bash $j outs ); do
 			echo ${sbatch_job_id}_$((ji/(max_jobs_in_bundle*num_jobs_per_node))) > ${f}.launched
 		done
 		ji="$(( ji+1 ))"
