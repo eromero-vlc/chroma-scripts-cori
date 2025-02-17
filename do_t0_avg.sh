@@ -3,7 +3,8 @@
 source ensembles.sh
 
 redstar_dat_mom() {
-	echo "${1}${2}${3}"
+	ph=( $( mom_auto_phase $@ ) )
+	echo "${1}${2}${3}ph${ph[0]}${ph[1]}${ph[2]}"
 }
 
 redstar_dat_mom_snk() {
@@ -77,17 +78,18 @@ for ens in $ensembles; do
 	done > $merge_cfgs 2> $err
 	cat $err
 
+	corr_dir="/lustre/orion/nph122/scratch/eromero/cl21_32_64_b6p3_m0p2350_m0p2050-5162/corr/auto_phasing_3_0_4p_2_mix_phasing/avg"
+	mkdir -p $corr_dir
+	for redstar_file in `cat ${redstar_files}` ; do 
 	for t_source in $prop_t_sources ; do
 	(
 		merge_files="`mktemp`"
 		cfg_number=0
 		for cfg in `cat $merge_cfgs`; do
-			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files} | while read f ; do
-				echo $cfg_number $f
-			done
+			echo $cfg_number $( echo $redstar_file | sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" )
 			cfg_number="$(( cfg_number+1 ))"
 		done > ${merge_files}
-		corr_file_avg="`corr_tmp_file_name`"
+		corr_file_avg="$( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" )"
 		mkdir -p `dirname $corr_file_avg`
 		echo creating $corr_file_avg
 		echo ">" $dbmerge $corr_file_avg $merge_files 4000
@@ -95,14 +97,19 @@ for ens in $ensembles; do
 		rm -f $corr_file_avg
 		$dbmerge $corr_file_avg $merge_files 4000 || exit -1
 	) &
-	done
+	done # t_source
+	done # redstar_file
 	wait
 
-	corr_file_avg="data/corr.edb"
-	echo creating final $corr_file_avg
-	mkdir -p `dirname $corr_file_avg`
-	rm -f $corr_file_avg
-	$dbavgsrc $corr_file_avg $( for t_source in $prop_t_sources ; do corr_tmp_file_name ; done )
+	for redstar_file in `cat ${redstar_files}` ; do 
+		files="$( for t_source in $prop_t_sources ; do
+			echo $corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" ) )
+		done )"
+		corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
+		echo creating final $corr_file_avg
+		rm -f $corr_file_avg
+		$dbavgsrc $corr_file_avg $files
+	done # redstar_file
 
 	# Extract the content
 	#(
