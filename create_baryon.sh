@@ -41,6 +41,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
 		for phase in $( get_all_phases ); do

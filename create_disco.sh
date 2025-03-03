@@ -17,6 +17,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
 		num_color_parts="$(( (disco_max_colors + disco_max_colors_at_once-1) / disco_max_colors_at_once ))"

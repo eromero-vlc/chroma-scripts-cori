@@ -28,7 +28,15 @@ ensemble0() {
 	#confs="`seq 6000 10 9990`"
 	confs="`seq 10000 10 20100`"
 	confs="`seq 10000 10 10990`"
+	confs="`seq 11000 10 11990`"
+	confs="`seq 12000 10 13990`"
+	confs="`seq 10000 10 13990`"
+	confs="`seq 14000 10 16990`"
+	confs="`seq 10000 10 16990`"
+	confs="`seq 17000 10 20100`"
+	#confs="`seq 15000 10 19990`"
 	#confs="`seq 5170 10 6990`"
+	#confs="`seq 10000 10 11990`"
 	#confs=10000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -646,6 +654,11 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 	}
+	pack_file_name() {
+		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
+		prefix_path_extra="_2pt-disco"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/corr_pack_cfg_${cfg}.tar.gz"
+	}
 	redstar_slurm_nodes=1
 	redstar_minutes=30
 	redstar_jobs_per_node=8 # use for computing corr graphs
@@ -725,10 +738,10 @@ export SB_CACHEGB_CPU=5
 #
 
 BASH_INVOCATION_OPTIONS=
-max_jobs=100 # maximum jobs to be launched
-max_minutes=30 # maximum hours for a single job
+max_jobs=50 # maximum jobs to be launched
+max_minutes=120 # maximum hours for a single job
 slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
-slurm_max_jobs=80 # maximum bundled jobs in a slurm job
+slurm_max_jobs=50 # maximum bundled jobs in a slurm job
 
 #
 # Path options

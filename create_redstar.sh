@@ -605,6 +605,7 @@ EOF
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p ${runpath}
 
 		for t_source in $prop_t_sources; do
