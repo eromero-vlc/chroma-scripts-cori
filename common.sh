@@ -12,6 +12,10 @@ take_first() {
 	echo ${1}
 }
 
+neg_mom() {
+	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
+}
+
 # mom_word momx0 momy0 momz0 [momx1 momy1 momz1]
 # Return a single word representing a momentum (transfer)
 
