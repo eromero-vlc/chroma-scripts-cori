@@ -7,15 +7,15 @@ ensembles="ensemble0"
 ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="yes"
+	run_props="nop"
 	run_gprops="nop"
-	run_baryons="yes"
+	run_baryons="nop"
 	run_mesons="nop"
-	run_discos="nop"
-	run_redstar="yes"
+	run_discos="yes"
+	run_redstar="nop"
 
-	run_onthefly="yes"
-	onthefly_chroma_minutes=30
+	run_onthefly="nop"
+	onthefly_chroma_minutes=10
 	max_moms_per_job=100
 
 	# Ensemble properties
@@ -23,12 +23,14 @@ ensemble0() {
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 5170 10 20070`"
-	#confs="`seq 5170 10 5990`"
-	#confs="`seq 6000 10 9990`"
 	confs="`seq 5170 10 9990`"
-	#confs="`seq 5170 10 6990`"
-	#confs=5170
+	confs="`seq 10000 10 20100`"
+	#confs="`seq 10000 10 10290`"
+	#confs="`seq 10300 10 12990`"
+	#confs="`seq 13000 10 15990`"
+	#confs="`seq 16000 10 18990`"
+	#confs="`seq 19000 10 22190`"
+	#confs=10000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -91,8 +93,8 @@ ensemble0() {
               <AxialGaugeFix>false</AxialGaugeFix>
               <AutotuneDslash>true</AutotuneDslash>
               <MULTIGRIDParams>
-                <Verbosity>true</Verbosity>
-                <Precision>HALF</Precision>
+                <Verbosity>false</Verbosity>
+                <Precision>SINGLE</Precision>
                 <Reconstruct>RECONS_8</Reconstruct>
                 <Blocking>
                   <elem>4 4 4 4</elem>
@@ -118,7 +120,7 @@ ensemble0() {
                   <elem>CG</elem>
                   <elem>CG</elem>
                 </SubspaceSolver>
-                <RsdTargetSubspaceCreate>5e-06 5e-06</RsdTargetSubspaceCreate>
+                <RsdTargetSubspaceCreate>5e-07 5e-07</RsdTargetSubspaceCreate>
                 <MaxIterSubspaceCreate>500 500</MaxIterSubspaceCreate>
                 <MaxIterSubspaceRefresh>500 500</MaxIterSubspaceRefresh>
                 <OuterGCRNKrylov>20</OuterGCRNKrylov>
@@ -418,12 +420,13 @@ ensemble0() {
 	disco_probing_power=20
 	disco_max_colors=3325
 	disco_max_colors_at_once=256
+	disco_max_colors_at_once=512
 	disco_noise_vectors=1
 	disco_t_sources="0 16 32 48 8 24 40 56"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=120
-	disco_max_rhs=24
+	disco_max_rhs=12
 	disco_proj="
   <projectorType>MGPROTON</projectorType>
   <type>mg</type>
@@ -500,9 +503,9 @@ ensemble0() {
 "
 	disco_file_name() {
 		if [ $color_part != avg ]; then
-			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco3/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco3/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
 		fi
 	}
 	disco_transfer_back="nop"
@@ -645,6 +648,12 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 	}
+	corr_dir_name_avg() {
+		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
+		prefix_path_extra="_2pt-disco"
+		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_avg"
+	}
+
 	redstar_slurm_nodes=1
 	redstar_minutes=30
 	redstar_jobs_per_node=8 # use for computing corr graphs
@@ -663,12 +672,13 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm6.1"
+chromaform="$HOME/scratch/chromaform_rocm6.2"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /opt/rocm-6.0.0/llvm/lib"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-colorvec-pdf-next-hadron-hip-adat-pdf-next-superbblas-sp"
+redstar="$chromaform/install-redstar/redstar-pdf-next-colorvec-pdf-next-hadron-hip-adat-pdf-next-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -695,11 +705,11 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
-export SB_CACHEGB_GPU=60
+#export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
-export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
+#export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
 export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
 export QUDA_ENABLE_NVSHMEM=0
@@ -725,9 +735,10 @@ export SB_CACHEGB_CPU=5
 #
 
 BASH_INVOCATION_OPTIONS=
-max_jobs=4 # maximum jobs to be launched
-max_minutes=30 # maximum hours for a single job
-slurm_max_bundled_jobs=500 # maximum bundled jobs in a slurm job
+max_jobs=50 # maximum jobs to be launched
+max_minutes=120 # maximum hours for a single job
+slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
+slurm_max_jobs=50 # maximum bundled jobs in a slurm job
 
 #
 # Path options

@@ -164,7 +164,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # zphase
+		done # phase
 		done # t_source
 	done # cfg
 done # ens

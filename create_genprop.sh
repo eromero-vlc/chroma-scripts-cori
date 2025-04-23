@@ -24,14 +24,19 @@ for ens in $ensembles; do
 		for phase in $( get_all_phases ); do
 
 		[ ${run_onthefly} != yes ] && max_moms_per_job=1
-		moms="`
+		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
+		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
+
+			gprop_moms="`
 			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-				[ $( mom_word $( mom_auto_phase $momij ) ) == $phase ] && mom_word $( mom_fly $momij ) 
+					[ $( mom_word $( mom_auto_phase $momij ) ) != $phase ] && continue
+					this_mf="$( mom_word $( mom_fly $momij ) )"
+					for m in $mom_group ; do
+						[ $m == $this_mf ] && echo ${this_mf//_/ } && break
+					done
 			done | sort -u
 		`"
-		[ $( num_args $moms ) == 0 ] && continue
-		k_split $max_moms_per_job $moms | while read mom_group ; do
-		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
+			[ $( num_args $gprop_moms ) == 0 ] && continue
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
@@ -42,7 +47,6 @@ for ens in $ensembles; do
 			#
 			# Genprops creation
 			#
-			gprop_moms="$( for mom in $mom_group; do echo ${mom//_/ }; done )"
 				mom_leader="`take_first $mom_group`"
 			tsep_leader="`take_first $tsep_group`"
 			phase_snk="$( get_sink ${phase//_/ } )"

@@ -85,7 +85,7 @@ run() {
 }
 
 check() {
-	[ $run_gprops != yes ] || bash $gprop_script check || exit 1
+	[ $run_gprops != yes -o ! -f $gprop_script ] || bash $gprop_script check || exit 1
 	[ $run_baryons != yes ] || bash $baryon_script check || exit 1
 	[ $run_props != yes ] || bash $prop_script check || exit 1
 `
@@ -97,7 +97,7 @@ check() {
 }
 
 blame() {
-	[ $run_gprops != yes ] || bash $gprop_script blame || exit 1
+	[ $run_gprops != yes  -o ! -f $gprop_script ] || bash $gprop_script blame || exit 1
 	[ $run_baryons != yes ] || bash $baryon_script blame || exit 1
 	[ $run_props != yes ] || bash $prop_script blame || exit 1
 `
