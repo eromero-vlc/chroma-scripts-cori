@@ -548,6 +548,7 @@ environ() {
 }
 
 run() {
+	find ${localpath} &> $output
 	tmp_runpath="${localpath}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
@@ -556,7 +557,7 @@ run() {
 $( corr_graph "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" "${tsep_group}" $insert_op_mom_combos )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
-	echo Starting $redstar_npt redstar.xml output.xml > $output
+	echo Starting $redstar_npt redstar.xml output.xml >> $output
 	$redstar_npt redstar.xml output.xml &>> $output
 	rm -rf \$tmp_runpath
 }

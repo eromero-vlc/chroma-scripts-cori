@@ -16,6 +16,10 @@ neg_mom() {
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
 }
 
+neg_mom_mom() {
+	echo $(( -$1 )) $(( -$2 )) $(( -$3 )) $(( -$4 )) $(( -$5 )) $(( -$6 ))
+}
+
 # mom_word momx0 momy0 momz0 [momx1 momy1 momz1]
 # Return a single word representing a momentum (transfer)
 
@@ -24,6 +28,31 @@ mom_word() {
 	[ $# == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
 	[ $# == 7 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}_${7}
 	[ $# == 9 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}_${7}_${8}_${9}
+}
+
+is_canonical() {
+	if [ $1 -ne 0 ] ; then
+		[ $1 -gt 0 ] && return 0
+	elif [ $2 -ne 0 ] ; then
+		[ $2 -gt 0 ] && return 0
+	elif [ $3 -ne 0 -o $# -eq 3 ] ; then
+		[ $3 -ge 0 ] && return 0
+	elif [ $4 -ne 0 ] ; then
+		[ $4 -gt 0 ] && return 0
+	elif [ $5 -ne 0 ] ; then
+		[ $5 -gt 0 ] && return 0
+	elif [ $6 -ne 0 ] ; then
+		[ $6 -ge 0 ] && return 0
+	fi
+	return 1
+}
+
+make_canonical() {
+	if is_canonical $( mom_auto_phase $@ ) ; then
+		echo $@
+	else
+		neg_mom_mom $@
+	fi
 }
 
 mom_auto_phase() {

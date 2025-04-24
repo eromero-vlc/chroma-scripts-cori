@@ -59,18 +59,27 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
+	echo cleaning in \$MY_ARGS > $output
+	srun -n 1 -N 1 \$MY_ARGS rm -rf $localpath/*
+	sleep 10
 	if [ $run_gprops == yes -a -f $gprop_script ] ; then
 		bash $gprop_script run
 		sleep 30
 	fi
+	echo after gprop >> $output
+	srun -n 1 -N 1 \$MY_ARGS find ${localpath} &>> $output
 	if [ $run_baryons == yes ] ; then
 		bash $baryon_script run
 		sleep 30
 	fi
+	echo after baryon >> $output
+	srun -n 1 -N 1 \$MY_ARGS find ${localpath} &>> $output
 	if [ $run_props == yes ] ; then
 		bash $prop_script run
 		sleep 30
 	fi
+	echo after prop >> $output
+	srun -n 1 -N 1 \$MY_ARGS find ${localpath} &>> $output
 
 	$slurm_script_prologue_redstar
 	srun -n $redstar_procs -N $redstar_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS -c '

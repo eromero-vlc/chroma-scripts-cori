@@ -8,11 +8,11 @@ redstar_dat_mom() {
 }
 
 redstar_dat_mom_snk() {
-	echo "${1}${2}${3}"
+	redstar_dat_mom ${1} ${2} ${3}
 }
 
 redstar_dat_mom_src() {
-	echo "${4}${5}${6}"
+	redstar_dat_mom ${4} ${5} ${6}
 }
 
 # Load redstar environment
@@ -61,78 +61,86 @@ for ens in $ensembles; do
 	done > $redstar_files # phase
 
 	# Checking for configurations with all expected correlation functions
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		if ! [ -f $lime_file ] ; then
-			echo Excluding $cfg >&2
-			continue
-		fi
-		files="$( for t_source in $prop_t_sources ; do
-			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
-		done )"
-		if ls $files &> /dev/null ; then
-			echo $cfg
-		else
-			echo Excluding $cfg >&2
-		fi
-	done > $merge_cfgs 2> $err
-	cat $err
+	#for cfg in $confs; do
+	#	lime_file="`lime_file_name`"
+	#	if ! [ -f $lime_file ] ; then
+	#		echo Excluding $cfg >&2
+	#		continue
+	#	fi
+	#	files="$( for t_source in $prop_t_sources ; do
+	#		sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
+	#	done )"
+	#	if ls $files &> /dev/null ; then
+	#		echo $cfg
+	#	else
+	#		echo Excluding $cfg >&2
+	#	fi
+	#done > $merge_cfgs 2> $err
+	#cat $err
 
 	corr_dir="/lustre/orion/nph122/scratch/eromero/cl21_32_64_b6p3_m0p2350_m0p2050-5162/corr/auto_phasing_3_0_4p_2_mix_phasing/avg"
-	mkdir -p $corr_dir
-	for redstar_file in `cat ${redstar_files}` ; do 
-	for t_source in $prop_t_sources ; do
-	(
-		merge_files="`mktemp`"
-		cfg_number=0
-		for cfg in `cat $merge_cfgs`; do
-			echo $cfg_number $( echo $redstar_file | sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" )
-			cfg_number="$(( cfg_number+1 ))"
-		done > ${merge_files}
-		corr_file_avg="$( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" )"
-		mkdir -p `dirname $corr_file_avg`
-		echo creating $corr_file_avg
-		echo ">" $dbmerge $corr_file_avg $merge_files 4000
-		#cat $merge_files
-		rm -f $corr_file_avg
-		$dbmerge $corr_file_avg $merge_files 4000 || exit -1
-	) &
-	done # t_source
-	done # redstar_file
-	wait
+	#mkdir -p $corr_dir
+	#for redstar_file in `cat ${redstar_files}` ; do 
+	#for t_source in $prop_t_sources ; do
+	#(
+	#	merge_files="`mktemp`"
+	#	cfg_number=0
+	#	for cfg in `cat $merge_cfgs`; do
+	#		echo $cfg_number $( echo $redstar_file | sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" )
+	#		cfg_number="$(( cfg_number+1 ))"
+	#	done > ${merge_files}
+	#	corr_file_avg="$( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" )"
+	#	mkdir -p `dirname $corr_file_avg`
+	#	echo creating $corr_file_avg
+	#	echo ">" $dbmerge $corr_file_avg $merge_files 4000
+	#	#cat $merge_files
+	#	rm -f $corr_file_avg
+	#	$dbmerge $corr_file_avg $merge_files 4000 || exit -1
+	#) &
+	#done # t_source
+	#done # redstar_file
+	#wait
 
-	for redstar_file in `cat ${redstar_files}` ; do 
-		files="$( for t_source in $prop_t_sources ; do
-			echo $corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" ) )
-		done )"
-		corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
-		echo creating final $corr_file_avg
-		rm -f $corr_file_avg
-		$dbavgsrc $corr_file_avg $files
-	done # redstar_file
+	#for redstar_file in `cat ${redstar_files}` ; do 
+	#	files="$( for t_source in $prop_t_sources ; do
+	#		echo $corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" ) )
+	#	done )"
+	#	corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
+	#	echo creating final $corr_file_avg
+	#	rm -f $corr_file_avg
+	#	$dbavgsrc $corr_file_avg $files
+	#done # redstar_file
 
 	# Extract the content
-	#(
-	#	cd $tmp_dat_dir
-	#	rm $tmp_dat_dir/*
-	#	$dbutil $corr_file_avg keysxml $keys
-	#	$dbutil $corr_file_avg get $keys
-	#	if [ ${redstar_2pt} == yes ] ; then
-	#		echo "$redstar_2pt_moms" | while read mom ; do
-	#			[ $( num_args $mom ) -ne 3 ] && continue
-	#			proper_corr_file_avg="`cfg= t_source=avg corr_file_name`"
-	#			new_dat_files_dir="`dirname $proper_corr_file_avg`"
-	#			mkdir -p $new_dat_files_dir
-	#			mv *,$( redstar_dat_mom $mom ),*,$( redstar_dat_mom $mom ),*.dat $new_dat_files_dir
-	#		done
-	#	elif [ ${redstar_3pt} == yes ] ; then
-	#		echo "$redstar_3pt_snkmom_srcmom" | while read snk_src_mom ; do
-	#			[ $( num_args $snk_src_mom ) -ne 6 ] && continue
-	#			proper_corr_file_avg="`cfg= t_source=avg mom="$snk_src_mom" corr_file_name`"
-	#			new_dat_files_dir="`dirname $proper_corr_file_avg`"
-	#			mkdir -p $new_dat_files_dir
-	#			mv *,$( redstar_dat_mom_snk $snk_src_mom ),*,$( redstar_dat_mom_src $snk_src_mom ),*.dat $new_dat_files_dir
-	#		done
-	#	fi
-	#)
+	for redstar_file in `cat ${redstar_files}` ; do 
+		cd $tmp_dat_dir
+		rm $tmp_dat_dir/*
+		corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
+		echo openning $corr_file_avg
+		$dbutil $corr_file_avg keysxml $keys
+		$dbutil $corr_file_avg get $keys
+		ls
+		if [ ${redstar_3pt} == yes ] ; then
+			echo "$redstar_3pt_snkmom_srcmom" | while read snk_src_mom ; do
+				[ $( num_args $snk_src_mom ) -ne 6 ] && continue
+				proper_corr_file_avg="`cfg= t_source=avg mom="$snk_src_mom" corr_file_name`"
+				new_dat_files_dir="`dirname $proper_corr_file_avg`"
+				echo mkdir -p $new_dat_files_dir
+				mkdir -p $new_dat_files_dir
+				#echo mv *,$( redstar_dat_mom_snk $snk_src_mom ),*,$( redstar_dat_mom_src $snk_src_mom ),*.dat $new_dat_files_dir
+				mv *,$( redstar_dat_mom_snk $snk_src_mom ),*,$( redstar_dat_mom_src $snk_src_mom ),*.dat $new_dat_files_dir
+			done
+		fi
+		if [ ${redstar_2pt} == yes ] ; then
+			echo "$redstar_2pt_moms" | while read mom ; do
+				[ $( num_args $mom ) -ne 3 ] && continue
+				proper_corr_file_avg="`cfg= t_source=avg corr_file_name`"
+				new_dat_files_dir="`dirname $proper_corr_file_avg`"
+				echo mkdir -p $new_dat_files_dir
+				mkdir -p $new_dat_files_dir
+				#echo "mv *,$( redstar_dat_mom $mom ),*,$( redstar_dat_mom $mom ),*.dat $new_dat_files_dir"
+				mv *,$( redstar_dat_mom $mom ),*,$( redstar_dat_mom $mom ),*.dat $new_dat_files_dir
+			done
+		fi
+	done # redstar_file
 done # ens
