@@ -335,6 +335,7 @@ corr_graph() {
       <use_genprop4>true</use_genprop4>
       <use_FSq>false</use_FSq>
       <fake_data_modeP>false</fake_data_modeP>
+      <genprop_return_zero_value_for_t_slice_outside_source_sink_range>true</genprop_return_zero_value_for_t_slice_outside_source_sink_range>
       <ensemble>${confsname}</ensemble>
       <FlavorToMass>
         <elem>
@@ -606,6 +607,7 @@ EOF
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p ${runpath}
 
 		for t_source in $prop_t_sources; do

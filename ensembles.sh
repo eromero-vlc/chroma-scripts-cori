@@ -28,6 +28,10 @@ ensemble() {
 	confs="`seq 5170 10 10000`"
 	confs="`seq 5170 10 8000`"
 	confs="`seq 5170 10 5299`"
+	confs="`seq 5170 10 8999`"
+	confs="`seq 9000 10 12999`"
+	confs="`seq 13000 10 16999`"
+	confs="`seq 17000 10 20999`"
 	#confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -52,6 +56,7 @@ ensemble() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
+	#prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=16
 	prop_t_back=0
@@ -751,7 +756,7 @@ export NPT_BATCH_SIZE=1
 BASH_INVOCATION_OPTIONS=
 max_jobs=1 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
-slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
+slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
 
 #
 # Path options

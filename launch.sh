@@ -78,13 +78,13 @@ done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max
 			cat << EOF > $wrapup_job
 #!/bin/bash -l
 . $first_job environ
-srun \$MY_ARGS -N1 -n$num_jobs_per_node --gpu-bind=closest -K0 -k -W0  bash $BASH_INVOCATION_OPTIONS -c "$(
+$(
 			j="0"
 			for job in $first_job $jobs_in_a_node; do
-				echo -n "[ \\\$SLURM_PROCID == $j ] && MY_JOB_INDEX=$j bash $BASH_INVOCATION_OPTIONS $job run; "
+				echo "[ \$SLURM_PROCID == $j ] && bash $BASH_INVOCATION_OPTIONS $job run "
 				j="$(( j+1 ))"
 			done
-)"
+)
 EOF
 		done
 		jobs="`k_split $num_jobs_per_node $actual_jobs | while read first_job jobs_in_a_node; do echo -n "${runpath}/${first_job//\//_}.sh_aux "; done`"
@@ -118,7 +118,7 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "MY_ARGS='-r $(( j_seq*num_nodes_per_job ))' bash $BASH_INVOCATION_OPTIONS $job run"
+				echo "srun -N $num_nodes_per_job --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node )) --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
@@ -135,9 +135,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
-#SBATCH --nodes=$(( num_nodes_per_job * bundle_size )) --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node ))
-#SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) # number of cores per task
-#SBATCH --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) ))
+#SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
 #SBATCH -J batch-${tag}
 #SBATCH --array=0-$((num_slurm_jobs-1))
 `
@@ -157,6 +155,7 @@ $slurm_sbatch_prologue
 	[ x$dep_jobs != x ] && echo "#SBATCH -d afterok:$dep_jobs"
 `
 
+$slurm_script_prologue
 bash $BASH_INVOCATION_OPTIONS $runpath/run_${jobtag}_script.sh
 exit 0 # always return ok no matter the actual result
 EOF

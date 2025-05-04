@@ -12,31 +12,32 @@ for ens in $ensembles; do
 	tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
 	[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
 
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		colorvec_file="`colorvec_file_name`"
-		[ -f $lime_file ] || continue
+	for t_source in $gprop_t_sources; do
+	for phase in $( get_all_phases ); do
 
-		runpath="$PWD/${tag}/conf_${cfg}"
-		mkdir -p $runpath
+	[ ${run_onthefly} != yes ] && max_moms_per_job=1
+	k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
+	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
-		for t_source in $gprop_t_sources; do
-		for phase in $( get_all_phases ); do
+		gprop_moms="`
+			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
+				[ $( mom_word $( mom_auto_phase $momij ) ) != $phase ] && continue
+				this_mf="$( mom_word $( mom_fly $momij ) )"
+				for m in $mom_group ; do
+					[ $m == $this_mf ] && echo ${this_mf//_/ } && break
+				done
+			done | sort -u
+		`"
+		[ $( num_args $gprop_moms ) == 0 ] && continue
 
-		[ ${run_onthefly} != yes ] && max_moms_per_job=1
-		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
-		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
+		for cfg in $confs; do
+			lime_file="`lime_file_name`"
+			colorvec_file="`colorvec_file_name`"
+			[ -f $lime_file ] || continue
 
-			gprop_moms="`
-				echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-					[ $( mom_word $( mom_auto_phase $momij ) ) != $phase ] && continue
-					this_mf="$( mom_word $( mom_fly $momij ) )"
-					for m in $mom_group ; do
-						[ $m == $this_mf ] && echo ${this_mf//_/ } && break
-					done
-				done | sort -u
-			`"
-			[ $( num_args $gprop_moms ) == 0 ] && continue
+			runpath="$PWD/${tag}/conf_${cfg}"
+			[ -f ${runpath}.tar.gz ] && continue
+			mkdir -p $runpath
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
@@ -179,7 +180,8 @@ run() {
 	cd $runpath
 	mkdir -p `dirname ${gprop_file}`
 	rm -f ${gprop_file}*
-	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args
 }
 
 blame() {
@@ -215,9 +217,9 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # tsep_group
-		done # mom_group
-		done # t_source
-		done # phase
-	done # cfg
+		done # cfg
+	done # tsep_group
+	done # mom_group
+	done # t_source
+	done # phase
 done # ens
