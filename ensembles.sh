@@ -19,17 +19,17 @@ ensemble0() {
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 1000 10 4500`"
-	#confs="`seq 1000 10 1100`"
-	#confs="`seq 2000 10 3000`"
-	#confs="`seq 1000 10 1990`"
-	confs="`seq 1000 10 2000`"
-	confs="${confs//1920/}"
-	#confs=1000
+	confs="`seq 5170 10 20070`"
+	confs="`seq 15000 10 17990`"
+	confs="`seq 18000 10 20070`"
+	#confs="`seq 5170 10 7500`"
+	#confs="`seq 7510 10 9990`"
+	#confs="`seq 5170 10 6990`"
+	#confs=15000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -61,7 +61,7 @@ ensemble0() {
 	prop_zphases="0.00 2.00 -2.00"
 	prop_zphases="0.00"
 	prop_mass="-0.2350" # light
-	prop_mass="-0.2050" # heavy
+	#prop_mass="-0.2050" # heavy
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
@@ -91,13 +91,13 @@ ensemble0() {
               <AsymmetricLinop>true</AsymmetricLinop>
               <CudaReconstruct>RECONS_12</CudaReconstruct>
               <CudaSloppyPrecision>SINGLE</CudaSloppyPrecision>
-              <CudaSloppyReconstruct>RECONS_8</CudaSloppyReconstruct>
+              <CudaSloppyReconstruct>RECONS_12</CudaSloppyReconstruct>
               <AxialGaugeFix>false</AxialGaugeFix>
               <AutotuneDslash>true</AutotuneDslash>
               <MULTIGRIDParams>
-                <Verbosity>true</Verbosity>
-                <Precision>HALF</Precision>
-                <Reconstruct>RECONS_8</Reconstruct>
+                <Verbosity>false</Verbosity>
+                <Precision>SINGLE</Precision>
+                <Reconstruct>RECONS_12</Reconstruct>
                 <Blocking>
                   <elem>4 4 4 4</elem>
                   <elem>2 2 2 2</elem>
@@ -107,7 +107,7 @@ ensemble0() {
                   <elem>CA_GCR</elem>
                 </CoarseSolverType>
                 <CoarseResidual>0.1 0.1 0.1</CoarseResidual>
-                <MaxCoarseIterations>12 12 8</MaxCoarseIterations>
+                <MaxCoarseIterations>20 20 16</MaxCoarseIterations>
                 <RelaxationOmegaMG>1.0 1.0 1.0</RelaxationOmegaMG>
                 <SmootherType>
                   <elem>CA_GCR</elem>
@@ -122,9 +122,9 @@ ensemble0() {
                   <elem>CG</elem>
                   <elem>CG</elem>
                 </SubspaceSolver>
-                <RsdTargetSubspaceCreate>5e-06 5e-06</RsdTargetSubspaceCreate>
-                <MaxIterSubspaceCreate>500 500</MaxIterSubspaceCreate>
-                <MaxIterSubspaceRefresh>500 500</MaxIterSubspaceRefresh>
+                <RsdTargetSubspaceCreate>5e-07 5e-07</RsdTargetSubspaceCreate>
+                <MaxIterSubspaceCreate>900 900</MaxIterSubspaceCreate>
+                <MaxIterSubspaceRefresh>900 900</MaxIterSubspaceRefresh>
                 <OuterGCRNKrylov>20</OuterGCRNKrylov>
                 <PrecondGCRNKrylov>10</PrecondGCRNKrylov>
                 <GenerateNullspace>true</GenerateNullspace>
@@ -435,6 +435,8 @@ ensemble0() {
 	disco_max_colors_at_once=1663
 	disco_noise_vectors=1
 	disco_t_sources="0 16 32 48 8 24 40 56"
+	disco_t_sources="4 12 20 24 28 36 40 44 52 60"
+	#disco_t_sources="4"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=400
@@ -515,134 +517,26 @@ ensemble0() {
 "
 	disco_file_name() {
 		if [ $color_part != avg ]; then
-			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco4/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco4/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
 		fi
 	}
 	disco_trace_file_name() {
-		echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.trace.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/disco4/${confsname}.disco.t0_${t_source}.trace.sdb${cfg}"
 	}
 	disco_transfer_back="nop"
 	disco_delete_after_transfer_back="nop"
 	disco_transfer_from_jlab="nop"
 	disco_max_displacement=16
-	disco_groupx_moms="\
-0 0 0
-0 1 0
-0 1 1
-0 1 -1
-0 1 -2
-0 1 2
-1 0 0
-1 1 0
-1 1 1
-1 1 -1
-1 1 -2
-1 1 2
-2 0 1
-2 0 -1
-2 0 -2
-2 0 2
--2 -2 0
-1 0 -1
--2 0 -2
--2 0 0
--2 0 2
--2 0 1
--2 0 -1
--2 1 -2
--2 1 -1
--2 2 1
--1 0 1
--1 -2 1
--1 -2 0
--1 -2 -1
--2 -2 -1
--1 -2 2
--1 -1 -2
--1 0 0
--1 -1 0
-3 0 0
-0 2 2
--1 2 1
--1 0 -2
--1 -1 -1
--2 -1 0
--1 0 -1
--1 -1 1
--1 0 2
--1 -1 2
-0 2 0
--2 1 0
--1 1 -2
--1 1 -1
--1 1 2
--1 2 -1
-2 -2 0
-1 0 -2
-1 0 2
-1 0 1
-2 2 1"
-	mom_rot() {
-		local r="$1"
-		shift
-		local m=( "$@" )
-		echo ${m[$(( (3-r+3+0)%3 ))]} ${m[$(( (3-r+3+1)%3 ))]} ${m[$(( (3-r+3+2)%3 ))]}
-	}
-	mom_flip() {
-		if [ $1 == 1 ] ; then
-			echo $2 $3 $4
-		else
-			echo $(( -${2} )) $(( -${3} )) $(( -${4} ))
-		fi	
-	}
-	local groupid=1
-	for ldir in 1 2 3 ; do for dir in 1 -1 ; do
-		declare -g disco_group${groupid}_insertions="\
+	disco_group0_insertions="\
 z
 $(
-	for dist in $( seq 1 $disco_max_displacement ) ; do
+	for ldir in 1 2 3 ; do for dir in 1 -1 ; do for dist in $( seq 1 $disco_max_displacement ) ; do
 		echo -n z
 		for i in $( seq 1 $dist ); do echo -n " $(( ldir*dir ))" ; done
 		echo
-	done
-)"
-		declare -g disco_group${groupid}_moms="$(
-	echo "$disco_groupx_moms" | while read mom ; do
-		mom_flip $dir $( mom_rot $ldir $mom )
-	done
-)"
-		groupid="$(( groupid+1 ))"
-	done; done
-	disco_group0_insertions="\
-$(
-	# staples:
-	#  (---) d
-	#       <----* -
-	#            | | b
-	#  ----------* -
-	#  (---------) m
-	for z in 1 2 3 ; do
-	for x in 1 2 3 ; do
-		[ $x == $z ] && continue
-		for dirz in 1 -1 ; do
-		for dirx in 1 -1 ; do
-			for d in 0 1 2 3 ; do
-				for m in 4 8 12 16 20 ; do
-					for b in 2 4 6 8 ; do
-						echo -n z
-						for ((i=0 ; i<m ; ++i )) ; do echo -n " $(( z*dirz ))" ; done
-						for ((i=0 ; i<b ; ++i )) ; do echo -n " $(( x*dirx ))" ; done
-						for ((i=0 ; i<m-d ; ++i )) ; do echo -n " $(( -z*dirz ))" ; done
-						echo
-					done
-				done
-			done
-		done
-		done
-	done
-	done
+	done; done; done
 )"
 	disco_group0_moms="0 0 0"
 
@@ -775,18 +669,18 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="/lus/work/CT5/cpt1504/zafeiro/chromaform1"
+chromaform="/lus/work/CT5/c1816207/zafeiro/chromaform"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
+#chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat-pdf-superbblas-sp"
 adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install/adat-pdf-superbblas"
+adat="$chromaform/install-redstar/adat-pdf-superbblas"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -798,7 +692,7 @@ slurm_cores_per_node=56
 slurm_gpus_per_node=8
 srun_extra_args="--cpu-bind=none --gpus-per-task=1"
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH --account=cpt1504
+#SBATCH --account=c1816207
 #SBATCH --constraint=MI250
 #SBATCH --threads-per-core=1
 #SBATCH --exclusive
@@ -838,7 +732,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=300 # maximum jobs to be launched
+max_jobs=200 # maximum jobs to be launched
 max_hours=5 # maximum hours for a single job
 
 #
