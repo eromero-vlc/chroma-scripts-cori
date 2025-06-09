@@ -20,7 +20,7 @@ while true; do
 	echo "Checking..."
 	#check
 	bash check.sh
-	echo "Packing..."
+	#echo "Packing..."
 	#bash do_pack.sh
 	#bash launch.sh
 	date

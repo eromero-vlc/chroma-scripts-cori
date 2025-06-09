@@ -48,7 +48,7 @@ for ens in $ensembles; do
 
 	runpathens="$PWD/${tag}"
 	find $runpathens -name '*.sh' | while read f; do
-		[ -f $f.launched ] || echo `bash $f class` $f >> $jobsfile
+		[ -f $f.launched ] || [ -f $f.launched.verified ] || echo `bash $f class` $f >> $jobsfile
 	done
 done
 

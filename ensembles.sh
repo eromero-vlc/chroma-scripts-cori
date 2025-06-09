@@ -23,14 +23,14 @@ ensemble() {
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 5170 10 9990`"
-	confs="`seq 10000 10 20100`"
+	confs="`seq 5170 10 13990`"
+	#confs="`seq 10000 10 20100`"
 	#confs="`seq 10000 10 10290`"
 	#confs="`seq 10300 10 12990`"
 	#confs="`seq 13000 10 15990`"
 	#confs="`seq 16000 10 18990`"
 	#confs="`seq 19000 10 22190`"
-	#confs=10000
+	#confs=5170
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -416,7 +416,7 @@ ensemble() {
 "
 
 	# Disco options
-	disco_max_displacement=8
+	disco_max_displacement=16
 	disco_probing_displacement=0
 	disco_probing_power=20
 	disco_max_colors=3325
@@ -424,6 +424,7 @@ ensemble() {
 	disco_max_colors_at_once=512
 	disco_noise_vectors=1
 	disco_t_sources="0 16 32 48 8 24 40 56"
+	disco_t_sources="4 12 20 24 28 36 40 44 52 60"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=120
@@ -504,9 +505,9 @@ ensemble() {
 "
 	disco_file_name() {
 		if [ $color_part != avg ]; then
-			echo "${confspath}/${confsprefix}/disco3/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco4/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/disco3/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco4/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
 		fi
 	}
 	disco_transfer_back="nop"
@@ -686,7 +687,7 @@ redstar="$chromaform/install-redstar/redstar-pdf-next-colorvec-pdf-next-hadron-h
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install-redstar/adat-pdf-next-superbblas-sp"
+adat="$chromaform/install-redstar-nompi/adat-pdf-next-meta-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
