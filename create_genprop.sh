@@ -12,31 +12,32 @@ for ens in $ensembles; do
 	tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
 	[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
 
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		colorvec_file="`colorvec_file_name`"
-		[ -f $lime_file ] || continue
+	for t_source in $gprop_t_sources; do
+	for phase in $( get_all_phases ); do
 
-		runpath="$PWD/${tag}/conf_${cfg}"
-		mkdir -p $runpath
+	[ ${run_onthefly} != yes ] && max_moms_per_job=1
+	k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
+	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
-		for t_source in $gprop_t_sources; do
-		for phase in $( get_all_phases ); do
-
-		[ ${run_onthefly} != yes ] && max_moms_per_job=1
-		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
-		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
-
-			gprop_moms="`
+		gprop_moms="`
 			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-					[ $( mom_word $( mom_auto_phase $momij ) ) != $phase ] && continue
-					this_mf="$( mom_word $( mom_fly $momij ) )"
-					for m in $mom_group ; do
-						[ $m == $this_mf ] && echo ${this_mf//_/ } && break
-					done
+				[ $( mom_word $( mom_auto_phase $momij ) ) != $phase ] && continue
+				this_mf="$( mom_word $( mom_fly $momij ) )"
+				for m in $mom_group ; do
+					[ $m == $this_mf ] && echo ${this_mf//_/ } && break
+				done
 			done | sort -u
 		`"
-			[ $( num_args $gprop_moms ) == 0 ] && continue
+		[ $( num_args $gprop_moms ) == 0 ] && continue
+
+		for cfg in $confs; do
+			lime_file="`lime_file_name`"
+			colorvec_file="`colorvec_file_name`"
+			[ -f $lime_file ] || continue
+
+			runpath="$PWD/${tag}/conf_${cfg}"
+			[ -f ${runpath}.tar.gz ] && continue
+			mkdir -p $runpath
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
@@ -47,7 +48,7 @@ for ens in $ensembles; do
 			#
 			# Genprops creation
 			#
-				mom_leader="`take_first $mom_group`"
+			mom_leader="`take_first $mom_group`"
 			tsep_leader="`take_first $tsep_group`"
 			phase_snk="$( get_sink ${phase//_/ } )"
 			phase_src="$( get_source ${phase//_/ } )"
@@ -86,7 +87,7 @@ for ens in $ensembles; do
 	echo "<elem>
               <t_source>${t_offset}</t_source>
               <t_sink>$(( (t_offset+tsep)%t_size ))</t_sink>
-              <Nt_forward>${redstar_t_corr}</Nt_forward>
+              <Nt_forward>$(( tsep+2 ))</Nt_forward>
               <Nt_backward>0</Nt_backward>
             </elem>"
 	done
@@ -100,7 +101,7 @@ for ens in $ensembles; do
             <displacement_length>1</displacement_length>
             <num_tries>0</num_tries>
             <quarkPhase>${phase_src}</quarkPhase>
-            <aQuarkPhase>${phase_snk}</aQuarkPhase>
+            <aQuarkPhase>$( neg_mom ${phase_snk} )</aQuarkPhase>
             <max_rhs>${gprop_max_rhs}</max_rhs>
             <use_multiple_writers>false</use_multiple_writers>
             <use_genprop4_format>false</use_genprop4_format>
@@ -179,7 +180,8 @@ run() {
 	cd $runpath
 	mkdir -p `dirname ${gprop_file}`
 	rm -f ${gprop_file}*
-	srun -n $(( slurm_procs_per_node*gprop_slurm_nodes )) -N $gprop_slurm_nodes \$MY_ARGS $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args
 }
 
 blame() {
@@ -215,9 +217,9 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # tsep_group
-		done # mom_group
-		done # t_source
-		done # phase
-	done # cfg
+		done # cfg
+	done # tsep_group
+	done # mom_group
+	done # t_source
+	done # phase
 done # ens

@@ -298,7 +298,7 @@ corr_graph() {
     <ensemble>${confsname}</ensemble>
   </Param> 
 
-    <NPointList>
+  <NPointList>
 `
 	if [ $t_origin == -1 ]; then
 		local phase_snk="$( get_sink ${phase//_/ } )"
@@ -321,7 +321,7 @@ corr_graph() {
 		done
 	fi
 `
-    </NPointList>
+  </NPointList>
   <DBFiles>
     <proj_op_xmls></proj_op_xmls>
     <corr_graph_bin>${corr_graph_file}</corr_graph_bin>
@@ -335,6 +335,7 @@ corr_graph() {
       <use_genprop4>true</use_genprop4>
       <use_FSq>false</use_FSq>
       <fake_data_modeP>false</fake_data_modeP>
+      <genprop_return_zero_value_for_t_slice_outside_source_sink_range>true</genprop_return_zero_value_for_t_slice_outside_source_sink_range>
       <ensemble>${confsname}</ensemble>
       <FlavorToMass>
         <elem>
@@ -422,9 +423,10 @@ corr_graph() {
 		done
 		if [ $are_there_3pt == yes ] ; then
 			local i
-		for i in $( gprop_file_name ); do
-			echo "<elem>$i</elem>"
-		done
+			for i in $( gprop_file_name ); do
+				echo "<elem>$i</elem>"
+			done
+		fi
 	fi
 	fi
 `
@@ -475,11 +477,11 @@ for ens in $ensembles; do
 
 		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read this_all_moms ; do
 			mom_leader="`take_first $this_all_moms`"
-		combo_line=0
+			combo_line=0
 			k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $( get_corr_lines $phase $this_all_moms ) | while read insert_op_mom_combos ; do
 				corr_graph_bin="${corr_runpath}/corr_graph_ph${phase}_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}.bin"
-			output="${corr_graph_bin}.out"
-			cat << EOF > ${corr_graph_bin}.sh
+				output="${corr_graph_bin}.out"
+				cat << EOF > ${corr_graph_bin}.sh
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -525,7 +527,7 @@ globus() { echo -n; }
 eval "\${1:-run}"
 EOF
 
-			for t_source in $prop_t_sources; do
+				for t_source in $prop_t_sources; do
 					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
 					mkdir -p `dirname ${corr_file}`
 					prefix="t${t_source}_ph${phase}_insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
@@ -548,6 +550,7 @@ environ() {
 }
 
 run() {
+	find ${localpath} &> $output
 	tmp_runpath="${localpath}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
@@ -556,7 +559,7 @@ run() {
 $( corr_graph "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" "${tsep_group}" $insert_op_mom_combos )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
-	echo Starting $redstar_npt redstar.xml output.xml > $output
+	echo Starting $redstar_npt redstar.xml output.xml >> $output
 	$redstar_npt redstar.xml output.xml &>> $output
 	rm -rf \$tmp_runpath
 }
@@ -592,10 +595,10 @@ globus() {
 
 eval "\${1:-run}"
 EOF
-			done # t_source
-
-			combo_line="$(( combo_line+1 ))"
-		done # insert_op_mom_combos
+				done # t_source
+	
+				combo_line="$(( combo_line+1 ))"
+			done # insert_op_mom_combos
 		done # this_all_moms
 	done # tsep_group
 	done # phase
@@ -605,6 +608,7 @@ EOF
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p ${runpath}
 
 		for t_source in $prop_t_sources; do

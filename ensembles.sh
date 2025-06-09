@@ -2,9 +2,9 @@
 
 . common.sh
 
-ensembles="ensemble0"
+ensembles="ensemble"
 
-ensemble0() {
+ensemble() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="nop"
@@ -40,7 +40,7 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=128  # colorvecs to use
+	nvec=64  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
@@ -54,9 +54,9 @@ ensemble0() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
-	prop_t_sources="`seq 0 63`"
+	#prop_t_sources="0"
 	prop_create_if_missing="nop"
-	prop_t_fwd=32
+	prop_t_fwd=16
 	prop_t_back=0
 	prop_nvec=128
 	prop_mass="-0.2350"
@@ -65,7 +65,7 @@ ensemble0() {
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=20
-	prop_max_rhs=1
+	prop_max_rhs=12
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -142,7 +142,7 @@ ensemble0() {
               <type>eo</type>
               <solver>
                 <type>mr</type>
-                <tol>1e-10</tol>
+                <tol>1e-8</tol>
                 <max_its>20000</max_its>
                 <prefix>l0</prefix>
                 <verbosity>Detailed</verbosity>
@@ -270,8 +270,9 @@ ensemble0() {
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
-	gprop_max_tslices_in_contraction=1
-	gprop_max_mom_in_contraction=1
+	gprop_max_rhs=$prop_max_rhs
+	gprop_max_tslices_in_contraction=2
+	gprop_max_mom_in_contraction=10
 	gprop_slurm_nodes="${prop_slurm_nodes}"
 	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
@@ -286,7 +287,7 @@ ensemble0() {
 				echo $n
 			else
 				for (( node=0 ; node<gprop_slurm_nodes*slurm_procs_per_node ; ++node )) ; do
-					echo "afs:${n}.part_$node"
+					echo "${n}.part_$node"
 				done
 			fi
 		else
@@ -415,7 +416,7 @@ ensemble0() {
 "
 
 	# Disco options
-	disco_max_displacement=16
+	disco_max_displacement=8
 	disco_probing_displacement=0
 	disco_probing_power=20
 	disco_max_colors=3325
@@ -522,9 +523,12 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=20 # Number of time slices
+	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
+	redstar_auto_phasing_4plus=2
+	redstar_auto_phasing_3=0
+	redstar_auto_phasing_sign="yes"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=3
 	redstar_2pt_moms="\
@@ -581,12 +585,12 @@ $(
 		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E"
 		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE"
 	elif [ $redstar_op_bases == 3 ]; then
-	redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
-	redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
-	redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
-	redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
-	redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
-	redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
+		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1"
+		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E"
+		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1"
+		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
+		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
 	else
 		echo "too lazy"; return -1
 	fi
@@ -610,22 +614,16 @@ pion_pionxDX__J0_A1
 " # use for 3pt correlation functions
 	redstar_insertion_disps="\
 z0 
-z1 3
-z2 3 3
-z3 3 3 3
-z4 3 3 3 3
-z5 3 3 3 3 3
-z6 3 3 3 3 3 3
-z7 3 3 3 3 3 3 3
-z8 3 3 3 3 3 3 3 3
-zn1 -3
-zn2 -3 -3
-zn3 -3 -3 -3
-zn4 -3 -3 -3 -3
-zn5 -3 -3 -3 -3 -3
-zn6 -3 -3 -3 -3 -3 -3
-zn7 -3 -3 -3 -3 -3 -3 -3
-zn8 -3 -3 -3 -3 -3 -3 -3 -3"
+$(
+        for (( n=1 ; n<=12 ; ++n )) do
+                echo -n z$n
+                for (( z=0 ; z<n ; ++z )) do echo -n " 3"; done
+                echo
+                echo -n zn$n
+                for (( z=0 ; z<n ; ++z )) do echo -n " -3"; done
+                echo
+        done
+)"
 	gprop_insertion_disps="${redstar_insertion_disps}"
 	redstar_use_meson="nop"
 	redstar_use_baryon="yes"
@@ -641,17 +639,23 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 	}
 	corr_file_name() {
 		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
-		prefix_path_extra="_2pt-disco"
+		prefix_path_extra="_mix_phasing-new-1op"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
-		local ins_path=""
-		[ $t_source != avg ] && ins_path="/ins_${insertion_op}_tsep_${tsep}"
-		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+		if [ x$cfg != xavg -a x$cfg != x ] ; then
+			local ins_path="/ins_${insertion_op}_tsep_${tsep}"
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+		elif [ x$cfg == xavg ] ; then
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+		else
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_avg/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+		fi
 	}
-	corr_dir_name_avg() {
+	corr_tmp_file_name() {
 		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
-		prefix_path_extra="_2pt-disco"
-		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_avg"
+		prefix_path_extra="_mix_phasing"
+		#echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.${redstar_tag}.${prefix_path}_t0_${t_source}.edb"
+		echo "${localpath}/avg/${confsname}.nuc_local.n${redstar_nvec}.${redstar_tag}.${prefix_path}_t0_${t_source}.edb"
 	}
 
 	redstar_slurm_nodes=1
@@ -709,7 +713,6 @@ export SB_MPI_GPU=1
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
-#export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
 export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
 export QUDA_ENABLE_NVSHMEM=0
@@ -728,6 +731,7 @@ export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 2))
 export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 export SB_CACHEGB_CPU=5
+export NPT_BATCH_SIZE=1
 "
 
 #
@@ -745,7 +749,7 @@ slurm_max_jobs=50 # maximum bundled jobs in a slurm job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$HOME/scratch"
+confspath="/lustre/orion/nph122/scratch/eromero"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"

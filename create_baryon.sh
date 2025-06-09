@@ -35,25 +35,27 @@ for ens in $ensembles; do
 	# Check for running baryons
 	[ $run_baryons != yes ] && continue
 
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		colorvec_file="`colorvec_file_name`"
-		[ -f $lime_file ] || continue
+	for phase in $( get_all_phases ); do
 
-		runpath="$PWD/${tag}/conf_${cfg}"
-		mkdir -p $runpath
+		#
+		# Baryon creation
+		#
 
-		for phase in $( get_all_phases ); do
+		t_sources="all"
+		[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
+		[ ${run_onthefly} != yes ] && max_moms_per_job=1
+		for t_source in $t_sources; do
+		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
 
-			#
-			# Baryon creation
-			#
+		for cfg in $confs; do
+			lime_file="`lime_file_name`"
+			colorvec_file="`colorvec_file_name`"
+			[ -f $lime_file ] || continue
+	
+			runpath="$PWD/${tag}/conf_${cfg}"
+			[ -f ${runpath}.tar.gz ] && continue
+			mkdir -p $runpath
 
-			t_sources="all"
-			[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
-			[ ${run_onthefly} != yes ] && max_moms_per_job=1
-			for t_source in $t_sources; do
-			k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
 
 			if [ ${run_onthefly} == yes ] ; then
 				# Find t_origin
@@ -155,7 +157,8 @@ run() {
 	cd $runpath
 	rm -f $baryon_file
 	mkdir -p `dirname ${baryon_file}`
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args
 }
 
 check() {
@@ -191,8 +194,8 @@ globus() {
 eval "\${1:-run}"
 
 EOF
-			done # mom_group
-			done # t_source
-		done # phase
-	done # cfg
+		done # cfg
+		done # mom_group
+		done # t_source
+	done # phase
 done # ens

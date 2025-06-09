@@ -28,6 +28,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
 		for phase in $( get_all_phases ) ; do
@@ -59,21 +60,26 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
+	#rm -rf $localpath/*
+	[ \$SLURM_PROCID == 0 ] && echo starting > $output
 	if [ $run_gprops == yes -a -f $gprop_script ] ; then
 		bash $gprop_script run
-		#sleep 30
 	fi
+	[ \$SLURM_PROCID == 0 ] && echo after gprop >> $output
+	[ \$SLURM_PROCID == 0 ] && find ${localpath} &>> $output
 	if [ $run_baryons == yes ] ; then
 		bash $baryon_script run
-		#sleep 30
 	fi
+	[ \$SLURM_PROCID == 0 ] && echo after baryon >> $output
+	[ \$SLURM_PROCID == 0 ] && find ${localpath} &>> $output
 	if [ $run_props == yes ] ; then
 		bash $prop_script run
-		#sleep 30
 	fi
+	[ \$SLURM_PROCID == 0 ] && echo after prop >> $output
+	[ \$SLURM_PROCID == 0 ] && find ${localpath} &>> $output
 
 	$slurm_script_prologue_redstar
-	srun -n $redstar_procs -N $redstar_nodes \$MY_ARGS --gpu-bind=closest -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS -c '
+	export ROCR_VISIBLE_DEVICES=\$SLURM_PROCID
 `
 	i=0
 	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
@@ -81,7 +87,6 @@ run() {
 		i="$((i+1))"
 	done
 `
-'
 }
 
 check() {
@@ -129,7 +134,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes jobs_per_node max_concurrent_jobs
-	echo d $onthefly_chroma_minutes $onthefly_slurm_nodes 1 0
+	echo d_${phase}_${mom_leader}_${tsep_leader} $onthefly_chroma_minutes $onthefly_slurm_nodes 1 0
 }
 
 globus() {

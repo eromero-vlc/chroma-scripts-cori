@@ -15,6 +15,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
 		for t_source in $prop_t_sources; do
@@ -55,7 +56,7 @@ for ens in $ensembles; do
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
           <max_rhs>${prop_max_rhs}</max_rhs>
-          <phases><elem><source>${phase_src}</source><sink>${phase_snk}</sink></elem></phases>
+          <phases><elem><source>${phase_src}</source><sink>$( neg_mom ${phase_snk} )</sink></elem></phases>
           <use_superb_format>true</use_superb_format>
           <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         </Contractions>
@@ -128,7 +129,8 @@ run() {
 	cd $runpath
 	mkdir -p `dirname ${prop_file}`
 	rm -f $prop_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*prop_slurm_nodes )) -N $prop_slurm_nodes $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args
 }
 
 check() {
