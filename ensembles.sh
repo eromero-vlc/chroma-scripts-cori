@@ -6,8 +6,8 @@ ensembles="ensemble0"
 
 ensemble0() {
 	# Tasks to run
-	run_eigs="yes"
-	run_props="yes"
+	run_eigs="nop"
+	run_props="nop"
 	run_gprops="yes"
 	run_baryons="yes"
 	run_mesons="nop"
@@ -259,11 +259,11 @@ ensemble0() {
 	# Baryon options
 	baryon_nvec=$nvec
 	baryon_zphases="${prop_zphases}"
-	baryon_chroma_max_tslices_in_contraction=1 # as large as possible
+	baryon_chroma_max_tslices_in_contraction=16 # as large as possible
 	baryon_chroma_max_moms_in_contraction=1 # as large as possible (zero means do all momenta at once)
-	baryon_chroma_max_vecs=2 # as large as possible (zero means do all eigenvectors are contracted at once)
-	baryon_slurm_nodes=2
-	baryon_chroma_geometry="1 2 2 4"
+	baryon_chroma_max_vecs=4 # as large as possible (zero means do all eigenvectors are contracted at once)
+	baryon_slurm_nodes=8
+	baryon_chroma_geometry="1 1 1 64"
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
@@ -332,7 +332,7 @@ ensemble0() {
 	redstar_t_corr=16 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_2pt="yes"
+	redstar_2pt="nop"
 	redstar_2pt_moms="\
 -2 0 2
 0 2 -2
@@ -391,7 +391,7 @@ ensemble0() {
 1 -1 1
 0 -2 0
 0 -2 2 "
-	redstar_3pt="nop"
+	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
 0 1 4   0 0 4   
@@ -466,21 +466,23 @@ zn8 -3 -3 -3 -3 -3 -3 -3 -3"
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
+		local extra="_2pt"
+		[ $redstar_3pt == yes ] && extra=_3pt
 		if [ ${zphase} == 0.00 ]; then
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/unphased/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/unphased${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		else
 			if [ $t_source == avg ]; then
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}${extra}/t0_${t_source}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			else
-				echo "${confspath}/${confsprefix}/corr/z${zphase}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
+				echo "${confspath}/${confsprefix}/corr/z${zphase}${extra}/t0_${t_source}/ins_${insertion_op}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_z${zphase}.sdb${cfg}"
 			fi
 		fi
 	}
-	redstar_slurm_nodes=1
+	redstar_slurm_nodes=2
 	redstar_minutes=30
 	redstar_jobs_per_node=8 # use for computing corr graphs
 	redstar_max_concurrent_jobs=24000
@@ -498,11 +500,11 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform_rocm5.5"
-chroma="$chromaform/install-rocm5.4/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
+chromaform="$HOME/scratch/chromaform_rocm6.0"
+chroma="$chromaform/install-rocm6.0/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-rocm5.4/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
+redstar="$chromaform/install-rocm6.0/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -524,9 +526,9 @@ slurm_sbatch_prologue="#!/bin/bash
 #SBATCH -C nvme"
 
 slurm_script_prologue="
-. $chromaform/env_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4.sh
-. $chromaform/env_extra_rocm5.4_0.sh
+. $chromaform/env_rocmsh
+. $chromaform/env_extra.sh
+. $chromaform/env_extra0.sh
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=7
 #export SLURM_CPU_BIND=\"cores\"

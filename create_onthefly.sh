@@ -10,7 +10,8 @@ for ens in $ensembles; do
 	[ $run_onthefly != yes -o $run_redstar != yes ] && continue
 
 	# Get the number of nodes to run
-	onthefly_slurm_nodes=1
+	onthefly_slurm_nodes="$redstar_slurm_nodes"
+	[ $run_baryons == yes -a $onthefly_slurm_nodes -lt $baryon_slurm_nodes ] && onthefly_slurm_nodes="$baryon_slurm_nodes"
 	[ $run_props == yes -a $onthefly_slurm_nodes -lt $prop_slurm_nodes ] && onthefly_slurm_nodes="$prop_slurm_nodes"
 	[ $run_gprops == yes -a $onthefly_slurm_nodes -lt $gprop_slurm_nodes ] && onthefly_slurm_nodes="$gprop_slurm_nodes"
 
