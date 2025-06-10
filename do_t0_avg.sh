@@ -4,7 +4,12 @@ source ensembles.sh
 
 redstar_dat_mom() {
 	ph=( $( mom_auto_phase $@ ) )
-	echo "${1}${2}${3}ph${ph[0]}${ph[1]}${ph[2]}"
+	mt="$( momtype $@ | tr -d ' ' )"
+	if [ ${ph[0]}${ph[1]}${ph[2]} == 000 ] ; then
+		echo "${1}${2}${3},*__${mt}"
+	else
+		echo "${1}${2}${3},*__${mt}ph${ph[0]}${ph[1]}${ph[2]}"
+	fi
 }
 
 redstar_dat_mom_snk() {
@@ -13,6 +18,11 @@ redstar_dat_mom_snk() {
 
 redstar_dat_mom_src() {
 	redstar_dat_mom ${4} ${5} ${6}
+}
+
+rename_moms() {
+	[ $# == 3 ] && echo "mom$1.$2.$3"
+	[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 }
 
 # Load redstar environment
@@ -78,10 +88,8 @@ for ens in $ensembles; do
 	#done > $merge_cfgs 2> $err
 	#cat $err
 
-	corr_dir="/lustre/orion/nph122/scratch/eromero/cl21_32_64_b6p3_m0p2350_m0p2050-5162/corr/auto_phasing_3_0_4p_2_mix_phasing/avg"
-	#mkdir -p $corr_dir
-	#for redstar_file in `cat ${redstar_files}` ; do 
 	#for t_source in $prop_t_sources ; do
+	#for redstar_file in `cat ${redstar_files}` ; do 
 	#(
 	#	merge_files="`mktemp`"
 	#	cfg_number=0
@@ -89,58 +97,67 @@ for ens in $ensembles; do
 	#		echo $cfg_number $( echo $redstar_file | sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" )
 	#		cfg_number="$(( cfg_number+1 ))"
 	#	done > ${merge_files}
-	#	corr_file_avg="$( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" )"
+	#	corr_file_avg="$( echo $redstar_file | sed "s/t0_/tavg_/g;s/@CFG/all/g;s/@SRC/${t_source}/g" )"
 	#	mkdir -p `dirname $corr_file_avg`
 	#	echo creating $corr_file_avg
 	#	echo ">" $dbmerge $corr_file_avg $merge_files 4000
 	#	#cat $merge_files
 	#	rm -f $corr_file_avg
 	#	$dbmerge $corr_file_avg $merge_files 4000 || exit -1
+	#	rm -f $merge_files
 	#) &
-	#done # t_source
 	#done # redstar_file
 	#wait
+	#done # t_source
 
 	#for redstar_file in `cat ${redstar_files}` ; do 
 	#	files="$( for t_source in $prop_t_sources ; do
-	#		echo $corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" ) )
+	#		echo $redstar_file | sed "s/t0_/tavg_/g;s/@CFG/all/g;s/@SRC/${t_source}/g"
 	#	done )"
-	#	corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
+	#	corr_file_avg="$( echo $redstar_file | sed "s/t0_/tavg_/g;s/@CFG/all/g;s/@SRC/all/g" )"
+	#	mkdir -p `dirname $corr_file_avg`
 	#	echo creating final $corr_file_avg
 	#	rm -f $corr_file_avg
 	#	$dbavgsrc $corr_file_avg $files
 	#done # redstar_file
 
 	# Extract the content
+	corr_file="$PWD/corr.tar"
+	rm -f $corr_file
+	tar cf $corr_file ensembles.sh
 	for redstar_file in `cat ${redstar_files}` ; do 
 		cd $tmp_dat_dir
 		rm $tmp_dat_dir/*
-		corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
+		corr_file_avg="$( echo $redstar_file | sed "s/t0_/tavg_/g;s/@CFG/all/g;s/@SRC/all/g" )"
 		echo openning $corr_file_avg
 		$dbutil $corr_file_avg keysxml $keys
 		$dbutil $corr_file_avg get $keys
-		ls
 		if [ ${redstar_3pt} == yes ] ; then
 			echo "$redstar_3pt_snkmom_srcmom" | while read snk_src_mom ; do
 				[ $( num_args $snk_src_mom ) -ne 6 ] && continue
-				proper_corr_file_avg="`cfg= t_source=avg mom="$snk_src_mom" corr_file_name`"
-				new_dat_files_dir="`dirname $proper_corr_file_avg`"
-				echo mkdir -p $new_dat_files_dir
+				new_dat_files_dir="$( rename_moms $snk_src_mom )"
 				mkdir -p $new_dat_files_dir
-				#echo mv *,$( redstar_dat_mom_snk $snk_src_mom ),*,$( redstar_dat_mom_src $snk_src_mom ),*.dat $new_dat_files_dir
-				mv *,$( redstar_dat_mom_snk $snk_src_mom ),*,$( redstar_dat_mom_src $snk_src_mom ),*.dat $new_dat_files_dir
+				if mv *,$( redstar_dat_mom_snk $snk_src_mom ).*,$( redstar_dat_mom_src $snk_src_mom ).dat $new_dat_files_dir &> /dev/null ; then
+					ls $new_dat_files_dir
+					tar rf $corr_file $new_dat_files_dir/
+				fi
+				rm -r $new_dat_files_dir
 			done
 		fi
 		if [ ${redstar_2pt} == yes ] ; then
 			echo "$redstar_2pt_moms" | while read mom ; do
 				[ $( num_args $mom ) -ne 3 ] && continue
-				proper_corr_file_avg="`cfg= t_source=avg corr_file_name`"
-				new_dat_files_dir="`dirname $proper_corr_file_avg`"
-				echo mkdir -p $new_dat_files_dir
+				new_dat_files_dir="$( rename_moms $mom )"
 				mkdir -p $new_dat_files_dir
-				#echo "mv *,$( redstar_dat_mom $mom ),*,$( redstar_dat_mom $mom ),*.dat $new_dat_files_dir"
-				mv *,$( redstar_dat_mom $mom ),*,$( redstar_dat_mom $mom ),*.dat $new_dat_files_dir
+				echo mv "*,$( redstar_dat_mom $mom ).*,$( redstar_dat_mom $mom ).dat"
+				if mv *,$( redstar_dat_mom $mom ).*,$( redstar_dat_mom $mom ).dat $new_dat_files_dir &> /dev/null ; then
+					ls $new_dat_files_dir
+					tar rf $corr_file $new_dat_files_dir/
+				fi
+				rm -r $new_dat_files_dir
 			done
 		fi
+		echo missing
+		ls
 	done # redstar_file
 done # ens

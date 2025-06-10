@@ -71,6 +71,10 @@ mom_auto_phase() {
 	echo
 }
 
+momtype() {
+	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
+}
+
 # mom_fly momx0 momy0 momz0 [momx1 momy1 momz1] 
 # Return a canonical direction of mom0 - mom1 and the phasing
 

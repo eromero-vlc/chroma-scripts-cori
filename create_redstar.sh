@@ -2,10 +2,6 @@
 
 source ensembles.sh
 
-momtype() {
-	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
-}
-
 num_zeros_mom() {
 	local n=0
 	for i in $@; do
@@ -564,6 +560,7 @@ EOFeof
 }
 
 check() {
+	[ -f $corr_file ] || exit 1
 	tail -n 10 ${output} 2> /dev/null | grep -q "REDSTAR_NPT: total time" && exit 0
 	exit 1
 }

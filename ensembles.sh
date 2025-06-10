@@ -25,13 +25,13 @@ ensemble() {
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 5170 10 20070`"
 	#confs="`seq 10010 10 20070`"
-	confs="`seq 5170 10 10000`"
-	confs="`seq 5170 10 8000`"
-	confs="`seq 5170 10 5299`"
-	confs="`seq 5170 10 8999`"
-	confs="`seq 9000 10 12999`"
-	confs="`seq 13000 10 16999`"
-	confs="`seq 17000 10 20999`"
+	#confs="`seq 5170 10 10000`"
+	#confs="`seq 5170 10 8000`"
+	#confs="`seq 5170 10 5299`"
+	#confs="`seq 5170 10 8999`"
+	#confs="`seq 9000 10 12999`"
+	#confs="`seq 13000 10 16999`"
+	#confs="`seq 17000 10 20999`"
 	#confs="5170"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -56,7 +56,6 @@ ensemble() {
 
 	# Props options
 	prop_t_sources="0 16 32 48"
-	#prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=16
 	prop_t_back=0
@@ -701,7 +700,7 @@ redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-meta-colorvec-pdf-ne
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install-redstar/adat-pdf-next-superbblas-sp"
+adat="$chromaform/install-redstar-nompi/adat-pdf-next-meta-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
