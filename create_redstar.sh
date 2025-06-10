@@ -2,10 +2,6 @@
 
 source ensembles.sh
 
-momtype() {
-	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
-}
-
 num_zeros_mom() {
 	local n=0
 	for i in $@; do
@@ -49,10 +45,29 @@ get_ops() {
 	echo "${!varname}"
 }
 
+# | Operator Name          | Isospin | Gamma Structure | flavor/twoI | irmom/row
+# |----------------------- |---------|-----------------|-------------| ---------
+# | fl_a0xDX__J0_A1        |       0 |               1 |     0       |    1
+# | a_a0xDX__J0_A1         |       1 |               1 |     2       |    1
+# | omegal_rhoxDX__J1_T1   |       0 |             g_k |     0       |  1 2 3
+# | rho_rhoxDX__J1_T1      |       1 |             g_k |     2       |  1 2 3
+# | hl_b1xDX__J1_T1        |       0 |         g_i g_j |     0       |  1 2 3
+# | b_b1xDX__J1_T1         |       1 |         g_i g_j |     2       |  1 2 3
+# | etal_pion_2xDX__J0_A1  |       0 |         g_5 g_4 |     0       |    1
+# | pion_pion_2xDX__J0_A1  |       1 |         g_5 g_4 |     2       |    1
+# | hl_b0xDX__J0_A1        |       0 |             g_4 |     0       |    1
+# | b_b0xDX__J0_A1         |       1 |             g_4 |     2       |    1
+# | omegal_rho_2xDX__J1_T1 |       0 |         g_k g_4 |     0       |  1 2 3
+# | rho_rho_2xDX__J1_T1    |       1 |         g_k g_4 |     2       |  1 2 3
+# | fl_a1xDX__J1_T1        |       0 |         g_k g_5 |     0       |  1 2 3
+# | a_a1xDX__J1_T1         |       1 |         g_k g_5 |     2       |  1 2 3
+# | etal_pionxDX__J0_A1    |       0 |             g_5 |     0       |    1
+# | pion_pionxDX__J0_A1    |       1 |             g_5 |     2       |    1
+
 operator_rows() {
 	case $1 in
-		pion*|b_b0*|a_a0*|hc_b0*) echo 1 ;;
-		rho_rho*|b_b1*|a_a1*) echo 1 2 3 ;;
+		etal_*|pion*|hl_b0*|b_b0*|fl_a0*|a_a0*|hc_b0*) echo 1 ;;
+		omegal_*|rho_*|hl_b1*|b_b1*|fl_a1*|a_a1*) echo 1 2 3 ;;
 		*) echo "operator_rows: $1 ?" >&2; exit 1;;
 	esac
 }
@@ -60,6 +75,7 @@ operator_rows() {
 operator_twoI() {
 	case $1 in
 		hc_b0*) echo 0 ;;
+		etal*|hl_b0*|fl_a0*|omegal_rho*|hl_b1*|fl_a1*) echo 0 ;;
 		pion*|b_b0*|a_a0*|rho_rho*|b_b1*|a_a1*) echo 2 ;;
 		*) echo "operator_twoI: $1 ?" >&2; exit 1;;
 	esac
@@ -67,7 +83,8 @@ operator_twoI() {
 
 npoint_2pt() {
 	local mom="$1"
-	local operators="$2"
+	local phasing="$2"
+	local operators="$3"
 	for operatori in $operators; do
 		for operatorj in $operators; do
 			echo "
@@ -88,11 +105,12 @@ npoint_2pt() {
                    <mom>$mom</mom>
                    <row>1</row>
                  </irmom>
+                 <phasing>${phasing}</phasing>
                  <Op>
                    <Operators>
                      <elem>
                        <name>$operatori</name>
-                       <mom_type>$( momtype $mom )</mom_type>
+                       <mom_class>$( momtype $mom )</mom_class>
                      </elem>
                    </Operators>
                    <CGs>
@@ -116,11 +134,12 @@ npoint_2pt() {
                    <row>1</row>
                    <mom>$mom</mom>
                  </irmom>
+                 <phasing>${phasing}</phasing>
                  <Op>
                    <Operators>
                      <elem>
                        <name>$operatorj</name>
-                       <mom_type>$( momtype $mom )</mom_type>
+                       <mom_class>$( momtype $mom )</mom_class>
                      </elem>
                    </Operators>
                    <CGs>
@@ -136,13 +155,15 @@ npoint_2pt() {
 
 npoint_3pt() {
 	local momi="$1"
-	local operatorsi="$2"
-	local momj="$3"
-	local operatorsj="$4"
-	local momk="$5"
-	local operatorsk="$6"
-	local t_seps="$7"
-	local disps="$8"
+	local phasingi="$2"
+	local operatorsi="$3"
+	local momj="$4"
+	local phasingj="$5"
+	local operatorsj="$6"
+	local momk="$7"
+	local operatorsk="$8"
+	local t_seps="$9"
+	local disps="${10}"
 	local momtypei="$( momtype $momi )"
 	local momtypej="$( momtype $momj )"
 	local momtypek="$( momtype $momk )"
@@ -165,11 +186,12 @@ npoint_3pt() {
                    <row> $( for rowi in 1 2; do echo -n "<alt>$rowi</alt>"; done ) </row>
                    <mom>$momi</mom>
                  </irmom>
+                 <phasing>$phasingi</phasing>
                  <Op>
                    <Operators>
                      <elem>
                        <name> $( for operatori in $operatorsi; do echo "<alt>$operatori</alt>"; done ) </name>
-                       <mom_type>$momtypei</mom_type>
+                       <mom_class>$momtypei</mom_class>
                      </elem>
                    </Operators>
                    <CGs>
@@ -197,7 +219,7 @@ npoint_3pt() {
                    <Operators>
                      <elem>
                        <name>${operatork}</name>
-                       <mom_type>$momtypek</mom_type>
+                       <mom_class>$momtypek</mom_class>
                        <disp_list>$( echo "$disps" | while read disp_prefix disp_list; do [ x${disp_prefix}x != xx ] && echo "<alt>$disp_list</alt>"; done ) </disp_list>
                      </elem>
                    </Operators>
@@ -222,11 +244,12 @@ npoint_3pt() {
                    <row> $( for rowj in 1 2; do echo -n "<alt>$rowj</alt>"; done ) </row>
                    <mom>$momj</mom>
                  </irmom>
+                 <phasing>$phasingj</phasing>
                  <Op>
                    <Operators>
                      <elem>
                        <name> $( for operatorj in $operatorsj; do echo "<alt>$operatorj</alt>"; done ) </name>
-                       <mom_type>$momtypej</mom_type>
+                       <mom_class>$momtypej</mom_class>
                      </elem>
                    </Operators>
                    <CGs>
@@ -243,19 +266,25 @@ corr_graph() {
 	local corr_graph_file="$1"
 	local corr_file="$2"
 	local t_origin="$3"
-	shift 3
+	local tseps="$4"
+	shift 4
+	ops="$@"
 	echo "<?xml version=\"1.0\"?>
 <RedstarNPt>
   <Param>
-    <version>12</version>
+    <version>14</version>
+    <cgc_options>
+      <autoIrrepCG>true</autoIrrepCG>
+      <rephaseIrrepCG>true</rephaseIrrepCG>
+      <enableCGTargetMomRotation>true</enableCGTargetMomRotation>
+      <autoCGVersion>1</autoCGVersion>
+    </cgc_options>
     <diagnostic_level>0</diagnostic_level>
-    <autoIrrepCG>true</autoIrrepCG>
-    <rephaseIrrepCG>false</rephaseIrrepCG>
     <Nt_corr>${redstar_t_corr}</Nt_corr>
     <convertUDtoL>true</convertUDtoL>
     <convertUDtoS>false</convertUDtoS>
     <average_1pt_diagrams>true</average_1pt_diagrams>
-    <zeroUnsmearedGraphsP>false</zeroUnsmearedGraphsP>
+    <zeroUnsmearedGraphsP>$( if [ $redstar_disco == yes ]; then echo false ; else echo true ; fi )</zeroUnsmearedGraphsP>
     <t_origin>$t_origin</t_origin>
     <bc_spec>-1</bc_spec>
     <Layout>
@@ -263,31 +292,32 @@ corr_graph() {
       <decayDir>3</decayDir>
     </Layout>
     <ensemble>${confsname}</ensemble>
+  </Param> 
 
     <NPointList>
 `
 	if [ $t_origin == -1 ]; then
+		local phase_snk="$( get_sink ${phase//_/ } )"
+		local phase_src="$( get_source ${phase//_/ } )"
+		local insert_op_mom_combo
 		for insert_op_mom_combo in "$@" ; do
-			local insert_op_mom_array=( ${insert_op_mom_combo/\~/ } )
-			local insertion_op="${insert_op_mom_array[0]}"
-			local mom="${insert_op_mom_array[1]//_/ }"
-			if [ ${redstar_2pt} == yes ] ; then
-				local operators="$( get_ops $mom )"
-				npoint_2pt "$mom" "$operators"
+			local insert_op_mom_array=( ${insert_op_mom_combo//\~/ } )
+			local insertion_op="${insert_op_mom_array[6]}"
+			local momi="$( get_sink ${insert_op_mom_combo//\~/ } )"
+			local momj="$( get_source ${insert_op_mom_combo//\~/ } )"
+			if [ $insertion_op == 2pt ] ; then
+				local operators="$( get_ops $momi )"
+				npoint_2pt "$momi" "${phase_snk}" "$operators"
 			else
-				local momarray=( $mom )
-				local momi="${momarray[0]} ${momarray[1]} ${momarray[2]}"
-				local momj="${momarray[3]} ${momarray[4]} ${momarray[5]}"
 				local operatorsi="$( get_ops $momi )"
 				local operatorsj="$( get_ops $momj )"
 				local momk="$( insertion_mom $momi $momj )"
-				npoint_3pt "$momi" "$operatorsi" "$momj" "$operatorsj" "$momk" "$insertion_op" "$gprop_t_seps" "$redstar_insertion_disps"
+				npoint_3pt "$momi" "$phase_snk" "$operatorsi" "$momj" "$phase_src" "$operatorsj" "$momk" "$insertion_op" "$tseps" "$redstar_insertion_disps"
 			fi
 		done
 	fi
 `
     </NPointList>
-  </Param> 
   <DBFiles>
     <proj_op_xmls></proj_op_xmls>
     <corr_graph_bin>${corr_graph_file}</corr_graph_bin>
@@ -301,6 +331,7 @@ corr_graph() {
       <use_genprop4>true</use_genprop4>
       <use_FSq>false</use_FSq>
       <fake_data_modeP>false</fake_data_modeP>
+      <genprop_return_zero_value_for_t_slice_outside_source_sink_range>true</genprop_return_zero_value_for_t_slice_outside_source_sink_range>
       <ensemble>${confsname}</ensemble>
       <FlavorToMass>
         <elem>
@@ -379,9 +410,19 @@ corr_graph() {
       <unsmeared_genprop4_dbs>
 `
 	if [ $redstar_use_gprops == yes ]; then
+		local are_there_3pt="nop"
+		local insert_op_mom_combo
+		for insert_op_mom_combo in "$@" ; do
+			local insert_op_mom_array=( ${insert_op_mom_combo//\~/ } )
+			local insertion_op="${insert_op_mom_array[6]}"
+			[ $insertion_op != 2pt ] && are_there_3pt="yes"
+		done
+		if [ $are_there_3pt == yes ] ; then
+			local i
 		for i in $( gprop_file_name ); do
 			echo "<elem>$i</elem>"
 		done
+	fi
 	fi
 `
       </unsmeared_genprop4_dbs>
@@ -403,59 +444,37 @@ for ens in $ensembles; do
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
 
-	if [ ${redstar_2pt} == yes -a ${redstar_disco} == yes ] ; then
-		echo "Unsupported to compute 2pt and disco correlation functions"
-		exit 1
-	fi
-	mom_groups="`
-		(
-			[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
-			[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
-		) | while read momij; do
-			[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
-		done | sort -u
-	`"
-
 	[ ${run_onthefly} != yes ] && max_moms_per_job=1
 
-	corr_runpath="$PWD/${tag}/redstar_corr_graph"
+	if [ ${redstar_3pt} == yes ] ; then
+		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
+		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
+		
+	else
+		tsep_groups=0
+		max_tseps_per_job=1
+	fi
+
+	corr_runpath="$PWD/${tag}/redstar_corr_graph-${ens}"
+	rm -rf $corr_runpath
 	mkdir -p $corr_runpath
 
-	template_runpath="$PWD/${tag}/redstar_template"
+	template_runpath="$PWD/${tag}/redstar_template-${ens}"
+	rm -rf ${template_runpath}
 	mkdir -p ${template_runpath}
 	cfg="@CFG"
 	runpath="$PWD/${tag}/conf_${cfg}"
 	rm -f ${redstar_files}*
 
-	k_split $max_moms_per_job $mom_groups | while read mom_group ; do
-		mom_leader="`take_first $mom_group`"
-		if [ ${redstar_2pt} == yes ]; then
-			all_insert_ops="_2pt_"
-		else
-			all_insert_ops="$redstar_insertion_operators"
-		fi
-		this_all_moms="$(
-			if [ ${redstar_2pt} == yes ] ; then
-				echo "$redstar_2pt_moms" | while read momij; do
-					for this_momij in $mom_group ; do
-						[ $( mom_word $( mom_fly $momij ) ) == $this_momij ] && mom_word $momij
-					done
-				done
-			else
-				echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-					for this_momij in $mom_group ; do
-						[ $( mom_word $( mom_fly $momij ) ) == $this_momij ] && mom_word $momij
-					done
-				done
-			fi | sort -u | while read mom ; do
-				for insert_op in $all_insert_ops ; do
-					echo ${insert_op}~${mom}
-				done
-			done
-		)"
+	for phase in $( get_all_phases ); do
+	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
+		tsep_leader="`take_first $tsep_group`"
+
+		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read this_all_moms ; do
+			mom_leader="`take_first $this_all_moms`"
 		combo_line=0
-		k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $this_all_moms | while read insert_op_mom_combos ; do
-			corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}.bin"
+			k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $( get_corr_lines $phase $this_all_moms ) | while read insert_op_mom_combos ; do
+				corr_graph_bin="${corr_runpath}/corr_graph_ph${phase}_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}.bin"
 			output="${corr_graph_bin}.out"
 			cat << EOF > ${corr_graph_bin}.sh
 $slurm_sbatch_prologue
@@ -470,11 +489,12 @@ environ() {
 
 run() {
 	tmp_runpath="${localpath}/${corr_graph_bin//\//_}"
+	[ -e ${localpath} ] || tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
 	rm -f ${corr_graph_bin}
 	cat << EOFeof > corr_graph.xml
-$( corr_graph "${corr_graph_bin}" "none" "-1" $insert_op_mom_combos )
+$( corr_graph "${corr_graph_bin}" "none" "-1" "${tsep_group}" $insert_op_mom_combos )
 EOFeof
 	echo Starting $redstar_corr_graph corr_graph.xml output_xml > $output
 	$redstar_corr_graph corr_graph.xml output_xml &>> $output
@@ -503,10 +523,9 @@ eval "\${1:-run}"
 EOF
 
 			for t_source in $prop_t_sources; do
-				for zphase in $prop_zphases; do
-					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} corr_file_name`"
+					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
 					mkdir -p `dirname ${corr_file}`
-					prefix="t${t_source}_insop${combo_line}_z${zphase}_mf${mom_leader}"
+					prefix="t${t_source}_ph${phase}_insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
 					redstar_xml="redstar_${prefix}.xml"
 					output_xml="redstar_xml_out_${prefix}.out"
 					output="$runpath/redstar_${prefix}.out"
@@ -526,20 +545,22 @@ environ() {
 }
 
 run() {
+	find ${localpath} &> $output
 	tmp_runpath="${localpath}/${runpath//\//_}_$prefix"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
 	rm -f ${corr_file}
 	cat << EOFeof > redstar.xml
-$( corr_graph "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" )
+$( corr_graph "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" "${tsep_group}" $insert_op_mom_combos )
 EOFeof
 	mkdir -p `dirname ${corr_file}`
-	echo Starting $redstar_npt redstar.xml output.xml > $output
+	echo Starting $redstar_npt redstar.xml output.xml >> $output
 	$redstar_npt redstar.xml output.xml &>> $output
 	rm -rf \$tmp_runpath
 }
 
 check() {
+	[ -f $corr_file ] || exit 1
 	tail -n 10 ${output} 2> /dev/null | grep -q "REDSTAR_NPT: total time" && exit 0
 	exit 1
 }
@@ -550,7 +571,7 @@ deps() {
 	[ $redstar_use_meson == yes ] && echo echo $( meson_file_name | tr '\n' ' ' )
 	[ $redstar_use_baryon == yes ] && [ $run_onthefly != yes -o $run_baryons != yes ] && echo echo $( baryon_file_name | tr '\n' ' ' )
 	[ $run_onthefly != yes -o $run_props != yes ] && echo echo $( prop_file_name | tr '\n' ' ' )
-	[ $redstar_use_gprops == yes ] && [ $run_onthefly != yes -o $run_gprops != yes ] && echo echo $( gprop_file_name | tr '\n' ' ' )
+	[ $redstar_use_gprops == yes ] && [ $run_onthefly != yes -o $run_gprops != yes ] && echo echo $( tseps="${tsep_group}" gprop_file_name | tr '\n' ' ' )
 	[ $redstar_use_disco == yes ] && echo echo $( disco_file_name | tr '\n' ' ' )
 `
 }
@@ -570,18 +591,20 @@ globus() {
 
 eval "\${1:-run}"
 EOF
-				done # zphase
 			done # t_source
 
 			combo_line="$(( combo_line+1 ))"
 		done # insert_op_mom_combos
-	done # mom_group
+		done # this_all_moms
+	done # tsep_group
+	done # phase
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p ${runpath}
 
 		for t_source in $prop_t_sources; do
@@ -601,7 +624,7 @@ t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash -l \$t
+	bash $BASH_INVOCATION_OPTIONS \$t
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -609,7 +632,7 @@ elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
 elif [ x\$1 == xrun ]; then
-	bash -l \$t \$@
+	bash $BASH_INVOCATION_OPTIONS \$t \$@
 	r="\$?"
 	rm -f \$t
 	exit \$r

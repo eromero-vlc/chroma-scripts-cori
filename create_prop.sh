@@ -15,22 +15,26 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
 		for t_source in $prop_t_sources; do
-		for zphase in $prop_zphases; do
+		for phase in $( get_all_phases ); do
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			prop_file="`prop_file_name single`"
+			[ ${run_onthefly} != yes -a ${prop_create_if_missing} == yes -a -f ${prop_file} ] && continue
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${prop_file}`
 
 			#
 			# Propagators creation
 			#
 
-			prefix="${runpath}/prop_t${t_source}_z${zphase}"
+			phase_snk="$( get_sink ${phase//_/ } )"
+			phase_src="$( get_source ${phase//_/ } )"
+			prefix="${runpath}/prop_t${t_source}_phase${phase}"
 			prop_xml="${prefix}.xml"
 			cat << EOF > $prop_xml
 <?xml version="1.0"?>
@@ -51,8 +55,8 @@ for ens in $ensembles; do
           <Nt_backward>$prop_t_back</Nt_backward>
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
-          <max_rhs>1</max_rhs>
-          <phase>0.00 0.00 $zphase</phase>
+          <max_rhs>${prop_max_rhs}</max_rhs>
+          <phases><elem><source>${phase_src}</source><sink>$( neg_mom ${phase_snk} )</sink></elem></phases>
           <use_superb_format>true</use_superb_format>
           <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         </Contractions>
@@ -115,17 +119,18 @@ EOF
 			[ $run_onthefly == yes ] && script="${script}.future"
 			cat << EOF > ${script}
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/prop_t${t_source}_z${zphase}.out0
+#SBATCH -o $runpath/prop_t${t_source}_${phase}.out0
 #SBATCH -t $prop_chroma_minutes
 #SBATCH --nodes=$prop_slurm_nodes -n $(( slurm_procs_per_node*prop_slurm_nodes ))  -c $(( slurm_cores_per_node/slurm_procs_per_node ))
-#SBATCH -J prop-${cfg}-${t_source}-${zphase}
+#SBATCH -J prop-${cfg}-${t_source}-${phase}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	mkdir -p `dirname ${prop_file}`
 	rm -f $prop_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*prop_slurm_nodes )) -N $prop_slurm_nodes $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args
 }
 
 check() {
@@ -161,7 +166,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # zphase
+		done # phase
 		done # t_source
 	done # cfg
 done # ens

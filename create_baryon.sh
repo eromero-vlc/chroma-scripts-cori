@@ -2,6 +2,32 @@
 
 source ensembles.sh
 
+# mom_flip momx0 momy0 momz0
+# Return the momentum negated
+
+mom_flip() {
+	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
+}
+
+get_moms() {
+	local phase="$1"
+	shift
+	local l
+	local m
+	get_all_corr | while read l ; do
+		[ $(num_args $l ) == 0 -o $( mom_word $( get_phase_from_corr_line $l ) ) != $phase ] && continue
+		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
+		for m in $@ ; do
+			if [ $this_mom == $m ] ; then
+				mom_flip $( get_sink $( get_mom_from_corr_line $l ) )
+				mom_flip $( get_source $( get_mom_from_corr_line $l ) )
+				break
+			fi
+		done
+	done
+}
+
+
 for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
@@ -9,30 +35,7 @@ for ens in $ensembles; do
 	# Check for running baryons
 	[ $run_baryons != yes ] && continue
 
-	moms="all"
-	if [ $run_onthefly == yes ]; then
-		if [ ${redstar_2pt} == yes -a ${redstar_3pt} == yes ] ; then
-			echo "Unsupported to compute 2pt and 3pt on the fly at once"
-			exit 1
-		fi
-		moms="`
-			(
-				[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms"
-				[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom"
-			) | while read momij; do
-				[ $(num_args $momij) -gt 0 ] && mom_word $( mom_fly $momij )
-			done | sort -u
-		`"
-	fi
-	for cfg in $confs; do
-		lime_file="`lime_file_name`"
-		colorvec_file="`colorvec_file_name`"
-		[ -f $lime_file ] || continue
-
-		runpath="$PWD/${tag}/conf_${cfg}"
-		mkdir -p $runpath
-
-		for zphase in $baryon_zphases; do
+	for phase in $( get_all_phases ); do
 
 			#
 			# Baryon creation
@@ -42,26 +45,18 @@ for ens in $ensembles; do
 			[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
 			[ ${run_onthefly} != yes ] && max_moms_per_job=1
 			for t_source in $t_sources; do
-			k_split $max_moms_per_job $moms | while read mom_group ; do
+		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
 
-			baryon_moms_xml="
-<mom_list>
-	`
-		if [ ${redstar_2pt} == yes ] ; then
-			for momij in $mom_group ; do
-				mom_split ${momij//_/ }
-			done
-		elif [ ${redstar_3pt} == yes ] ; then
-			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-				for this_momij in $mom_group ; do
-					[ $( mom_word $( mom_fly $momij ) ) == $this_momij ] && mom_split $momij
-				done
-			done
-		fi | sort -u | while read mom; do
-			echo "<elem>$mom</elem>"
-		done
-	`
-</mom_list>"
+		for cfg in $confs; do
+			lime_file="`lime_file_name`"
+			colorvec_file="`colorvec_file_name`"
+			[ -f $lime_file ] || continue
+	
+			runpath="$PWD/${tag}/conf_${cfg}"
+			[ -f ${runpath}.tar.gz ] && continue
+			mkdir -p $runpath
+
+
 			if [ ${run_onthefly} == yes ] ; then
 				# Find t_origin
 				baryon_t_source="`shuffle_t_source $cfg $t_size $t_source`"
@@ -77,7 +72,9 @@ for ens in $ensembles; do
 			baryon_file="`baryon_file_name single`"
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${baryon_file}`
 
-			prefix="$runpath/baryon_${zphase}${prefix_extra}"
+			phase_snk="$( get_sink ${phase//_/ } )"
+			phase_src="$( get_source ${phase//_/ } )"
+			prefix="$runpath/baryon_ph${phase}${prefix_extra}"
 			baryon_xml="${prefix}.xml"
 			cat << EOF > $baryon_xml
 <?xml version="1.0"?>
@@ -99,11 +96,16 @@ for ens in $ensembles; do
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
-        <phase>0.00 0.00 $zphase</phase>
+        <phases><elem>${phase_src}</elem><elem>${phase_snk}</elem></phases>
         <use_superb_format>true</use_superb_format>
         <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
-
-	$baryon_moms_xml
+        <mom_list>
+$(
+	get_moms $phase $mom_group | sort -u | while read mom ; do
+		echo "<elem>$mom</elem>"
+	done
+)	
+        </mom_list>
         $baryon_extra_xml
 
         <LinkSmearing>
@@ -148,14 +150,15 @@ $slurm_sbatch_prologue
 #SBATCH -o ${prefix}.out0
 #SBATCH -t $baryon_chroma_minutes
 #SBATCH --nodes=$baryon_slurm_nodes -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
-#SBATCH -J bar-${cfg}-${zphase}-${baryon_file_index}
+#SBATCH -J bar-${cfg}-${phase}-${baryon_file_index}
 
 run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $baryon_file
 	mkdir -p `dirname ${baryon_file}`
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*baryon_slurm_nodes )) -N $baryon_slurm_nodes $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args
 }
 
 check() {
@@ -191,8 +194,8 @@ globus() {
 eval "\${1:-run}"
 
 EOF
+		done # cfg
 			done # mom_group
 			done # t_source
-		done # zphase
-	done # cfg
+	done # phase
 done # ens

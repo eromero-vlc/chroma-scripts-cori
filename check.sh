@@ -8,6 +8,7 @@ squeue -u $USER --array > $sq
 t="`mktemp`"
 ok="`mktemp`"
 fail="`mktemp`"
+pending="`mktemp`"
 globus_status_cache="`mktemp`"
 
 for ens in $ensembles; do
@@ -20,8 +21,10 @@ for ens in $ensembles; do
 	echo -n > $fail
 	find $runpathens -name '*.sh.launched' | while read f; do
 		[ -f $f.verified ] && continue
-		grep -q "\<`cat $f`\>" $sq && continue
-		if bash ${f%.launched} check; then
+		if grep -q "\<`cat $f`\>" $sq ;then
+			echo >> $pending
+			continue
+		elif bash ${f%.launched} check; then
 			echo >> $ok
 			bash ${f%.launched} globus | while read fglobus orig dest delete ; do
                 		echo pending $orig $dest $delete > $fglobus
@@ -34,7 +37,7 @@ for ens in $ensembles; do
 			echo fail $f
 		fi
 	done
-	echo OK: `wc -l < $ok`  Failed: `wc -l < $fail`
+	echo OK: `wc -l < $ok`  Failed: `wc -l < $fail` Pending: `wc -l < $pending`
 
 	for globus_path in $globus_check_dirs; do find -L $globus_path -name '*.globus'; done | while read f; do
 		cat $f | while read globus_task orig dest delete; do
@@ -60,7 +63,7 @@ for ens in $ensembles; do
 		done
 	done
 done
-rm -f $sq $ok $fail $globus_status_cache
+rm -f $sq $ok $fail $globus_status_cache $pending
 
 # Transfer files back
 if [ -s $t ] ; then
