@@ -7,23 +7,24 @@ ensembles="ensemble"
 ensemble() {
 	# Tasks to run
 	run_eigs="nop"
-	run_props="nop"
-	run_gprops="nop"
-	run_baryons="nop"
+	run_props="yes"
+	run_gprops="yes"
+	run_baryons="yes"
 	run_mesons="nop"
-	run_discos="yes"
-	run_redstar="nop"
+	run_discos="nop"
+	run_redstar="yes"
 
-	run_onthefly="nop"
-	onthefly_chroma_minutes=10
-	max_moms_per_job=100
+	run_onthefly="yes"
+	onthefly_chroma_minutes=115
+	max_moms_per_job=10
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 5170 10 13990`"
+	confs="`seq 5170 10 9990`"
+	confs="`seq 5170 10 6000`"
 	#confs="`seq 10000 10 20100`"
 	#confs="`seq 10000 10 10290`"
 	#confs="`seq 10300 10 12990`"
@@ -53,7 +54,7 @@ ensemble() {
 	eigs_transfer_from_jlab="yes"
 
 	# Props options
-	prop_t_sources="0 16 32 48"
+	prop_t_sources="`seq 0 63`"
 	#prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=16
@@ -680,10 +681,10 @@ PYTHON=python3
 chromaform="$HOME/scratch/chromaform_rocm6.2"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-redstar/redstar-pdf-next-colorvec-pdf-next-hadron-hip-adat-pdf-next-superbblas-sp"
+redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-hip-adat-pdf-next-meta-superbblas-sp"
+redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-cpu-adat-pdf-next-meta-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -710,7 +711,7 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
-#export SB_CACHEGB_GPU=60
+export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
@@ -740,10 +741,9 @@ export NPT_BATCH_SIZE=1
 #
 
 BASH_INVOCATION_OPTIONS=
-max_jobs=50 # maximum jobs to be launched
-max_minutes=120 # maximum hours for a single job
-slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
-slurm_max_jobs=50 # maximum bundled jobs in a slurm job
+max_jobs=1 # maximum jobs to be launched
+max_hours=2 # maximum hours for a single job
+slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
 
 #
 # Path options

@@ -134,7 +134,7 @@ outs() {
 
 class() {
 	# class max_minutes nodes jobs_per_node max_concurrent_jobs
-	echo d_${phase}_${mom_leader}_${tsep_leader} $onthefly_chroma_minutes $onthefly_slurm_nodes 1 0
+	echo d $onthefly_chroma_minutes $onthefly_slurm_nodes 1 0
 }
 
 globus() {

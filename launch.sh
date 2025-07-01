@@ -95,7 +95,7 @@ EOF
 	num_jobs="`echo $jobs | wc -w`"
 	[ $num_jobs == 0 ] && continue
 	# Max sequential jobs in a SLURM job
-	max_jobs_in_seq="$(( max_minutes / minutes_per_job ))"
+	max_jobs_in_seq="$(( max_hours*60 / minutes_per_job ))"
 	# minimum number of jobs to run
 	max_concurrent_jobs="$(( max_concurrent_jobs == 0 ? slurm_max_bundled_jobs : ( max_concurrent_jobs < slurm_max_bundled_jobs ? max_concurrent_jobs : slurm_max_bundled_jobs ) ))"
 	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
@@ -108,7 +108,6 @@ EOF
 	bundle_size="$(( (max_jobs_in_bundle + max_jobs_in_seq-1)/max_jobs_in_seq ))"
 	# maximum number of jobs executed one after another in a SLURM job
 	max_jobs_in_seq="$(( (max_jobs_in_bundle + bundle_size-1) / bundle_size ))"
-	num_slurm_jobs="$(( num_slurm_jobs <= slurm_max_jobs ? num_slurm_jobs : slurm_max_jobs ))"
 	cat << EOF > $runpath/run_${jobtag}_script.sh
 `
 	bundle_id=0

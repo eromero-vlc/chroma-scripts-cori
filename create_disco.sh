@@ -123,8 +123,7 @@ run() {
 	cd $runpath
 	mkdir -p `dirname ${disco_file}`
 	rm -f $disco_file
-	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &> $output
-	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args
+	srun \$MY_ARGS -n $(( slurm_procs_per_node*disco_slurm_nodes )) -N $disco_slurm_nodes $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &> $output
 }
 
 check() {
