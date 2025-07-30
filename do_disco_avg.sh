@@ -6,6 +6,7 @@ source ensembles.sh
 redstar_env_file="`mktemp`"
 echo "$slurm_script_prologue_redstar" > $redstar_env_file
 . $redstar_env_file
+export OMP_NUM_THREADS=1
 
 merge_cfgs="`mktemp`"
 err="`mktemp`"

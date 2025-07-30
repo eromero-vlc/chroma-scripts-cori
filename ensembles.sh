@@ -19,17 +19,21 @@ ensemble0() {
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 1000 10 4500`"
-	#confs="`seq 1000 10 1100`"
-	#confs="`seq 2000 10 3000`"
-	#confs="`seq 1000 10 1990`"
-	confs="`seq 1000 10 2000`"
-	confs="${confs//1920/}"
-	#confs=1000
+	confs="`seq 5170 10 20070`"
+	#confs="`seq 5170 10 5990`"
+	#confs="`seq 6000 10 9990`"
+	confs="`seq 5170 10 9990`"
+	confs="`seq 5170 10 12000`"
+	confs="`seq 12010 10 15000`"
+	confs="`seq 15010 10 19000`"
+	confs="`seq 19010 10 20100`"
+	#confs="`seq 5170 10 7500`"
+	#confs="`seq 7510 10 9990`"
+	#confs="`seq 5170 10 6990`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -775,7 +779,7 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="/lus/work/CT5/cpt1504/zafeiro/chromaform1"
+chromaform="/lus/work/CT5/c1816207/zafeiro/chromaform"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
@@ -784,9 +788,8 @@ redstar="$chromaform/install/redstar-pdf-colorvec-pdf-hadron-hip-adat-pdf-superb
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat-pdf-superbblas-sp"
 adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install/adat-pdf-superbblas"
+adat="$chromaform/install-redstar/adat-pdf-superbblas"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -798,7 +801,7 @@ slurm_cores_per_node=56
 slurm_gpus_per_node=8
 srun_extra_args="--cpu-bind=none --gpus-per-task=1"
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH --account=cpt1504
+#SBATCH --account=c1816207
 #SBATCH --constraint=MI250
 #SBATCH --threads-per-core=1
 #SBATCH --exclusive
@@ -838,7 +841,7 @@ export MPICH_GPU_SUPPORT_ENABLED=0 # gpu-are MPI produces segfaults
 # Options for launch
 #
 
-max_jobs=300 # maximum jobs to be launched
+max_jobs=200 # maximum jobs to be launched
 max_hours=5 # maximum hours for a single job
 
 #
@@ -846,7 +849,7 @@ max_hours=5 # maximum hours for a single job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="/lus/work/CT5/cpt1504/zafeiro"
+confspath="/lus/work/CT5/c1816207/zafeiro"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
