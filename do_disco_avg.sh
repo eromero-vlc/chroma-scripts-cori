@@ -26,6 +26,7 @@ for ens in $ensembles; do
 					disco_file_name
 				done
 			)"
+			ls $disco_files
 			if ! ls $lime_file $disco_files &> /dev/null ; then
 				ls $lime_file $disco_files
 				echo Excluding $cfg

@@ -17,6 +17,7 @@ for ens in $ensembles; do
 		[ -f $lime_file ] || continue
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
+		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
 		num_color_parts="$(( (disco_max_colors + disco_max_colors_at_once-1) / disco_max_colors_at_once ))"
@@ -24,7 +25,6 @@ for ens in $ensembles; do
 		for t_source in $disco_t_sources; do
 		for color_part in `seq 0 $(( num_color_parts-1 ))`; do
 			disco_file="`disco_file_name`"
-			disco_trace_file="`disco_trace_file_name`"
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
@@ -67,14 +67,6 @@ $(
         <noise_vectors>${disco_noise_vectors}</noise_vectors>
 	<t_sources>${t_offset}</t_sources>
         <max_rhs>${disco_max_rhs}</max_rhs>
-        <num_vecs>256</num_vecs>
-	<LinkSmearing>
-          <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
-          <link_smear_fact>$eigs_smear_rho</link_smear_fact>
-          <link_smear_num>$eigs_smear_steps</link_smear_num>
-          <no_smear_dir>3</no_smear_dir>
-        </LinkSmearing>
-
         <Propagator>
           <version>10</version>
           <quarkSpinType>FULL</quarkSpinType>
@@ -107,8 +99,6 @@ $(
       <NamedObject>
         <gauge_id>default_gauge_field</gauge_id>
         <sdb_file>${disco_file}</sdb_file>
-        <!-- defl_sdb_file>${disco_trace_file}</defl_sdb_file>
-        <ip_sdb_file>${disco_trace_file}.txt</ip_sdb_file -->
       </NamedObject>
     </elem>
   </InlineMeasurements>
@@ -143,9 +133,7 @@ run() {
 	
 	cd $runpath
 	mkdir -p `dirname ${disco_file}`
-	rm -f $disco_file $disco_trace_file
-	lscpu > $output
-	rocm-smi >> $output
+	rm -f $disco_file
 	srun \$MY_ARGS -n $(( slurm_procs_per_node*disco_slurm_nodes )) -N $disco_slurm_nodes $srun_extra_args $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &>> $output
 }
 
