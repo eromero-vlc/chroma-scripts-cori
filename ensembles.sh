@@ -19,21 +19,13 @@ ensemble0() {
 	max_moms_per_job=100
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-5162"
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-1700"
 	ensemble="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confsname="cl21_32_64_b6p3_m0p2350_m0p2050-1700"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 5170 10 20070`"
-	#confs="`seq 5170 10 5990`"
-	#confs="`seq 6000 10 9990`"
-	confs="`seq 5170 10 9990`"
-	confs="`seq 5170 10 12000`"
-	confs="`seq 12010 10 15000`"
-	confs="`seq 15010 10 19000`"
-	confs="`seq 19010 10 20100`"
-	#confs="`seq 5170 10 7500`"
-	#confs="`seq 7510 10 9990`"
-	#confs="`seq 5170 10 6990`"
+	confs="`seq 2000 10 6590`"
+	#confs="`seq 2000 10 4000`"
+	#confs="`seq 2010 10 6590`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -65,7 +57,7 @@ ensemble0() {
 	prop_zphases="0.00 2.00 -2.00"
 	prop_zphases="0.00"
 	prop_mass="-0.2350" # light
-	prop_mass="-0.2050" # heavy
+	#prop_mass="-0.2050" # heavy
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
@@ -439,6 +431,7 @@ ensemble0() {
 	disco_max_colors_at_once=1663
 	disco_noise_vectors=1
 	disco_t_sources="0 16 32 48 8 24 40 56"
+	#disco_t_sources="4 20 36 52 12 28 44 60"
 	disco_slurm_nodes=1
 	disco_chroma_geometry="1 2 2 2"
 	disco_chroma_minutes=400
@@ -520,12 +513,13 @@ ensemble0() {
 	disco_file_name() {
 		if [ $color_part != avg ]; then
 			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.cp_${color_part}.sdb${cfg}"
+			#echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}_U${prop_mass}.cp_${color_part}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.avg.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}_U${prop_mass}.avg.sdb${cfg}"
 		fi
 	}
 	disco_trace_file_name() {
-		echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}.trace.sdb${cfg}"
+		echo "${confspath}/${confsprefix}/disco2/${confsname}.disco.t0_${t_source}_U${prop_mass}.trace.sdb${cfg}"
 	}
 	disco_transfer_back="nop"
 	disco_delete_after_transfer_back="nop"
@@ -533,61 +527,32 @@ ensemble0() {
 	disco_max_displacement=16
 	disco_groupx_moms="\
 0 0 0
-0 1 0
-0 1 1
-0 1 -1
-0 1 -2
-0 1 2
-1 0 0
-1 1 0
-1 1 1
-1 1 -1
-1 1 -2
-1 1 2
-2 0 1
-2 0 -1
-2 0 -2
-2 0 2
--2 -2 0
-1 0 -1
--2 0 -2
--2 0 0
--2 0 2
--2 0 1
--2 0 -1
--2 1 -2
--2 1 -1
--2 2 1
--1 0 1
--1 -2 1
--1 -2 0
--1 -2 -1
+-4 -1  0
+-4  1  0
+-3 -2  0
+-3 -1  0
+-3  0  0
+-3  1  0
+-3  1  1
 -2 -2 -1
--1 -2 2
--1 -1 -2
--1 0 0
--1 -1 0
-3 0 0
-0 2 2
--1 2 1
--1 0 -2
+-2 -2  0
+-2 -2  1
+-2 -1 -1
+-2 -1  0
+-2 -1  1
+-2 -1  2
+-2  0 -1
+-2  0  0
+-2  0  1
+-2  0  2
+-2  1 -1
+-2  1  0
+-2  1  1
+-2  1  2
 -1 -1 -1
--2 -1 0
--1 0 -1
--1 -1 1
--1 0 2
--1 -1 2
-0 2 0
--2 1 0
--1 1 -2
--1 1 -1
--1 1 2
--1 2 -1
-2 -2 0
-1 0 -2
-1 0 2
-1 0 1
-2 2 1"
+-1 -1  0
+-1 -1  1
+-1  0  1"
 	mom_rot() {
 		local r="$1"
 		shift
@@ -789,7 +754,7 @@ redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
 adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install-redstar/adat-pdf-superbblas"
+adat="$chromaform/install-redstar/adat-pdf-next-meta-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"

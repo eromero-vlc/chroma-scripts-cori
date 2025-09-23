@@ -150,7 +150,7 @@ run() {
 }
 
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && [ -f ${disco_file} ] && exit 0
 	exit 1
 }
 
