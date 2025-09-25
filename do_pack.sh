@@ -24,7 +24,6 @@ for ens in $ensembles; do
 
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
-	[ ${redstar_2pt} != yes -a ${redstar_3pt} != yes ] && continue
 
 	if [ ${redstar_3pt} == yes ] ; then
 		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
@@ -60,6 +59,17 @@ for ens in $ensembles; do
 		fi
 		runpath="$PWD/${tag}/conf_${cfg}"
 		[ -f ${runpath}.tar.gz ] && continue
+
+		# Check that all jobs finished
+		s="$(
+			find $runpath -name '*.sh' | while read f; do
+				if [ ! -f $f.launched.verified ] ; then
+					echo pending 
+					break
+				fi
+			done
+		)" 
+		[ x$s == xpending ] && continue
 
 		files="$( for t_source in $prop_t_sources ; do
 			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}

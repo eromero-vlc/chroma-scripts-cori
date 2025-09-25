@@ -35,7 +35,10 @@ for ens in $ensembles; do
 	# Check for running baryons
 	[ $run_baryons != yes ] && continue
 
-	for phase in $( get_all_phases ); do
+	get_grouping_vars
+
+	k_split $max_phases_per_job $phase_groups | while read phase_group ; do
+	phase_leader="`take_first $phase_group`"
 
 		#
 		# Baryon creation
@@ -45,7 +48,7 @@ for ens in $ensembles; do
 		[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
 		[ ${run_onthefly} != yes ] && max_moms_per_job=1
 		for t_source in $t_sources; do
-		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
+		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
 
 		for cfg in $confs; do
 			lime_file="`lime_file_name`"
@@ -74,7 +77,7 @@ for ens in $ensembles; do
 
 			phase_snk="$( get_sink ${phase//_/ } )"
 			phase_src="$( get_source ${phase//_/ } )"
-			prefix="$runpath/baryon_ph${phase}${prefix_extra}"
+			prefix="$runpath/baryon_${prefix_extra}"
 			baryon_xml="${prefix}.xml"
 			cat << EOF > $baryon_xml
 <?xml version="1.0"?>
@@ -96,7 +99,14 @@ for ens in $ensembles; do
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
-        <phases><elem>${phase_src}</elem><elem>${phase_snk}</elem></phases>
+        <phases>$(
+		for phase in $phase_group; do
+			echo "$( get_sink ${phase//_/ } )"
+			echo "$( get_source ${phase//_/ } )"
+		done | sort -u | while read phase ; do
+			echo "<elem>${phase}</elem>"
+		done
+	)</phases>
         <use_superb_format>true</use_superb_format>
         <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         <mom_list>

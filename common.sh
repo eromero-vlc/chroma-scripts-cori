@@ -12,6 +12,22 @@ take_first() {
 	echo ${1}
 }
 
+# Return useful variables for grouping
+get_grouping_vars() {
+	# Set phase groups
+	phase_groups="$( get_all_phases )"
+
+	# Set tsep groups
+	if [ ${redstar_3pt} == yes ] ; then
+		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
+		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
+		
+	else
+		tsep_groups=0
+		max_tseps_per_job=1
+	fi
+}
+
 neg_mom() {
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
 }
@@ -94,7 +110,7 @@ get_all_corr() {
 		echo $( mom_auto_phase $momij ) $momij 3pt
 	done | sort -u
 	[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms" | while read momij; do
-		echo $( mom_auto_phase $momij ) $( mom_auto_phase $momij ) $momij $momij 2pt
+		echo $( mom_auto_phase $momij ) $momij 2pt
 	done | sort -u
 }
 
@@ -120,9 +136,11 @@ get_all_phases() {
 get_fly_moms() {
 	local l
 	get_all_corr | while read l ; do
-		if [ $(num_args $l ) -gt 0 -a $( mom_word $( get_phase_from_corr_line $l ) ) == $1 ] ; then
-			 echo $( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )
-		fi
+		for phase in $@ ; do
+			if [ $(num_args $l ) -gt 0 -a $( mom_word $( get_phase_from_corr_line $l ) ) == $phase ] ; then
+				 echo $( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )
+			fi
+		done
 	done | sort -u
 }
 
@@ -131,12 +149,10 @@ mom_word_esp() {
 }
 
 get_corr_lines() {
-	local phase="$1"
-	shift
 	local l
 	local m
 	get_all_corr | while read l ; do
-		[ $(num_args $l ) == 0 -o $( mom_word $( get_phase_from_corr_line $l ) ) != $phase ] && continue
+		[ $(num_args $l ) == 0 ] && continue
 		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
 		for m in $@ ; do
 			if [ $this_mom == $m ] ; then

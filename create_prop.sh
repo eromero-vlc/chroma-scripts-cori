@@ -9,6 +9,8 @@ for ens in $ensembles; do
 	# Check for running props
 	[ $run_props != yes ] && continue
 
+	get_grouping_vars
+
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
@@ -19,7 +21,8 @@ for ens in $ensembles; do
 		mkdir -p $runpath
 
 		for t_source in $prop_t_sources; do
-		for phase in $( get_all_phases ); do
+		k_split $max_phases_per_job $phase_groups | while read phase_group ; do
+		phase_leader="`take_first $phase_group`"
 
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
@@ -32,8 +35,6 @@ for ens in $ensembles; do
 			# Propagators creation
 			#
 
-			phase_snk="$( get_sink ${phase//_/ } )"
-			phase_src="$( get_source ${phase//_/ } )"
 			prefix="${runpath}/prop_t${t_source}_phase${phase}"
 			prop_xml="${prefix}.xml"
 			cat << EOF > $prop_xml
@@ -56,7 +57,13 @@ for ens in $ensembles; do
           <decay_dir>3</decay_dir>
           <num_tries>-1</num_tries>
           <max_rhs>${prop_max_rhs}</max_rhs>
-          <phases><elem><source>${phase_src}</source><sink>$( neg_mom ${phase_snk} )</sink></elem></phases>
+          <phases>$(
+		for phase in $phase_group; do
+			phase_snk="$( get_sink ${phase//_/ } )"
+			phase_src="$( get_source ${phase//_/ } )"
+			echo "<elem><source>${phase_src}</source><sink>$( neg_mom ${phase_snk} )</sink></elem>"
+		done
+          )</phases>
           <use_superb_format>true</use_superb_format>
           <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         </Contractions>
@@ -166,7 +173,7 @@ globus() {
 eval "\${1:-run}"
 EOF
 
-		done # phase
+		done # phase_group
 		done # t_source
 	done # cfg
 done # ens

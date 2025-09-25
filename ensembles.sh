@@ -62,6 +62,7 @@ ensemble() {
 	prop_chroma_geometry="1 1 2 4"
 	prop_chroma_minutes=20
 	prop_max_rhs=12
+	max_phases_per_job=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -241,7 +242,7 @@ ensemble() {
 	# propagator filename
 	prop_file_name() {
 		local n node
-		n="${confspath}/${confsprefix}/prop_db/phased_${phase}/${cfg}/${confsname}.phased_${phase}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/prop_db/phased_${phase_group}/${cfg}/${confsname}.phased_${phase_group}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_props == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -276,7 +277,7 @@ ensemble() {
 	gprop_file_name() {
 		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
-		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase}/t0_${t_source}/unsmeared_meson.phased_${phase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase_group}/t0_${t_source}/unsmeared_meson.phased_${phase_group}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_gprops == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -366,7 +367,7 @@ ensemble() {
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
-		n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.baryon.colorvec.t_0_$((t_size-1)).phased_${phase}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.baryon.colorvec.t_0_$((t_size-1)).phased_${phase_group}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_baryons == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -607,11 +608,10 @@ $(
 	redstar_auto_phasing_3=0
 	redstar_auto_phasing_sign="yes"
 	redstar_2pt="yes"
-	redstar_2pt_max_mom=3
+	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
 0 0 0
 $(
-<<<<<<< HEAD
 	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo $i 0 0
 		echo -$i 0 0
@@ -621,24 +621,10 @@ $(
 		echo 0 -$i 0
 	done
 	for i in `seq 1 $redstar_2pt_max_mom`; do
-=======
-	for i in 4 5 6; do
-		echo $i 0 0
-		echo -$i 0 0
-	done
-	for i in 4 5 6; do
-		echo 0 $i 0
-		echo 0 -$i 0
-	done
-	for i in 4 5 6; do
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 		echo 0 0 $i
 		echo 0 0 -$i
 	done
 )"
-	redstar_auto_phasing_4plus=2
-	redstar_auto_phasing_3=0
-	redstar_auto_phasing_sign="yes"
 	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
@@ -733,11 +719,11 @@ $(
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
 			local ins_path="/ins_${insertion_op}_tsep_${tsep}"
-			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_group}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 		elif [ x$cfg == xavg ] ; then
-			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_group}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 		else
-			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_avg/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_avg/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_group}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 		fi
 	}
 	corr_tmp_file_name() {
@@ -765,29 +751,16 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-<<<<<<< HEAD
 chromaform="/lus/work/CT5/c1816207/zafeiro/chromaform"
 chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
-=======
-chromaform="$HOME/scratch/chromaform_rocm6.2"
-chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 
 redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-hip-adat-pdf-next-meta-superbblas-sp"
-redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-cpu-adat-pdf-next-meta-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-<<<<<<< HEAD
-adat="$chromaform/install-dev/adat-pdf-superbblas-sp"
-adat="$chromaform/install-redstar/adat-pdf-next-meta-superbblas-sp"
-=======
 adat="$chromaform/install-redstar-nompi/adat-pdf-next-meta-superbblas-sp"
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -799,18 +772,11 @@ slurm_cores_per_node=56
 slurm_gpus_per_node=8
 srun_extra_args="--cpu-bind=none --gpus-per-task=1"
 slurm_sbatch_prologue="#!/bin/bash
-<<<<<<< HEAD
 #SBATCH --account=c1816207
 #SBATCH --constraint=MI250
 #SBATCH --threads-per-core=1
 #SBATCH --exclusive
 #SBATCH --gpu-bind=none"
-=======
-#SBATCH -A NPH122
-#SBATCH -p batch
-#SBATCH --gpu-bind=none
-#SBATCH -C nvme"
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -822,20 +788,12 @@ export SB_MPI_GPU=1
 export SB_CACHEGB_GPU=60
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
-<<<<<<< HEAD
-export SB_NUM_GPUS_ON_NODE=8
-#export MPICH_GPU_IPC_CACHE_MAX_SIZE=1
-=======
 #export SB_NUM_GPUS_ON_NODE=1
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
 export QUDA_ENABLE_NVSHMEM=0
 export QUDA_ENABLE_MPS=0
-<<<<<<< HEAD
 ulimit -c 0
-=======
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 "
 
 #
@@ -857,26 +815,17 @@ export NPT_BATCH_SIZE=1
 # Options for launch
 #
 
-<<<<<<< HEAD
-max_jobs=200 # maximum jobs to be launched
-max_hours=5 # maximum hours for a single job
-=======
 BASH_INVOCATION_OPTIONS=
 max_jobs=1 # maximum jobs to be launched
 max_hours=2 # maximum hours for a single job
 slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-<<<<<<< HEAD
 confspath="/lus/work/CT5/c1816207/zafeiro"
-=======
-confspath="/lustre/orion/nph122/scratch/eromero"
->>>>>>> origin/frontier-cl21_32_64_b6p3_m0p2350_m0p2050-5162-2pt-for-disco-new
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"

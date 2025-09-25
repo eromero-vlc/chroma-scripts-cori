@@ -9,19 +9,12 @@ for ens in $ensembles; do
 	# Check for running on the fly
 	[ $run_onthefly != yes -o $run_redstar != yes ] && continue
 
+	get_grouping_vars
+
 	# Get the number of nodes to run
 	onthefly_slurm_nodes=1
 	[ $run_props == yes -a $onthefly_slurm_nodes -lt $prop_slurm_nodes ] && onthefly_slurm_nodes="$prop_slurm_nodes"
 	[ $run_gprops == yes -a $onthefly_slurm_nodes -lt $gprop_slurm_nodes ] && onthefly_slurm_nodes="$gprop_slurm_nodes"
-
-	if [ ${redstar_3pt} == yes ] ; then
-		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
-		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
-		
-	else
-		tsep_groups=0
-		max_tseps_per_job=1
-	fi
 
 	for cfg in $confs; do
 		lime_file="`lime_file_name`"
@@ -31,24 +24,25 @@ for ens in $ensembles; do
 		[ -f ${runpath}.tar.gz ] && continue
 		mkdir -p $runpath
 
-		for phase in $( get_all_phases ) ; do
-		k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
+		k_split $max_phases_per_job $phase_groups | while read phase_group ; do
+		phase_leader="`take_first $phase_group`"
+		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
 		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		for t_source in $gprop_t_sources; do
 
 			mom_leader="`take_first $mom_group`"
 			tsep_leader="`take_first $tsep_group`"
-			baryon_script="$runpath/baryon_ph${phase}_t0_${t_source}_mf${mom_leader}.sh.future"
-			gprop_script="${runpath}/gprop_t${t_source}_phase${phase}_mf${mom_leader}_tsep${tsep_leader}.sh.future"
-			prop_script="${runpath}/prop_t${t_source}_phase${phase}.sh.future"
+			baryon_script="$runpath/baryon_t0_${t_source}_mf${mom_leader}.sh.future"
+			gprop_script="${runpath}/gprop_t${t_source}_mf${mom_leader}_tsep${tsep_leader}.sh.future"
+			prop_script="${runpath}/prop_t${t_source}_phase${phase_leader}.sh.future"
 
-			redstar_tasks="$( ls $runpath/redstar_t${t_source}_ph${phase}_insop*_mf${mom_leader}_tsep${tsep_leader}.sh.future )"
+			redstar_tasks="$( ls $runpath/redstar_t${t_source}_insop*_mf${mom_leader}_tsep${tsep_leader}.sh.future )"
 			num_redstar_tasks="$( num_args $redstar_tasks )"
 			[ $num_redstar_tasks == 0 ] && continue
 			redstar_procs="$(( num_redstar_tasks < slurm_procs_per_node*onthefly_slurm_nodes ? num_redstar_tasks : slurm_procs_per_node*onthefly_slurm_nodes ))"
 			redstar_nodes="$(( num_redstar_tasks < onthefly_slurm_nodes ? num_redstar_tasks : onthefly_slurm_nodes ))"
 
-			prefix="onthfly_t${t_source}_ph${phase}_mf${mom_leader}_tsep${tsep_leader}"
+			prefix="onthfly_t${t_source}_mf${mom_leader}_tsep${tsep_leader}"
 			output="$runpath/${prefix}.out"
 			cat << EOF > $runpath/${prefix}.sh
 $slurm_sbatch_prologue
@@ -60,23 +54,15 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	#rm -rf $localpath/*
-	[ \$SLURM_PROCID == 0 ] && echo starting > $output
 	if [ $run_gprops == yes -a -f $gprop_script ] ; then
 		bash $gprop_script run
 	fi
-	[ \$SLURM_PROCID == 0 ] && echo after gprop >> $output
-	[ \$SLURM_PROCID == 0 ] && find ${localpath} &>> $output
 	if [ $run_baryons == yes ] ; then
 		bash $baryon_script run
 	fi
-	[ \$SLURM_PROCID == 0 ] && echo after baryon >> $output
-	[ \$SLURM_PROCID == 0 ] && find ${localpath} &>> $output
 	if [ $run_props == yes ] ; then
 		bash $prop_script run
 	fi
-	[ \$SLURM_PROCID == 0 ] && echo after prop >> $output
-	[ \$SLURM_PROCID == 0 ] && find ${localpath} &>> $output
 
 	$slurm_script_prologue_redstar
 	export ROCR_VISIBLE_DEVICES=\$SLURM_PROCID
@@ -152,6 +138,6 @@ EOF
 		done # t_source
 		done # tsep_group
 		done # mom_group
-		done # phase
+		done # phase_group
 	done # cfg
 done # ens
