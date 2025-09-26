@@ -6,13 +6,13 @@ ensembles="ensemble"
 
 ensemble() {
 	# Tasks to run
-	run_eigs="nop"
-	run_props="yes"
-	run_gprops="yes"
-	run_baryons="yes"
+	run_eigs="yes"
+	run_props="nop"
+	run_gprops="nop"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
-	run_redstar="yes"
+	run_redstar="nop"
 
 	run_onthefly="yes"
 	onthefly_chroma_minutes=115
@@ -24,6 +24,7 @@ ensemble() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050-1700"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 2000 10 6590`"
+	confs=2000
 	#confs="`seq 2000 10 4000`"
 	#confs="`seq 2010 10 6590`"
 	s_size=32 # lattice spatial size
@@ -35,14 +36,14 @@ ensemble() {
 
 	# Colorvecs options
 	max_nvec=128  # colorvecs to compute
-	nvec=64  # colorvecs to use
+	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
-	eigs_slurm_nodes=2
-	eigs_chroma_geometry="1 2 2 4"
-	eigs_chroma_minutes=600
+	eigs_slurm_nodes=1
+	eigs_chroma_geometry="1 1 1 4"
+	eigs_chroma_minutes=60
 	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="yes"
@@ -59,7 +60,7 @@ ensemble() {
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
-	prop_chroma_geometry="1 1 2 4"
+	prop_chroma_geometry="1 1 1 4"
 	prop_chroma_minutes=20
 	prop_max_rhs=12
 	max_phases_per_job=1
@@ -363,7 +364,7 @@ ensemble() {
 	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
 	baryon_chroma_max_vecs=32 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=1
-	baryon_chroma_geometry="1 1 1 8"
+	baryon_chroma_geometry="1 1 1 4"
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
@@ -751,31 +752,27 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="/lus/work/CT5/c1816207/zafeiro/chromaform"
-chroma="$chromaform/install/chroma-sp-qdpxx-double-nd4-superbblas-hip-next/bin/chroma"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-hip-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512  -libdevice-path /opt/rocm-6.0.0/llvm/lib"
+chromaform="/pscratch/sd/e/eromero/chromaform-gpu-new"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
-redstar="$chromaform/install-redstar-nompi/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-hip-adat-pdf-next-meta-superbblas-sp"
+redstar="$chromaform/install/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-cuda-adat-pdf-next-meta-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install-redstar-nompi/adat-pdf-next-meta-superbblas-sp"
+adat="$chromaform/install/adat-pdf-next-meta-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
 
-slurm_procs_per_node=8
-slurm_cores_per_node=56
-slurm_gpus_per_node=8
-srun_extra_args="--cpu-bind=none --gpus-per-task=1"
+slurm_procs_per_node=4
+slurm_cores_per_node=64
+slurm_gpus_per_node=4
+srun_extra_args="--gpus-per-task=1"
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH --account=c1816207
-#SBATCH --constraint=MI250
-#SBATCH --threads-per-core=1
-#SBATCH --exclusive
+#SBATCH --account=hadron -q regular -C gpu
 #SBATCH --gpu-bind=none"
 
 slurm_script_prologue="
@@ -785,8 +782,8 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
-export SB_CACHEGB_GPU=60
-export MPICH_GPU_SUPPORT_ENABLED=1
+#export SB_CACHEGB_GPU=60
+#export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
 export QUDA_ENABLE_P2P=0
@@ -825,7 +822,7 @@ slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="/lus/work/CT5/c1816207/zafeiro"
+confspath="/global/cfs/cdirs/hadron/b6p3"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
