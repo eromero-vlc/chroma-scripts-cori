@@ -6,17 +6,17 @@ ensembles="ensemble"
 
 ensemble() {
 	# Tasks to run
-	run_eigs="yes"
-	run_props="nop"
+	run_eigs="nop"
+	run_props="yes"
 	run_gprops="nop"
-	run_baryons="nop"
+	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
-	run_redstar="nop"
+	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=115
-	max_moms_per_job=10
+	onthefly_chroma_minutes=60
+	max_moms_per_job=1000
 
 	# Ensemble properties
 	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050-1700"
@@ -24,7 +24,7 @@ ensemble() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050-1700"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 2000 10 6590`"
-	confs=2000
+	confs=4000
 	#confs="`seq 2000 10 4000`"
 	#confs="`seq 2010 10 6590`"
 	s_size=32 # lattice spatial size
@@ -42,7 +42,7 @@ ensemble() {
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
 	eigs_slurm_nodes=1
-	eigs_chroma_geometry="1 1 1 4"
+	eigs_chroma_geometry="1 1 1 1"
 	eigs_chroma_minutes=60
 	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
@@ -50,7 +50,7 @@ ensemble() {
 
 	# Props options
 	prop_t_sources="`seq 0 63`"
-	#prop_t_sources="0"
+	prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=16
 	prop_t_back=0
@@ -60,10 +60,10 @@ ensemble() {
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
 	prop_slurm_nodes=1
-	prop_chroma_geometry="1 1 1 4"
+	prop_chroma_geometry="1 1 1 1"
 	prop_chroma_minutes=20
 	prop_max_rhs=12
-	max_phases_per_job=1
+	max_phases_per_job=10000
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -243,7 +243,7 @@ ensemble() {
 	# propagator filename
 	prop_file_name() {
 		local n node
-		n="${confspath}/${confsprefix}/prop_db/phased_${phase_group}/${cfg}/${confsname}.phased_${phase_group}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/prop_db/${confsname}.phased_${phase_leader}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_props == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -274,11 +274,11 @@ ensemble() {
 	gprop_slurm_nodes="${prop_slurm_nodes}"
 	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
-	localpath="/mnt/bb/$USER"
+	localpath="/tmp"
 	gprop_file_name() {
 		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
-		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase_group}/t0_${t_source}/unsmeared_meson.phased_${phase_group}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase_leader}/t0_${t_source}/unsmeared_meson.phased_${phase_leader}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}_mf${mom_leader}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_gprops == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -364,11 +364,11 @@ ensemble() {
 	baryon_chroma_max_moms_in_contraction=4 # as large as possible (zero means do all momenta at once)
 	baryon_chroma_max_vecs=32 # as large as possible (zero means do all eigenvectors are contracted at once)
 	baryon_slurm_nodes=1
-	baryon_chroma_geometry="1 1 1 4"
+	baryon_chroma_geometry="1 1 1 1"
 	baryon_chroma_minutes=120
 	baryon_file_name() {
 		local n node
-		n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.baryon.colorvec.t_0_$((t_size-1)).phased_${phase_group}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/baryon_db/${confsname}.n${baryon_nvec}.baryon.colorvec.t_0_$((t_size-1)).phased_${phase_leader}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_baryons == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -545,7 +545,7 @@ ensemble() {
 		local m=( "$@" )
 		echo ${m[$(( (3-r+3+0)%3 ))]} ${m[$(( (3-r+3+1)%3 ))]} ${m[$(( (3-r+3+2)%3 ))]}
 	}
-	mom_flip() {
+	mom_flip_dir() {
 		if [ $1 == 1 ] ; then
 			echo $2 $3 $4
 		else
@@ -565,7 +565,7 @@ $(
 )"
 		declare -g disco_group${groupid}_moms="$(
 	echo "$disco_groupx_moms" | while read mom ; do
-		mom_flip $dir $( mom_rot $ldir $mom )
+		mom_flip_dir $dir $( mom_rot $ldir $mom )
 	done
 )"
 		groupid="$(( groupid+1 ))"
@@ -611,19 +611,19 @@ $(
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
-0 0 0
+0 0 0  0 0 0
 $(
 	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo $i 0 0
-		echo -$i 0 0
+		echo $i 0 0  $i 0 0
+		echo -$i 0 0 -$i 0 0
 	done
 	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 $i 0
-		echo 0 -$i 0
+		echo 0 $i 0  0 $i 0
+		echo 0 -$i 0 0 -$i 0
 	done
 	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 0 $i
-		echo 0 0 -$i
+		echo 0 0 $i   0 0 $i
+		echo 0 0 -$i  0 0 -$i
 	done
 )"
 	redstar_3pt="nop"
@@ -720,9 +720,9 @@ $(
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
 			local ins_path="/ins_${insertion_op}_tsep_${tsep}"
-			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_group}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_${t_source}${ins_path}/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_leader}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 		elif [ x$cfg == xavg ] ; then
-			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_group}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
+			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/avg/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_leader}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 		else
 			echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/t0_avg/$( rename_moms $mom )/${confsname}.nuc_local.n${redstar_nvec}.phase_${phase_group}_tsrc_${t_source}_ins${insertion_op}${redstar_tag}.mom_${mom// /_}_${prefix_path}${tsep_extra}.sdb${cfg}"
 		fi
@@ -752,8 +752,9 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="/pscratch/sd/e/eromero/chromaform-gpu-new"
+chromaform="/work/06873/eloy/vista/chromaform"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -libdevice-path=/home1/apps/nvidia/Linux_aarch64/24.7/cuda/nvvm/libdevice -libdevice-name=libdevice.10.bc"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-cuda-adat-pdf-next-meta-superbblas-sp"
@@ -767,12 +768,11 @@ dbavg_disco="$adat/bin/dbavg_disco"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
 
-slurm_procs_per_node=4
-slurm_cores_per_node=64
-slurm_gpus_per_node=4
-srun_extra_args="--gpus-per-task=1"
+slurm_procs_per_node=1
+slurm_cores_per_node=72
+slurm_gpus_per_node=1
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH --account=hadron -q regular -C gpu
+#SBATCH --account=PHY20014 -p gh-dev
 #SBATCH --gpu-bind=none"
 
 slurm_script_prologue="
@@ -822,7 +822,7 @@ slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="/global/cfs/cdirs/hadron/b6p3"
+confspath="/work/06873/eloy/vista"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"

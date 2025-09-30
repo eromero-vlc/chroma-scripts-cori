@@ -118,7 +118,7 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "srun -N $num_nodes_per_job --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node )) --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
+				echo "ibrun -n $(( ( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node ) * num_nodes_per_job )) -o $(( j_seq*num_nodes_per_job ))  bash $BASH_INVOCATION_OPTIONS $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
@@ -135,7 +135,7 @@ EOF
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
-#SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
+#SBATCH --nodes=$(( num_nodes_per_job * bundle_size )) -n $(( num_nodes_per_job * bundle_size ))
 #SBATCH -J batch-${tag}
 #SBATCH --array=0-$((num_slurm_jobs-1))
 `

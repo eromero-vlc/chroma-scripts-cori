@@ -97,7 +97,7 @@ momtype() {
 mom_fly() {
 	if [ $# == 3 ]; then
 		echo $1 $2 $3
-	else
+	elif [ $# == 6 ]; then
 		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
 	fi
 }

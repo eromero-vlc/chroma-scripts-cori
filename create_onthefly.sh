@@ -66,6 +66,7 @@ run() {
 
 	$slurm_script_prologue_redstar
 	export ROCR_VISIBLE_DEVICES=\$SLURM_PROCID
+	export CUDA_VISIBLE_DEVICES=\$SLURM_PROCID
 `
 	i=0
 	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do

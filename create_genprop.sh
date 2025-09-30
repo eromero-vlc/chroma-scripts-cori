@@ -9,19 +9,21 @@ for ens in $ensembles; do
 	# Check for running genprops
 	[ $run_gprops != yes ] && continue
 
+	get_grouping_vars
+
 	tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
 	[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
 
 	for t_source in $gprop_t_sources; do
-	for phase in $( get_all_phases ); do
+	k_split $max_phases_per_job $phase_groups | while read phase_group ; do
+	phase_leader="`take_first $phase_group`"
 
 	[ ${run_onthefly} != yes ] && max_moms_per_job=1
-	k_split $max_moms_per_job $( get_fly_moms $phase ) | while read mom_group ; do
+	k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
 		gprop_moms="`
 			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-				[ $( mom_word $( mom_auto_phase $momij ) ) != $phase ] && continue
 				this_mf="$( mom_word $( mom_fly $momij ) )"
 				for m in $mom_group ; do
 					[ $m == $this_mf ] && echo ${this_mf//_/ } && break
@@ -221,5 +223,5 @@ EOF
 	done # tsep_group
 	done # mom_group
 	done # t_source
-	done # phase
+	done # phase_group
 done # ens

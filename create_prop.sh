@@ -35,7 +35,7 @@ for ens in $ensembles; do
 			# Propagators creation
 			#
 
-			prefix="${runpath}/prop_t${t_source}_phase${phase}"
+			prefix="${runpath}/prop_t${t_source}_phase${phase_leader}"
 			prop_xml="${prefix}.xml"
 			cat << EOF > $prop_xml
 <?xml version="1.0"?>
@@ -126,10 +126,10 @@ EOF
 			[ $run_onthefly == yes ] && script="${script}.future"
 			cat << EOF > ${script}
 $slurm_sbatch_prologue
-#SBATCH -o $runpath/prop_t${t_source}_${phase}.out0
+#SBATCH -o $runpath/prop_t${t_source}_${phase_leader}.out0
 #SBATCH -t $prop_chroma_minutes
 #SBATCH --nodes=$prop_slurm_nodes -n $(( slurm_procs_per_node*prop_slurm_nodes ))  -c $(( slurm_cores_per_node/slurm_procs_per_node ))
-#SBATCH -J prop-${cfg}-${t_source}-${phase}
+#SBATCH -J prop-${cfg}-${t_source}-${phase_leader}
 
 run() {
 	$slurm_script_prologue
@@ -138,6 +138,13 @@ run() {
 	rm -f $prop_file
 	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
 	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args
+	$(
+		if [ $run_onthefly == yes ] ; then
+			prop_file_save="`run_onthefly=nop prop_file_name single`"
+			echo "[ \$SLURM_PROCID == 0 ] && mkdir -p \`dirname ${prop_file_save}\`"
+			echo "[ \$SLURM_PROCID == 0 ] && cp $prop_file $prop_file_save"
+		fi
+	)
 }
 
 check() {
