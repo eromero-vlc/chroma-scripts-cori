@@ -17,6 +17,9 @@ get_grouping_vars() {
 	# Set phase groups
 	phase_groups="$( get_all_phases )"
 
+	# Set mom groups
+	[ ${run_onthefly} != yes ] && max_moms_per_job=1
+
 	# Set tsep groups
 	if [ ${redstar_3pt} == yes ] ; then
 		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
@@ -73,9 +76,9 @@ make_canonical() {
 
 mom_auto_phase() {
 	if [ ${redstar_auto_phasing_sign} != yes ] ; then
-	for i in ${@//-/}; do
-		echo -n $(( i >= 4 ? redstar_auto_phasing_4plus : ( i == 3 ? redstar_auto_phasing_3 : 0) )) ""
-	done
+		for i in ${@//-/}; do
+			echo -n $(( i >= 4 ? redstar_auto_phasing_4plus : ( i == 3 ? redstar_auto_phasing_3 : 0) )) ""
+		done
 	else
 		for i in ${@}; do
 			echo -n $(( i <= -4 ? -redstar_auto_phasing_4plus :
@@ -84,7 +87,6 @@ mom_auto_phase() {
 					( i == 3 ? redstar_auto_phasing_3 : redstar_auto_phasing_4plus))) )) ""
 		done
 	fi
-	echo
 }
 
 momtype() {
@@ -97,7 +99,7 @@ momtype() {
 mom_fly() {
 	if [ $# == 3 ]; then
 		echo $1 $2 $3
-	else
+	elif [ $# == 6 ]; then
 		echo $(( $1-$4 )) $(( $2-$5 )) $(( $3-$6 ))
 	fi
 }

@@ -10,12 +10,10 @@ mom_flip() {
 }
 
 get_moms() {
-	local phase="$1"
-	shift
 	local l
 	local m
 	get_all_corr | while read l ; do
-		[ $(num_args $l ) == 0 -o $( mom_word $( get_phase_from_corr_line $l ) ) != $phase ] && continue
+		[ $(num_args $l ) == 0 ] && continue
 		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
 		for m in $@ ; do
 			if [ $this_mom == $m ] ; then
@@ -46,8 +44,6 @@ for ens in $ensembles; do
 
 		t_sources="all"
 		[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
-		[ ${run_onthefly} != yes ] && max_moms_per_job=1
-		for t_source in $t_sources; do
 		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
 
 		for cfg in $confs; do
@@ -59,7 +55,7 @@ for ens in $ensembles; do
 			[ -f ${runpath}.tar.gz ] && continue
 			mkdir -p $runpath
 
-
+			for t_source in $t_sources; do
 			if [ ${run_onthefly} == yes ] ; then
 				# Find t_origin
 				baryon_t_source="`shuffle_t_source $cfg $t_size $t_source`"
@@ -75,8 +71,6 @@ for ens in $ensembles; do
 			baryon_file="`baryon_file_name single`"
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${baryon_file}`
 
-			phase_snk="$( get_sink ${phase//_/ } )"
-			phase_src="$( get_source ${phase//_/ } )"
 			prefix="$runpath/baryon_${prefix_extra}"
 			baryon_xml="${prefix}.xml"
 			cat << EOF > $baryon_xml
@@ -99,23 +93,15 @@ for ens in $ensembles; do
         <num_vecs>$baryon_nvec</num_vecs>
         <displacement_length>1</displacement_length>
         <decay_dir>3</decay_dir>
-        <phases>$(
-		for phase in $phase_group; do
-			echo "$( get_sink ${phase//_/ } )"
-			echo "$( get_source ${phase//_/ } )"
-		done | sort -u | while read phase ; do
-			echo "<elem>${phase}</elem>"
-		done
-	)</phases>
         <use_superb_format>true</use_superb_format>
         <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
-        <mom_list>
+        <combos>
 $(
-	get_moms $phase $mom_group | sort -u | while read mom ; do
-		echo "<elem>$mom</elem>"
+	get_moms $mom_group | sort -u | while read mom ; do
+		echo "<elem><phase>$( mom_auto_phase $mom )</phase><mom_list><elem>$mom</elem></mom_list></elem>"
 	done
-)	
-        </mom_list>
+)
+        </combos>
         $baryon_extra_xml
 
         <LinkSmearing>
@@ -204,8 +190,8 @@ globus() {
 eval "\${1:-run}"
 
 EOF
+		done # t_source
 		done # cfg
 		done # mom_group
-		done # t_source
-	done # phase
+	done # phase_group
 done # ens

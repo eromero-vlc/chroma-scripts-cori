@@ -81,7 +81,8 @@ run() {
 	
 	cd $runpath
 	rm -f $colorvec_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*eigs_slurm_nodes )) -N $eigs_slurm_nodes $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID == 0 ] && $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args &> $output
+	[ \$SLURM_PROCID != 0 ] && $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args
 }
 
 check() {
