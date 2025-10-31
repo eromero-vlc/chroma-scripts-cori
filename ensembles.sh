@@ -15,7 +15,7 @@ ensemble() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=115
+	onthefly_chroma_minutes=45
 	max_moms_per_job=10
 
 	# Ensemble properties
@@ -24,9 +24,10 @@ ensemble() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050-1700"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 2000 10 6590`"
-	confs=2000
-	#confs="`seq 2000 10 4000`"
-	#confs="`seq 2010 10 6590`"
+	#confs=2000
+	#confs="`seq 2000 10 2300`"
+	#confs="`seq 2300 10 2990`"
+	#confs="`seq 3000 10 6590`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -43,14 +44,14 @@ ensemble() {
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
 	eigs_slurm_nodes=1
 	eigs_chroma_geometry="1 1 1 4"
-	eigs_chroma_minutes=30
+	eigs_chroma_minutes=10
 	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="yes"
 
 	# Props options
 	prop_t_sources="`seq 0 63`"
-	prop_t_sources="0"
+	#prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=16
 	prop_t_back=0
@@ -62,7 +63,7 @@ ensemble() {
 	prop_slurm_nodes=1
 	prop_chroma_geometry="1 1 1 4"
 	prop_chroma_minutes=20
-	prop_max_rhs=12
+	prop_max_rhs=8
 	prop_save_file="yes"
 	max_phases_per_job=10000
 	prop_inv="
@@ -245,7 +246,7 @@ ensemble() {
 	prop_file_name() {
 		local n node
 		n="${confspath}/${confsprefix}/prop_db/${confsname}.phased_${phase_leader}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
-		if [ $run_onthefly == yes -a $run_props == yes ] ; then
+		if [ $run_onthefly == yes -a $run_props == yes -a $prop_save_file != yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
 				echo $n
@@ -254,11 +255,14 @@ ensemble() {
 					echo "${n}.part_$node"
 				done
 			fi
+		elif [ x$1 == xglobus ] ; then
+			n="${confspath}/${confsprefix}/prop_db/nev_${nvec}/${cfg}/${confsname}.phased_${phase_leader}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+			echo $n
 		else
 			echo $n
 		fi
 	}
-	prop_transfer_back="nop"
+	prop_transfer_back="yes"
 	prop_delete_after_transfer_back="nop"
 	prop_transfer_from_jlab="nop"
 
@@ -744,7 +748,7 @@ $(
 	redstar_delete_after_transfer_back="nop"
 	redstar_transfer_from_jlab="nop"
 
-	globus_check_dirs="${confspath}/${confsprefix}/corr-none"
+	globus_check_dirs="${confspath}/${confsprefix}"
 }
 
 chroma_python="$PWD/chroma_python"
@@ -755,8 +759,8 @@ PYTHON=python3
 #
 
 chromaform="/pscratch/sd/e/eromero/chromaform-gpu-new"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
 chroma="$chromaform/install/chroma-sp-quda-qdpxx-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512"
 
 redstar="$chromaform/install/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron-meta-cuda-adat-pdf-next-meta-superbblas-sp"
@@ -771,7 +775,7 @@ dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
 
 slurm_procs_per_node=4
-slurm_cores_per_node=64
+slurm_cores_per_node=128
 slurm_gpus_per_node=4
 #srun_extra_args="--gpus-per-task=1"
 slurm_sbatch_prologue="#!/bin/bash
@@ -787,7 +791,7 @@ export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 #export SB_CACHEGB_GPU=60
 #export MPICH_GPU_SUPPORT_ENABLED=1
-export SB_MPI_NONBLOCK=0
+#export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
 export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
@@ -818,8 +822,8 @@ export NPT_BATCH_SIZE=1
 
 BASH_INVOCATION_OPTIONS=
 max_jobs=1 # maximum jobs to be launched
-max_hours=2 # maximum hours for a single job
-slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
+max_hours=1 # maximum hours for a single job
+slurm_max_bundled_jobs=50 # maximum bundled jobs in a slurm job
 
 #
 # Path options
@@ -827,8 +831,8 @@ slurm_max_bundled_jobs=400 # maximum bundled jobs in a slurm job
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
 confspath="/global/cfs/cdirs/hadron/b6p3"
-this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
-jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
+this_ep="6bdc7956-fc0f-4ad2-989c-7aa5ee643a79:/global/homes/e/eromero/hadron/b6p3/"  # perlmutter
+jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:/qcd/cache/isoClover/cl21_32_64_b6p3_m0p2350_m0p2050_extension/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
 jlab_tape_registry="/mss/lattice/isoClover/b6p3"
 jlab_user="$USER"

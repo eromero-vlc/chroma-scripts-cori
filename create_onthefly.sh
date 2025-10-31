@@ -125,7 +125,9 @@ class() {
 }
 
 globus() {
-	echo -n
+	[ $run_gprops != yes -o ! -f $gprop_script ] || bash $gprop_script globus
+	[ $run_baryons != yes ] || bash $baryon_script globus
+	[ $run_props != yes ] || bash $prop_script globus
 `
 	for t in $redstar_tasks; do
 		echo bash $t globus

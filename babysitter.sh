@@ -6,8 +6,8 @@ while true; do
 	squeue -u $USER
 	echo "Checking..."
 	bash check.sh
-	echo "Packing..."
-	bash do_pack.sh
+	#echo "Packing..."
+	#bash do_pack.sh
 	date
 	echo "Going to sleep"
 	sleep $(( 60*30 ))

@@ -9,7 +9,7 @@ mom_flip() {
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
 }
 
-get_moms() {
+get_combos() {
 	local l
 	local m
 	get_all_corr | while read l ; do
@@ -17,8 +17,10 @@ get_moms() {
 		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
 		for m in $@ ; do
 			if [ $this_mom == $m ] ; then
-				mom_flip $( get_sink $( get_mom_from_corr_line $l ) )
-				mom_flip $( get_source $( get_mom_from_corr_line $l ) )
+				mom_snk="$( get_sink $( get_mom_from_corr_line $l ) )"
+				mom_src="$( get_source $( get_mom_from_corr_line $l ) )"
+				echo "<elem><phase>$( mom_flip $( mom_auto_phase $mom_snk ) )</phase><mom_list><elem>$( mom_flip $mom_snk )</elem></mom_list></elem>"
+				echo "<elem><phase>$( mom_auto_phase $mom_src )</phase><mom_list><elem>$( mom_flip $mom_src )</elem></mom_list></elem>"
 				break
 			fi
 		done
@@ -45,7 +47,7 @@ for ens in $ensembles; do
 		t_sources="all"
 		[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
 		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
-
+ 		combos="$( get_combos $mom_group | sort -u )"
 		for cfg in $confs; do
 			lime_file="`lime_file_name`"
 			colorvec_file="`colorvec_file_name`"
@@ -61,7 +63,7 @@ for ens in $ensembles; do
 				baryon_t_source="`shuffle_t_source $cfg $t_size $t_source`"
 				Nt_forward=$(( redstar_t_corr + 2  ))
 				mom_leader="`take_first $mom_group`"
-				prefix_extra="_t0_${t_source}_mf${mom_leader}"
+				prefix_extra="t0_${t_source}_mf${mom_leader}"
 			else
 				baryon_t_source=0
 				Nt_forward=$t_size
@@ -95,13 +97,7 @@ for ens in $ensembles; do
         <decay_dir>3</decay_dir>
         <use_superb_format>true</use_superb_format>
         <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
-        <combos>
-$(
-	get_moms $mom_group | sort -u | while read mom ; do
-		echo "<elem><phase>$( mom_auto_phase $mom )</phase><mom_list><elem>$mom</elem></mom_list></elem>"
-	done
-)
-        </combos>
+        <combos>$combos</combos>
         $baryon_extra_xml
 
         <LinkSmearing>

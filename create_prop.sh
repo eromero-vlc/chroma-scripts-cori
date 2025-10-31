@@ -28,6 +28,7 @@ for ens in $ensembles; do
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
 			prop_file="`prop_file_name single`"
+			prop_file_globus="`prop_file_name globus`"
 			[ ${run_onthefly} != yes -a ${prop_create_if_missing} == yes -a -f ${prop_file} ] && continue
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${prop_file}`
 
@@ -65,7 +66,7 @@ for ens in $ensembles; do
 		done
           )</phases>
           <use_superb_format>true</use_superb_format>
-          <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
+          <output_file_is_local>$( if [ $run_onthefly == yes -a $prop_save_file != yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         </Contractions>
         <Propagator>
           <version>10</version>
@@ -138,13 +139,6 @@ run() {
 	rm -f $prop_file
 	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
 	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args
-	$(
-		if [ $run_onthefly == yes -a $prop_save_file == yes ] ; then
-			prop_file_save="`run_onthefly=nop prop_file_name single`"
-			echo "[ \$SLURM_PROCID == 0 ] && mkdir -p \`dirname ${prop_file_save}\`"
-			echo "[ \$SLURM_PROCID == 0 ] && cp $prop_file $prop_file_save"
-		fi
-	)
 }
 
 check() {
@@ -174,7 +168,7 @@ class() {
 }
 
 globus() {
-	[ $prop_transfer_back == yes ] && echo ${prop_file}.globus ${this_ep}${prop_file#${confspath}} ${jlab_ep}${prop_file#${confspath}} ${prop_delete_after_transfer_back}
+	[ $prop_transfer_back == yes ] && echo ${prop_file}.globus ${this_ep}${prop_file#${confspath}} ${jlab_ep}${prop_file_globus#${confspath}} ${prop_delete_after_transfer_back}
 }
 
 eval "\${1:-run}"

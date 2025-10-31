@@ -65,6 +65,28 @@ for ens in $ensembles; do
 done
 rm -f $sq $ok $fail $globus_status_cache $pending
 
+globus_recursive_mkdir() {
+	case $1 in
+	*:*) echo -n ;;
+	*) 
+		echo invalid new directory name: $1
+		return -1
+		;;
+	esac
+	if [ "x${1/:*}" == x ] ; then
+		echo invalid new directory name: $1
+		return -1
+	fi
+	if ! ( globus ls $1 &> $ok || globus mkdir $1 &> $ok ) ; then
+		if ! globus_recursive_mkdir $( dirname $1 ) ; then
+			echo "Failed to create directory $1:" >&2
+			cat $ok >&2
+			return -1
+		fi
+		globus mkdir $1
+	fi
+}
+
 # Transfer files back
 if [ -s $t ] ; then
         cat $t | while read f orig dest delete ; do
@@ -77,7 +99,7 @@ if [ -s $t ] ; then
 		cat $tod | while read f orig dest delete ; do
 			dirname ${dest}
 		done | sort -u | while read p ; do
-			globus mkdir $p
+			globus_recursive_mkdir $p
 		done
 		split -l 900 $tod ${tod}_
 		for tt in `ls ${tod}_*` ; do
@@ -96,5 +118,5 @@ if [ -s $t ] ; then
 			done
 		done || exit 1
 	done
-	rm -f $t ${t}_*
+	rm -f $t ${t}_* $ok
 fi

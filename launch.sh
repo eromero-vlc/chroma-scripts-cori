@@ -118,7 +118,7 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "srun -N $num_nodes_per_job --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node )) --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
+				echo "srun -N $num_nodes_per_job --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node )) --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
