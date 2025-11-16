@@ -14,25 +14,6 @@ mkdir -p $runpath
 #  k_split n f0 f1 f2 ...
 # Print the given fi arguments but maximum `n` on each line
 
-k_split() {
-	local n i f
-	n="$1"
-	shift
-	i="0"
-	for f in "$@" "__last_file__"; do
-		if [ $f != "__last_file__" ]; then
-			echo -n "$f "
-			i="$(( i+1 ))"
-			if [ $i == $n ]; then
-				i="0"
-				echo
-			fi
-		else
-			[ $i != 0 ] && echo
-		fi
-	done
-}
-
 source ensembles.sh
 
 # Gather the current jobs running
@@ -95,7 +76,7 @@ EOF
 	num_jobs="`echo $jobs | wc -w`"
 	[ $num_jobs == 0 ] && continue
 	# Max sequential jobs in a SLURM job
-	max_jobs_in_seq="$(( max_hours*60 / minutes_per_job ))"
+	max_jobs_in_seq="$(( max_minutes / minutes_per_job ))"
 	# minimum number of jobs to run
 	max_concurrent_jobs="$(( max_concurrent_jobs == 0 ? slurm_max_bundled_jobs : ( max_concurrent_jobs < slurm_max_bundled_jobs ? max_concurrent_jobs : slurm_max_bundled_jobs ) ))"
 	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
@@ -118,7 +99,11 @@ EOF
 		k_split $max_jobs_in_seq $bjs | while read js; do
 			echo "("
 			for job in $js; do
-				echo "srun -N $num_nodes_per_job --ntasks-per-node=$(( num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node )) --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) --gpus-per-task=$(( slurm_gpus_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
+				if [ $srun_aggregate == yes ] ; then
+					echo "srun -N $num_nodes_per_job -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
+				else
+					echo "MY_SRUN_ARGS='-N $num_nodes_per_job -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0' bash $BASH_INVOCATION_OPTIONS $job run"
+				fi
 			done
 			echo ") &"
 			j_seq="$(( j_seq+1 ))"
@@ -136,6 +121,7 @@ $slurm_sbatch_prologue
 #SBATCH -o $runpath/run_${jobtag}_%a.out
 #SBATCH -t $(( minutes_per_job*max_jobs_in_seq ))
 #SBATCH --nodes=$(( num_nodes_per_job * bundle_size ))
+#SBATCH --threads-per-core=1 --cpus-per-task=$(( slurm_cores_per_node/(num_jobs_per_node == 1 ? slurm_procs_per_node : num_jobs_per_node) )) # number of cores per task
 #SBATCH -J batch-${tag}
 #SBATCH --array=0-$((num_slurm_jobs-1))
 `

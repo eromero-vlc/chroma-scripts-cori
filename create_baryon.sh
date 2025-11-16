@@ -149,8 +149,7 @@ run() {
 	cd $runpath
 	rm -f $baryon_file
 	mkdir -p `dirname ${baryon_file}`
-	[ \$SLURM_PROCID == 0 ] && $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args &> $output
-	[ \$SLURM_PROCID != 0 ] && $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args
+	$( my_srun $output $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args )
 }
 
 check() {

@@ -87,6 +87,7 @@ mom_auto_phase() {
 					( i == 3 ? redstar_auto_phasing_3 : redstar_auto_phasing_4plus))) )) ""
 		done
 	fi
+	echo
 }
 
 momtype() {
@@ -246,4 +247,17 @@ k_split_lines() {
 			[ $i != 0 ] && echo
 		fi
 	done
+}
+
+# my_srun output_file command_args...
+# Print the commands to run with mpi
+my_srun() {
+	output="$1"
+	shift
+	if [ $srun_aggregate == yes ] ; then
+		echo "[ \$SLURM_PROCID == 0 ] &&" $* "&>" $output
+		echo "[ \$SLURM_PROCID != 0 ] &&" $* 
+	else
+		echo "srun \$MY_SRUN_ARGS" $* "&>" $output
+	fi
 }

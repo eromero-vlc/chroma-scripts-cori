@@ -182,8 +182,7 @@ run() {
 	cd $runpath
 	mkdir -p `dirname ${gprop_file}`
 	rm -f ${gprop_file}*
-	[ \$SLURM_PROCID == 0 ] && $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args &> $output
-	[ \$SLURM_PROCID != 0 ] && $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args
+	$( my_srun $output $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args )
 }
 
 blame() {

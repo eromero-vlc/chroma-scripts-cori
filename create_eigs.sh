@@ -81,8 +81,7 @@ run() {
 	
 	cd $runpath
 	rm -f $colorvec_file
-	[ \$SLURM_PROCID == 0 ] && $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args &> $output
-	[ \$SLURM_PROCID != 0 ] && $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args
+	$( my_srun $output $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args )
 }
 
 check() {

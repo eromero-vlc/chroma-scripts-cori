@@ -65,15 +65,25 @@ run() {
 	fi
 
 	$slurm_script_prologue_redstar
-	export ROCR_VISIBLE_DEVICES=\$SLURM_PROCID
-	export CUDA_VISIBLE_DEVICES=\$SLURM_PROCID
-`
-	i=0
-	k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
-		echo "[ \\\$SLURM_PROCID == $i ] && bash $BASH_INVOCATION_OPTIONS $j run"
-		i="$((i+1))"
-	done
-`
+	$(
+		if [ $srun_aggregate == yes ] ; then
+			echo "export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID"
+			echo "export CUDA_VISIBLE_DEVICES=\$SLURM_LOCALID"
+			i=0
+			k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
+				echo "[ \$SLURM_PROCID == $i ] && bash $BASH_INVOCATION_OPTIONS $j run"
+				i="$((i+1))"
+			done
+		else
+			echo "srun -n $redstar_procs -N $redstar_nodes \$MY_SRUN_ARGS --gpu-bind=closest bash $BASH_INVOCATION_OPTIONS -c '"
+			i=0
+			k_split_lines $(( slurm_procs_per_node*onthefly_slurm_nodes )) $redstar_tasks | while read j ; do
+				echo "[ \$SLURM_PROCID == $i ] && bash $BASH_INVOCATION_OPTIONS $j run"
+				i="$((i+1))"
+			done
+			echo "'"
+		fi
+	)
 }
 
 check() {

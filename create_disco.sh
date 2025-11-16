@@ -134,8 +134,7 @@ run() {
 	cd $runpath
 	mkdir -p `dirname ${disco_file}`
 	rm -f $disco_file
-	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args &> $output
-	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args
+	$( my_srun $output $chroma -i ${prefix}.xml -geom $disco_chroma_geometry $chroma_extra_args )
 }
 
 check() {

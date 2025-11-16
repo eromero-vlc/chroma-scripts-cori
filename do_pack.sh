@@ -24,6 +24,7 @@ for ens in $ensembles; do
 
 	# Check for running redstar
 	[ $run_redstar != yes ] && continue
+	[ ${redstar_2pt} != yes -a ${redstar_3pt} != yes ] && continue
 
 	if [ ${redstar_3pt} == yes ] ; then
 		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"

@@ -106,7 +106,7 @@ run() {
 	$slurm_script_prologue
 	cd $runpath
 	rm -f $meson_file
-	srun \$MY_ARGS -n $(( slurm_procs_per_node*meson_slurm_nodes )) -N $meson_slurm_nodes $chroma -i ${meson_xml} -geom $meson_chroma_geometry $chroma_extra_args &> $output
+	$( my_srun $output $chroma -i ${meson_xml} -geom $meson_chroma_geometry $chroma_extra_args )
 }
 
 check() {
