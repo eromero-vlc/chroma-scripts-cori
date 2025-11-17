@@ -62,7 +62,7 @@ done | while read jobtag minutes_per_job num_nodes_per_job num_jobs_per_node max
 $(
 			j="0"
 			for job in $first_job $jobs_in_a_node; do
-				echo "[ \$SLURM_PROCID == $j ] && bash $BASH_INVOCATION_OPTIONS $job run "
+				echo "bash $BASH_INVOCATION_OPTIONS $job run"
 				j="$(( j+1 ))"
 			done
 )

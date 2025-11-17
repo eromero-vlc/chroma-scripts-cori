@@ -136,9 +136,8 @@ run() {
 	$slurm_script_prologue
 	cd $runpath
 	mkdir -p `dirname ${prop_file}`
-	rm -f $prop_file
-	[ \$SLURM_PROCID == 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args &> $output
-	[ \$SLURM_PROCID != 0 ] && $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args
+	rm -f ${prop_file}*
+	$( my_srun $output $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args )
 }
 
 check() {

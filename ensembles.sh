@@ -15,7 +15,7 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=30
+	onthefly_chroma_minutes=60
 	max_moms_per_job=100
 
 	# Ensemble properties
