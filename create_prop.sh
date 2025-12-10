@@ -167,7 +167,14 @@ class() {
 }
 
 globus() {
-	[ $prop_transfer_back == yes ] && echo ${prop_file}.globus ${this_ep}${prop_file#${confspath}} ${jlab_ep}${prop_file_globus#${confspath}} ${prop_delete_after_transfer_back}
+	$(
+	if [ $prop_transfer_back == yes ] && [ $run_onthefly != yes -o $prop_save_file == yes ]; then
+		for f in ${prop_file_globus} ; do
+			echo "echo ${f}.globus ${this_ep}${prop_file#${confspath}} ${jlab_ep}${f#${confspath}} ${prop_delete_after_transfer_back}"
+		done
+	fi
+	echo "echo -n"
+	)
 }
 
 eval "\${1:-run}"

@@ -2,9 +2,27 @@
 
 . common.sh
 
-ensembles="ensemble0"
+ensembles="ensemble0 ensemble1 ensemble2 ensemble3"
+#ensembles="ensemble0"
 
-ensemble0() {
+ensemble0() { ensemble_nvecs_boosting 128 1 ; }
+ensemble1() { ensemble_nvecs_boosting 128 2 ; }
+ensemble2() { ensemble_nvecs_boosting 128 3 ; }
+ensemble3() { ensemble_nvecs_boosting 128 4 ; }
+ensemble4() { ensemble_nvecs_boosting 128 0 ; }
+
+ensemble4() { ensemble_nvecs_boosting 256 1 ; }
+ensemble5() { ensemble_nvecs_boosting 256 2 ; }
+ensemble6() { ensemble_nvecs_boosting 256 3 ; }
+ensemble7() { ensemble_nvecs_boosting 256 4 ; }
+ensemble4() { ensemble_nvecs_boosting 256 0 ; }
+
+ensemble_nvecs_boosting() {
+	nvec=$1
+	prop_nvec=$1
+	redstar_auto_phasing_4plus=$2
+	redstar_auto_phasing_3=$2
+	
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
@@ -15,20 +33,19 @@ ensemble0() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=60
+	onthefly_chroma_minutes=120
 	max_moms_per_job=100
 
 	# Ensemble properties
 	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
 	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
-	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
+	tag="cl21_48_128_b6p5_m0p2070_m0p1750-${prop_nvec}-${redstar_auto_phasing_4plus}"
 	confs="`seq 1010 30 7634`"
-	confs="`seq 1010 30 1580`"
-	confs="`seq 1580 30 1999`"
+	confs="`seq 1010 30 2210`"
 	#confs="`seq 1610 30 1999`"
 	#confs="`seq 2000 30 7634`"
-	confs="1010"
+	#confs=1010
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
 
@@ -38,7 +55,7 @@ ensemble0() {
 
 	# Colorvecs options
 	max_nvec=512  # colorvecs to compute
-	nvec=128  # colorvecs to use
+	#nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
@@ -51,13 +68,13 @@ ensemble0() {
 	eigs_transfer_from_jlab="nop"
 
 	# Props options
-	prop_t_sources="0 16 32 48"
-	prop_t_sources="`seq 0 127`"
-	prop_t_sources="0"
+	prop_t_sources="0 32 64 96"
+	#prop_t_sources="`seq 0 127`"
+	#prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=22
 	prop_t_back=0
-	prop_nvec=128
+	#prop_nvec=128
 	prop_mass="-0.2070"
 	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
@@ -65,7 +82,7 @@ ensemble0() {
 	prop_chroma_geometry="1 1 3 4"
 	prop_chroma_minutes=20
 	prop_max_rhs=8
-	prop_save_file="yes"
+	prop_save_file="nop"
 	max_phases_per_job=10000
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
@@ -263,7 +280,7 @@ ensemble0() {
 			echo $n
 		fi
 	}
-	prop_transfer_back="yes"
+	prop_transfer_back="nop"
 	prop_delete_after_transfer_back="nop"
 	prop_transfer_from_jlab="nop"
 
@@ -392,7 +409,7 @@ ensemble0() {
 	baryon_transfer_back="nop"
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
-	redstar_op_bases=1
+	redstar_op_bases=all
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -530,22 +547,22 @@ $(
 	redstar_t_corr=20 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	redstar_auto_phasing_4plus=2
-	redstar_auto_phasing_3=0
+	#redstar_auto_phasing_4plus=2
+	#redstar_auto_phasing_3=0
 	redstar_auto_phasing_sign="yes"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
 0 0 0  0 0 0
 $(
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo $i 0 0  $i 0 0
-		echo -$i 0 0 -$i 0 0
-	done
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 $i 0  0 $i 0
-		echo 0 -$i 0 0 -$i 0
-	done
+	#for i in `seq 1 $redstar_2pt_max_mom`; do
+	#	echo $i 0 0  $i 0 0
+	#	echo -$i 0 0 -$i 0 0
+	#done
+	#for i in `seq 1 $redstar_2pt_max_mom`; do
+	#	echo 0 $i 0  0 $i 0
+	#	echo 0 -$i 0 0 -$i 0
+	#done
 	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 0 $i   0 0 $i
 		echo 0 0 -$i  0 0 -$i
@@ -593,8 +610,9 @@ $(
 		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
 		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
 	else
-		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1"
-		redstar_n00="NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1"
+		redstar_000="NucleonMHg1MxD0J0S_J3o2_Hg1 NucleonMG1u1MxD0J0S_J1o2_G1u1 NucleonMG1u2MxD0J0S_J1o2_G1u1 NucleonMG1u3MxD0J0S_J1o2_G1u1 NucleonMHu1MxD0J0S_J3o2_Hu1 NucleonMG1g2MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g3MxD0J0S_J1o2_G1g1"
+		redstar_n00="NucleonMHg1MxD0J0S_J3o2_H1o2D4E1 NucleonMHg1MxD0J0S_J3o2_H3o2D4E3 NucleonMG1u1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u2MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u3MxD0J0S_J1o2_H1o2D4E1 NucleonMHu1MxD0J0S_J3o2_H1o2D4E1 NucleonMHu1MxD0J0S_J3o2_H3o2D4E3 NucleonMG1g2MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g3MxD0J0S_J1o2_H1o2D4E1"
+		redstar_nn0="NucleonMHg1MxD0J0S_J3o2_H1o2D2E NucleonMHg1MxD0J0S_J3o2_H3o2D2E NucleonMG1u1MxD0J0S_J1o2_H1o2D2E NucleonMG1u2MxD0J0S_J1o2_H1o2D2E NucleonMG1u3MxD0J0S_J1o2_H1o2D2E NucleonMHu1MxD0J0S_J3o2_H1o2D2E NucleonMHu1MxD0J0S_J3o2_H3o2D2E NucleonMG1g2MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g3MxD0J0S_J1o2_H1o2D2E"
 	fi
 	redstar_insertion_operators="\
 fl_a0xDX__J0_A1
@@ -641,7 +659,7 @@ $(
 	}
 	corr_file_name() {
 		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
-		prefix_path_extra="_2pt-disco"
+		prefix_path_extra="_2pt_test_nvec${prop_nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
@@ -676,7 +694,7 @@ PYTHON=python3
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="~/work_qch_sf/chromaform-h100"
+chromaform="${HOME}/work_qch_sf/chromaform-h100"
 chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512" # -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
@@ -684,7 +702,7 @@ redstar="$chromaform/install/redstar-pdf-next-meta-colorvec-pdf-next-meta-hadron
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat-pdf-next-meta-superbblas-sp"
+adat="$chromaform/install-here/adat-pdf-next-meta-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -722,8 +740,8 @@ export QUDA_ENABLE_MPS=0
 #
 
 slurm_script_prologue_redstar="
-. $chromaform/env.sh
-. $chromaform/env_extra0.sh
+#. $chromaform/env.sh
+. $chromaform/env_extra1.sh
 export OPENBLAS_NUM_THREADS=1
 export SLURM_CPU_BIND=\"cores\"
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 2))
@@ -738,7 +756,7 @@ export SB_CACHEGB_CPU=5
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
 max_jobs=400 # maximum jobs to be launched
-max_minutes=60 # maximum hours for a single job
+max_minutes=120 # maximum hours for a single job
 slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
 slurm_max_jobs=400 # maximum bundled jobs in a slurm job
 
