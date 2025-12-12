@@ -75,19 +75,12 @@ make_canonical() {
 }
 
 mom_auto_phase() {
-	if [ ${redstar_auto_phasing_sign} != yes ] ; then
-		for i in ${@//-/}; do
-			echo -n $(( i >= 4 ? redstar_auto_phasing_4plus : ( i == 3 ? redstar_auto_phasing_3 : 0) )) ""
-		done
-	else
+	for p in $redstar_auto_phasing ; do
 		for i in ${@}; do
-			echo -n $(( i <= -4 ? -redstar_auto_phasing_4plus :
-					( i == -3 ? -redstar_auto_phasing_3 :
-					( i <= 2 ? 0 :
-					( i == 3 ? redstar_auto_phasing_3 : redstar_auto_phasing_4plus))) )) ""
+			echo -n $(( i <= -4 ? -p : ( i <= 3 ? 0 : p ) )) ""
 		done
-	fi
-	echo
+		echo
+	done
 }
 
 momtype() {
@@ -110,10 +103,10 @@ mom_fly() {
 
 get_all_corr() {
 	[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-		echo $( mom_auto_phase $momij ) $momij 3pt
+		echo $momij 3pt
 	done | sort -u
 	[ ${redstar_2pt} == yes ] && echo "$redstar_2pt_moms" | while read momij; do
-		echo $( mom_auto_phase $momij ) $momij 2pt
+		echo $momij 2pt
 	done | sort -u
 }
 
@@ -148,22 +141,22 @@ get_fly_moms() {
 }
 
 mom_word_esp() {
-	echo ${1}~${2}~${3}~${4}~${5}~${6}~${7}
+	echo ${1}~${2}~${3}~${4}~${5}~${6}~${7}~${8}~${9}~${10}~${11}~${12}~${13}
 }
 
 get_corr_lines() {
 	local l
 	local m
 	get_all_corr | while read l ; do
-		[ $(num_args $l ) == 0 ] && continue
+		[ $( num_args $l ) == 0 ] && continue
 		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
 		for m in $@ ; do
 			if [ $this_mom == $m ] ; then
 				if [ $( get_type_from_corr_line $l) == 2pt ] ; then
-					mom_word_esp $( get_mom_from_corr_line $l ) 2pt
+					mom_word_esp $l 2pt
 				else
 					for ins in $redstar_insertion_operators ; do
-						mom_word_esp $( get_mom_from_corr_line $l ) $ins
+						mom_word_esp $l $ins
 					done
 				fi
 				break

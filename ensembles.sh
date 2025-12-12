@@ -2,27 +2,9 @@
 
 . common.sh
 
-ensembles="ensemble0 ensemble1 ensemble2 ensemble3"
-#ensembles="ensemble0"
+ensembles="ensemble0"
 
-ensemble0() { ensemble_nvecs_boosting 128 1 ; }
-ensemble1() { ensemble_nvecs_boosting 128 2 ; }
-ensemble2() { ensemble_nvecs_boosting 128 3 ; }
-ensemble3() { ensemble_nvecs_boosting 128 4 ; }
-ensemble4() { ensemble_nvecs_boosting 128 0 ; }
-
-ensemble4() { ensemble_nvecs_boosting 256 1 ; }
-ensemble5() { ensemble_nvecs_boosting 256 2 ; }
-ensemble6() { ensemble_nvecs_boosting 256 3 ; }
-ensemble7() { ensemble_nvecs_boosting 256 4 ; }
-ensemble4() { ensemble_nvecs_boosting 256 0 ; }
-
-ensemble_nvecs_boosting() {
-	nvec=$1
-	prop_nvec=$1
-	redstar_auto_phasing_4plus=$2
-	redstar_auto_phasing_3=$2
-	
+ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
@@ -40,12 +22,12 @@ ensemble_nvecs_boosting() {
 	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
 	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
-	tag="cl21_48_128_b6p5_m0p2070_m0p1750-${prop_nvec}-${redstar_auto_phasing_4plus}"
+	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confs="`seq 1010 30 7634`"
 	confs="`seq 1010 30 2210`"
 	#confs="`seq 1610 30 1999`"
 	#confs="`seq 2000 30 7634`"
-	#confs=1010
+	confs=1010
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
 
@@ -55,7 +37,7 @@ ensemble_nvecs_boosting() {
 
 	# Colorvecs options
 	max_nvec=512  # colorvecs to compute
-	#nvec=128  # colorvecs to use
+	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
@@ -70,11 +52,11 @@ ensemble_nvecs_boosting() {
 	# Props options
 	prop_t_sources="0 32 64 96"
 	#prop_t_sources="`seq 0 127`"
-	#prop_t_sources="0"
+	prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=22
 	prop_t_back=0
-	#prop_nvec=128
+	prop_nvec=$nvec
 	prop_mass="-0.2070"
 	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
@@ -410,6 +392,7 @@ ensemble_nvecs_boosting() {
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
 	redstar_op_bases=all
+	redstar_op_bases=1
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -547,9 +530,7 @@ $(
 	redstar_t_corr=20 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
-	#redstar_auto_phasing_4plus=2
-	#redstar_auto_phasing_3=0
-	redstar_auto_phasing_sign="yes"
+	redstar_auto_phasing="0 1 3"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
@@ -566,6 +547,16 @@ $(
 	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 0 $i   0 0 $i
 		echo 0 0 -$i  0 0 -$i
+	done
+)"
+	redstar_2pt_moms="$(
+	echo "$redstar_2pt_moms" | while read momix momiy momiz momjx momjy momjz ; do
+		[ $( num_args $momjz ) == 0 ] && continue
+		mom_auto_phase $momix $momiy $momiz | while read phasei ; do
+			mom_auto_phase $momjx $momjy $momjz | while read phasej ; do
+				echo $phasei $phasej $momix $momiy $momiz $momjx $momjy $momjz
+			done
+		done
 	done
 )"
 	redstar_3pt="nop"
@@ -658,7 +649,7 @@ $(
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
-		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
+		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus// /,}"
 		prefix_path_extra="_2pt_test_nvec${prop_nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
@@ -672,7 +663,7 @@ $(
 		fi
 	}
 	pack_file_name() {
-		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus}"
+		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus// /,}"
 		prefix_path_extra="_2pt-disco"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/corr_pack_cfg_${cfg}.tar.gz"
 	}

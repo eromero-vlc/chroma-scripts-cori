@@ -2,11 +2,6 @@
 
 source ensembles.sh
 
-redstar_dat_mom() {
-	ph=( $( mom_auto_phase $@ ) )
-	echo "${1}${2}${3}ph${ph[0]}${ph[1]}${ph[2]}"
-}
-
 redstar_dat_mom_snk() {
 	echo "${1}${2}${3}"
 }

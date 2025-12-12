@@ -82,8 +82,10 @@ operator_twoI() {
 }
 
 npoint_2pt() {
-	local momi="$1"
-	local momj="$2"
+	local phasei="$1"
+	local momi="$2"
+	local phasej="$3"
+	local momj="$4"
 	for operatori in $( get_ops $momi ) ; do
 		for operatorj in $( get_ops $momj ) ; do
 			echo "
@@ -104,7 +106,7 @@ npoint_2pt() {
                    <mom>$momi</mom>
                    <row>1</row>
                  </irmom>
-                 <phasing>$( mom_auto_phase $momi )</phasing>
+                 <phasing>$phasei</phasing>
                  <Op>
                    <Operators>
                      <elem>
@@ -133,7 +135,7 @@ npoint_2pt() {
                    <row>1</row>
                    <mom>$momj</mom>
                  </irmom>
-                 <phasing>$( mom_auto_phase $momj )</phasing>
+                 <phasing>$phasej</phasing>
                  <Op>
                    <Operators>
                      <elem>
@@ -153,16 +155,16 @@ npoint_2pt() {
 }
 
 npoint_3pt() {
-	local momi="$1"
-	local phasingi="$( mom_auto_phase $momi )"
+	local phasingi="$1"
+	local momi="$2"
 	local operatorsi="$( get_ops $momi )"
-	local momj="$2"
-	local phasingj="$( mom_auto_phase $momj )"
+	local phasingj="$3"
+	local momj="$4"
 	local operatorsj="$( get_ops $momj )"
-	local momk="$3"
-	local operatorsk="$4"
-	local t_seps="$5"
-	local disps="$6"
+	local momk="$( insertion_mom $momi $momj )"
+	local operatorsk="$5"
+	local t_seps="$6"
+	local disps="$7"
 	local momtypei="$( momtype $momi )"
 	local momtypej="$( momtype $momj )"
 	local momtypek="$( momtype $momk )"
@@ -298,17 +300,15 @@ corr_graph() {
 	if [ $t_origin == -1 ]; then
 		local insert_op_mom_combo
 		for insert_op_mom_combo in "$@" ; do
-			local insert_op_mom_array=( ${insert_op_mom_combo//\~/ } )
-			local insertion_op="${insert_op_mom_array[6]}"
-			local momi="$( get_sink ${insert_op_mom_combo//\~/ } )"
-			local momj="$( get_source ${insert_op_mom_combo//\~/ } )"
+			local insertion_op="$( get_type_from_corr_line ${insert_op_mom_combo//\~/ } )"
+			local momi="$( get_sink $( get_mom_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
+			local phasei="$( get_sink $( get_phase_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
+			local momj="$( get_source $( get_mom_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
+			local phasej="$( get_source $( get_phase_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
 			if [ $insertion_op == 2pt ] ; then
-				npoint_2pt "$momi" "$momj"
+				npoint_2pt "$phasei" "$momi" "$phasej" "$momj"
 			else
-				local operatorsi="$( get_ops $momi )"
-				local operatorsj="$( get_ops $momj )"
-				local momk="$( insertion_mom $momi $momj )"
-				npoint_3pt "$momi" "$momj" "$momk" "$insertion_op" "$tseps" "$redstar_insertion_disps"
+				npoint_3pt "$phasei" "$momi" "$phasej" "$momj" "$insertion_op" "$tseps" "$redstar_insertion_disps"
 			fi
 		done
 	fi
