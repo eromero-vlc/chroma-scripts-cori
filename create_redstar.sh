@@ -299,7 +299,7 @@ corr_graph() {
 `
 	if [ $t_origin == -1 ]; then
 		local insert_op_mom_combo
-		for insert_op_mom_combo in "$@" ; do
+		for insert_op_mom_combo in $ops ; do
 			local insertion_op="$( get_type_from_corr_line ${insert_op_mom_combo//\~/ } )"
 			local momi="$( get_sink $( get_mom_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
 			local phasei="$( get_sink $( get_phase_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
@@ -363,7 +363,7 @@ corr_graph() {
       </smeared_glue_dbs>
       <prop_dbs>
 `
-		for i in $( prop_file_name ); do
+		for i in $( prop_file_name ) ; do
 			echo "<elem>$i</elem>"
 		done
 `
@@ -408,15 +408,16 @@ corr_graph() {
 	if [ $redstar_use_gprops == yes ]; then
 		local are_there_3pt="nop"
 		local insert_op_mom_combo
-		for insert_op_mom_combo in "$@" ; do
-			local insert_op_mom_array=( ${insert_op_mom_combo//\~/ } )
-			local insertion_op="${insert_op_mom_array[6]}"
+		for insert_op_mom_combo in $ops ; do
+			local insertion_op="$( get_type_from_corr_line ${insert_op_mom_combo//\~/ } )"
 			[ $insertion_op != 2pt ] && are_there_3pt="yes"
 		done
 		if [ $are_there_3pt == yes ] ; then
 			local i
-			for i in $( gprop_file_name ); do
-				echo "<elem>$i</elem>"
+			for phase in $( get_phases_in_3pt_mom_group $ops ) ; do
+				for i in $( gprop_file_name ); do
+					echo "<elem>$i</elem>"
+				done
 			done
 		fi
 	fi
@@ -460,7 +461,7 @@ for ens in $ensembles; do
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		tsep_leader="`take_first $tsep_group`"
 
-		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read this_all_moms ; do
+		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read this_all_moms ; do
 			mom_leader="`take_first $this_all_moms`"
 			combo_line=0
 			k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos ; do

@@ -10,22 +10,16 @@ mom_flip() {
 }
 
 get_combos() {
+	local word_l
 	local l
-	local m
-	get_all_corr | while read l ; do
-		[ $(num_args $l ) == 0 ] && continue
-		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
-		for m in $@ ; do
-			if [ $this_mom == $m ] ; then
-				mom_snk="$( get_sink $( get_mom_from_corr_line $l ) )"
-				phase_snk="$( get_sink $( get_phase_from_corr_line $l ) )"
-				mom_src="$( get_source $( get_mom_from_corr_line $l ) )"
-				phase_src="$( get_source $( get_phase_from_corr_line $l ) )"
-				echo "<elem><phase>$( mom_flip $phase_snk )</phase><mom_list><elem>$( mom_flip $mom_snk )</elem></mom_list></elem>"
-				echo "<elem><phase>$phase_src</phase><mom_list><elem>$( mom_flip $mom_src )</elem></mom_list></elem>"
-				break
-			fi
-		done
+	for word_l in $@ ; do
+		l="${word_l//\~/ }"
+		mom_snk="$( get_sink $( get_mom_from_corr_line $l ) )"
+		phase_snk="$( get_sink $( get_phase_from_corr_line $l ) )"
+		mom_src="$( get_source $( get_mom_from_corr_line $l ) )"
+		phase_src="$( get_source $( get_phase_from_corr_line $l ) )"
+		echo "<elem><phase>$( mom_flip $phase_snk )</phase><mom_list><elem>$( mom_flip $mom_snk )</elem></mom_list></elem>"
+		echo "<elem><phase>$phase_src</phase><mom_list><elem>$( mom_flip $mom_src )</elem></mom_list></elem>"
 	done
 }
 
@@ -48,7 +42,7 @@ for ens in $ensembles; do
 
 		t_sources="all"
 		[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
-		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
+		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read mom_group ; do
  		combos="$( get_combos $mom_group | sort -u )"
 		for cfg in $confs; do
 			lime_file="`lime_file_name`"
@@ -149,8 +143,7 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	rm -f $baryon_file
-	mkdir -p `dirname ${baryon_file}`
+	$( emit_clean_commnads "$baryon_file*" )
 	$( my_srun $output $chroma -i ${baryon_xml} -geom $baryon_chroma_geometry $chroma_extra_args )
 }
 

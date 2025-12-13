@@ -8,7 +8,7 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
-	run_gprops="nop"
+	run_gprops="yes"
 	run_baryons="yes"
 	run_mesons="nop"
 	run_discos="nop"
@@ -284,7 +284,7 @@ ensemble0() {
 	gprop_file_name() {
 		local t_seps_commas="`echo $tseps | xargs | tr ' ' ,`"
 		local n node
-		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase_leader}/t0_${t_source}/unsmeared_meson.phased_${phase_leader}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}_mf${mom_leader}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/unsmeared_meson_dbs/phased_${phase}/t0_${t_source}/unsmeared_meson.phased_${phase}_${phase}.n${gprop_nvec}.${t_source}.tsnk_${t_seps_commas}_mf${mom_leader}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_gprops == yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -392,7 +392,7 @@ ensemble0() {
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
 	redstar_op_bases=all
-	redstar_op_bases=1
+	#redstar_op_bases=1
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -536,30 +536,12 @@ $(
 	redstar_2pt_moms="\
 0 0 0  0 0 0
 $(
-	#for i in `seq 1 $redstar_2pt_max_mom`; do
-	#	echo $i 0 0  $i 0 0
-	#	echo -$i 0 0 -$i 0 0
-	#done
-	#for i in `seq 1 $redstar_2pt_max_mom`; do
-	#	echo 0 $i 0  0 $i 0
-	#	echo 0 -$i 0 0 -$i 0
-	#done
 	for i in `seq 1 $redstar_2pt_max_mom`; do
 		echo 0 0 $i   0 0 $i
 		echo 0 0 -$i  0 0 -$i
 	done
 )"
-	redstar_2pt_moms="$(
-	echo "$redstar_2pt_moms" | while read momix momiy momiz momjx momjy momjz ; do
-		[ $( num_args $momjz ) == 0 ] && continue
-		mom_auto_phase $momix $momiy $momiz | while read phasei ; do
-			mom_auto_phase $momjx $momjy $momjz | while read phasej ; do
-				echo $phasei $phasej $momix $momiy $momiz $momjx $momjy $momjz
-			done
-		done
-	done
-)"
-	redstar_3pt="nop"
+	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   
 0 1 4   0 0 4   
@@ -585,6 +567,8 @@ $(
 #			echo $m3 $m4 $m5
 #		done | sort -u
 #)"
+	redstar_2pt_moms="$( echo "$redstar_2pt_moms" | auto_phase_moms )"
+	redstar_3pt_snkmom_srcmom="$( echo "$redstar_3pt_snkmom_srcmom" | auto_phase_moms )"
 	redstar_disco="nop" # contracting for disco
 	if [ $redstar_op_bases == 1 ]; then
 		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1"

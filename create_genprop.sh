@@ -11,26 +11,19 @@ for ens in $ensembles; do
 
 	get_grouping_vars
 
-	tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
-	[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
-
 	for t_source in $gprop_t_sources; do
 	k_split $max_phases_per_job $phase_groups | while read phase_group ; do
 	phase_leader="`take_first $phase_group`"
 
 	[ ${run_onthefly} != yes ] && max_moms_per_job=1
-	k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
+	k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read mom_group ; do
+	[ $( num_args $mom_group ) == 0 ] && continue
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 
-		gprop_moms="`
-			echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
-				this_mf="$( mom_word $( mom_fly $momij ) )"
-				for m in $mom_group ; do
-					[ $m == $this_mf ] && echo ${this_mf//_/ } && break
-				done
-			done | sort -u
-		`"
-		[ $( num_args $gprop_moms ) == 0 ] && continue
+		mom_leader="`take_first $mom_group`"
+		
+		phases_in_group="$( get_phases_in_3pt_mom_group $mom_group )"
+		[ $( num_args $phases_in_group ) == 0 ] && continue
 
 		for cfg in $confs; do
 			lime_file="`lime_file_name`"
@@ -44,23 +37,35 @@ for ens in $ensembles; do
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-			gprop_file="`tseps="${tsep_group}" gprop_file_name single`"
-			[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
-
 			#
 			# Genprops creation
 			#
-			mom_leader="`take_first $mom_group`"
 			tsep_leader="`take_first $tsep_group`"
-			phase_snk="$( get_sink ${phase//_/ } )"
-			phase_src="$( get_source ${phase//_/ } )"
-			prefix="${runpath}/gprop_t${t_source}_phase${phase}_mf${mom_leader}_tsep${tsep_leader}"
+			prefix="${runpath}/gprop_t${t_source}_phase${phase_leader}_mf${mom_leader}_tsep${tsep_leader}"
 			gprop_xml="${prefix}.xml"
 			cat << EOF > $gprop_xml
 <?xml version="1.0"?>
 <chroma>
   <Param>
     <InlineMeasurements>
+EOF
+
+			for phase in $phases_in_group ; do
+				gprop_file="`tseps="${tsep_group}" phase="$phase" gprop_file_name single`"
+				[ $run_onthefly != yes ] && mkdir -p `dirname ${gprop_file}`
+
+				gprop_moms="$(
+					for m in $mom_group ; do
+						if [ "$( get_phase_from_corr_line ${m//\~/ } )" == "${phase//_/ }" -a $( get_type_from_corr_line ${m//\~/ } ) != 2pt ] ; then
+							mom_word $( mom_fly $( get_mom_from_corr_line ${m//\~/ } ) )
+						fi
+					done | sort -u
+				)"
+				[ $( num_args $gprop_moms ) == 0 ] && continue
+
+				phase_snk="$( get_sink ${phase//_/ } )"
+				phase_src="$( get_source ${phase//_/ } )"
+				cat << EOF >> $gprop_xml
       <elem>
         <Name>UNSMEARED_HADRON_NODE_DISTILLATION_SUPERB</Name>
         <Frequency>1</Frequency>
@@ -74,8 +79,8 @@ for ens in $ensembles; do
           </Displacements>
           <Moms>
 `
-	echo "$gprop_moms" | while read mom; do
-		[ "z$mom" != z ] && echo "<elem>$mom</elem>"
+	for mom in $gprop_moms ; do
+		echo "<elem>${mom//_/ }</elem>"
 	done
 `
           </Moms>
@@ -149,6 +154,10 @@ for ens in $ensembles; do
           <dist_op_file>${gprop_file}</dist_op_file>
         </NamedObject>
       </elem>
+EOF
+			done # phase_in_group
+
+			cat << EOF >> $gprop_xml
     </InlineMeasurements>
     <nrow>$s_size $s_size $s_size $t_size</nrow>
   </Param>
@@ -180,8 +189,13 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	mkdir -p `dirname ${gprop_file}`
-	rm -f ${gprop_file}*
+$(
+	for phase in $phases_in_group ; do
+		for i in $( tseps="$tsep_group" phase=$phase gprop_file_name single ) ; do
+			emit_clean_commnads "$( tseps="$tsep_group" phase=$phase gprop_file_name single )*"
+		done
+	done
+)
 	$( my_srun $output $chroma -i ${gprop_xml} -geom $gprop_chroma_geometry $chroma_extra_args )
 }
 
@@ -203,7 +217,17 @@ deps() {
 }
 
 outs() {
-	echo $gprop_file
+`
+	if [ $run_onthefly != yes ] ; then
+		for phase in $phases_in_group ; do
+			for i in $( tseps="$tsep_group" phase=$phase gprop_file_name ) ; do
+				echo "echo ${i#afs:}"
+			done
+		done
+	else
+		echo "echo -n"
+	fi
+`
 }
 
 class() {
@@ -212,7 +236,18 @@ class() {
 }
 
 globus() {
-	[ $gprop_transfer_back == yes ] && echo ${gprop_file}.globus ${this_ep}${gprop_file#${confspath}} ${jlab_ep}${gprop_file#${confspath}} ${gprop_delete_after_transfer_back}
+`
+	if [ $run_onthefly != yes ] ; then
+		for phase in $phases_in_group ; do
+			for i in $( tseps="$tsep_group" phase=$phase gprop_file_name ) ; do
+				f="${i#afs:}"
+				echo "[ $gprop_transfer_back == yes ] && echo ${f}.globus ${this_ep}${f#${confspath}} ${jlab_ep}${f#${confspath}} ${gprop_delete_after_transfer_back}"
+			done
+		done
+	else
+		echo "echo -n"
+	fi
+`
 }
 
 eval "\${1:-run}"

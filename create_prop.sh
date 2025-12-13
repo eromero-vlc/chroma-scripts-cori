@@ -135,8 +135,7 @@ $slurm_sbatch_prologue
 run() {
 	$slurm_script_prologue
 	cd $runpath
-	mkdir -p `dirname ${prop_file}`
-	rm -f ${prop_file}*
+	$( emit_clean_commnads "$prop_file*" )
 	$( my_srun $output $chroma -i ${prop_xml} -geom $prop_chroma_geometry $chroma_extra_args )
 }
 

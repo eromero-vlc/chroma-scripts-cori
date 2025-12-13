@@ -31,17 +31,18 @@ get_grouping_vars() {
 	fi
 }
 
+# Return the negative of a momentum
 neg_mom() {
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 ))
 }
 
+# Return the negative of a pair of momenta
 neg_mom_mom() {
 	echo $(( -$1 )) $(( -$2 )) $(( -$3 )) $(( -$4 )) $(( -$5 )) $(( -$6 ))
 }
 
 # mom_word momx0 momy0 momz0 [momx1 momy1 momz1]
 # Return a single word representing a momentum (transfer)
-
 mom_word() {
 	[ $# == 3 ] && echo ${1}_${2}_${3}
 	[ $# == 6 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}
@@ -49,6 +50,7 @@ mom_word() {
 	[ $# == 9 ] && echo ${1}_${2}_${3}_${4}_${5}_${6}_${7}_${8}_${9}
 }
 
+# Return whether a pair of momenta is canonical
 is_canonical() {
 	if [ $1 -ne 0 ] ; then
 		[ $1 -gt 0 ] && return 0
@@ -66,6 +68,7 @@ is_canonical() {
 	return 1
 }
 
+# Given a pair of momenta, if may return it negated if it is not canonical
 make_canonical() {
 	if is_canonical $( mom_auto_phase $@ ) ; then
 		echo $@
@@ -74,6 +77,7 @@ make_canonical() {
 	fi
 }
 
+# Return the list of phases associated to a momentum/pair of momenta
 mom_auto_phase() {
 	for p in $redstar_auto_phasing ; do
 		for i in ${@}; do
@@ -83,13 +87,13 @@ mom_auto_phase() {
 	done
 }
 
+# Return a canonized version of a momentum for redstar
 momtype() {
 	for i in $@; do echo $i; done | tr -d '-' | sort -nr | tr '\n' ' '
 }
 
 # mom_fly momx0 momy0 momz0 [momx1 momy1 momz1] 
 # Return a canonical direction of mom0 - mom1 and the phasing
-
 mom_fly() {
 	if [ $# == 3 ]; then
 		echo $1 $2 $3
@@ -100,7 +104,6 @@ mom_fly() {
 
 # Return a list of correlation functions as follows:
 # phased_snk phased_src mom_snk mom_src [2pt|3pt]
-
 get_all_corr() {
 	[ ${redstar_3pt} == yes ] && echo "$redstar_3pt_snkmom_srcmom" | while read momij; do
 		echo $momij 3pt
@@ -110,18 +113,22 @@ get_all_corr() {
 	done | sort -u
 }
 
+# Return a pair of phases for a given line returned by `get_all_corr`
 get_phase_from_corr_line() {
 	echo ${1} ${2} ${3} ${4} ${5} ${6}
 }
 
+# Return a pair of momenta for a given line returned by `get_all_corr`
 get_mom_from_corr_line() {
 	echo ${7} ${8} ${9} ${10} ${11} ${12}
 }
 
+# Return either 2pt or the insertion operator for a given line returned by `get_all_corr`
 get_type_from_corr_line() {
 	echo ${13}
 }
 
+# Return all pair of phases returned by `get_all_corr`
 get_all_phases() {
 	local l
 	get_all_corr | while read l ; do
@@ -129,46 +136,64 @@ get_all_phases() {
 	done | sort -u
 }
 
-get_fly_moms() {
+# Return a word for each line returned by `get_all_corr` such that matches an input phase
+word_moms_filtered_by_phases() {
 	local l
 	get_all_corr | while read l ; do
 		for phase in $@ ; do
 			if [ $(num_args $l ) -gt 0 -a $( mom_word $( get_phase_from_corr_line $l ) ) == $phase ] ; then
-				 echo $( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )
+				 echo $( mom_word_esp $l )
 			fi
 		done
 	done | sort -u
 }
 
+# Return the pair of phases for a given list of words representing lines returned by `get_all_corr`
+get_phases_in_3pt_mom_group() {
+	local l
+	for l in $@ ; do
+		[ $( num_args ${l//\~/ } ) == 13 ] && [ $( get_type_from_corr_line ${l//\~/ } ) != 2pt ] && mom_word $( get_phase_from_corr_line ${l//\~/ } )
+	done | sort -u
+}
+
+# Return the word associated to a line returned by `get_all_corr`
 mom_word_esp() {
 	echo ${1}~${2}~${3}~${4}~${5}~${6}~${7}~${8}~${9}~${10}~${11}~${12}~${13}
 }
 
+# Return words associated to the given input words representing lines returned by `get_all_corr`
 get_corr_lines() {
 	local l
-	local m
-	get_all_corr | while read l ; do
-		[ $( num_args $l ) == 0 ] && continue
-		local this_mom="$( mom_word $( mom_fly $( get_mom_from_corr_line $l ) ) )"
-		for m in $@ ; do
-			if [ $this_mom == $m ] ; then
-				if [ $( get_type_from_corr_line $l) == 2pt ] ; then
-					mom_word_esp $l 2pt
-				else
-					for ins in $redstar_insertion_operators ; do
-						mom_word_esp $l $ins
-					done
-				fi
-				break
-			fi
+	for l in $@ ; do
+		if [ $( get_type_from_corr_line ${l//\~/ } ) == 2pt ] ; then
+			mom_word_esp ${l//\~/ } 2pt
+		else
+			for ins in $redstar_insertion_operators ; do
+				mom_word_esp $( get_phase_from_corr_line ${l//\~/ } ) $( get_mom_from_corr_line ${l//\~/ } ) $ins
+			done
+		fi
+	done
+}
+
+auto_phase_moms() {
+	while read l ; do
+		[ $( num_args $l ) != 6 ] && continue
+		momi="$( get_sink $l )"
+		momj="$( get_source $l )"
+		mom_auto_phase $momi | while read phasei ; do
+			mom_auto_phase $momj | while read phasej ; do
+				echo $phasei $phasej $momi $momj
+			done
 		done
 	done
 }
 
+# Return the sink from a give pair of momenta/phases
 get_sink() {
 	echo $1 $2 $3
 }
 
+# Return the source from a give pair of momenta/phases
 get_source() {
 	echo $4 $5 $6
 }
@@ -253,4 +278,18 @@ my_srun() {
 	else
 		echo "srun \$MY_SRUN_ARGS" $* "&>" $output
 	fi
+}
+
+emit_clean_commnads() {
+	for f in $@ ; do
+		if [ $run_onthefly == yes -a $srun_aggregate != yes ] ; then
+			rm_f="${f#afs:}"
+			mkdir_f="${rm_f%\*}"
+			echo "$( my_srun /dev/null rm -f $rm_f )"
+			echo "$( my_srun /dev/null mkdir -p `dirname $mkdir_f` )"
+		else
+			echo "rm -f $rm_f"
+			echo "mkdir -p `dirname $mkdir_f`"
+		fi
+	done
 }

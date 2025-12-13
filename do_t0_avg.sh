@@ -43,7 +43,7 @@ for ens in $ensembles; do
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		tsep_leader="`take_first $tsep_group`"
 
-		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read this_all_moms ; do
+		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read this_all_moms ; do
 			mom_leader="`take_first $this_all_moms`"
 			combo_line=0
 			k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos ; do

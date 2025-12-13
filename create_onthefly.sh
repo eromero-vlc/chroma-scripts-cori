@@ -26,7 +26,7 @@ for ens in $ensembles; do
 
 		k_split $max_phases_per_job $phase_groups | while read phase_group ; do
 		phase_leader="`take_first $phase_group`"
-		k_split $max_moms_per_job $( get_fly_moms $phase_group ) | while read mom_group ; do
+		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read mom_group ; do
 		k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		for t_source in $gprop_t_sources; do
 
