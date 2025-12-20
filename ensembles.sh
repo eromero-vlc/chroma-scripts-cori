@@ -8,15 +8,15 @@ ensemble0() {
 	# Tasks to run
 	run_eigs="nop"
 	run_props="yes"
-	run_gprops="yes"
-	run_baryons="yes"
+	run_gprops="nop"
+	run_baryons="nop"
 	run_mesons="nop"
 	run_discos="nop"
-	run_redstar="yes"
+	run_redstar="nop"
 
-	run_onthefly="yes"
+	run_onthefly="nop"
 	onthefly_chroma_minutes=120
-	max_moms_per_job=100
+	max_moms_per_job=1000
 
 	# Ensemble properties
 	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
@@ -24,10 +24,10 @@ ensemble0() {
 	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
 	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
 	confs="`seq 1010 30 7634`"
-	confs="`seq 1010 30 2210`"
+	#confs="`seq 1010 30 2210`"
 	#confs="`seq 1610 30 1999`"
 	#confs="`seq 2000 30 7634`"
-	confs=1010
+	#confs=1010
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
 
@@ -52,7 +52,7 @@ ensemble0() {
 	# Props options
 	prop_t_sources="0 32 64 96"
 	#prop_t_sources="`seq 0 127`"
-	prop_t_sources="0"
+	#prop_t_sources="0"
 	prop_create_if_missing="nop"
 	prop_t_fwd=22
 	prop_t_back=0
@@ -60,12 +60,12 @@ ensemble0() {
 	prop_mass="-0.2070"
 	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=3
-	prop_chroma_geometry="1 1 3 4"
+	prop_slurm_nodes=6
+	prop_chroma_geometry="1 1 3 8"
 	prop_chroma_minutes=20
 	prop_max_rhs=8
 	prop_save_file="nop"
-	max_phases_per_job=10000
+	max_phases_per_job=1
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -246,6 +246,7 @@ ensemble0() {
 	prop_file_name() {
 		local n node
 		n="${confspath}/${confsprefix}/prop_db/${confsname}.phased_${phase_leader}.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
+		n="${confspath}/${confsprefix}/prop_db/${confsname}.phased_0_0_0_0_0_0.prop.n${prop_nvec}.light.t0_${t_source}.sdb${cfg}"
 		if [ $run_onthefly == yes -a $run_props == yes -a $prop_save_file != yes ] ; then
 			n="${localpath}/${n//\//_}"
 			if [ x$1 == xsingle ] ; then
@@ -269,13 +270,14 @@ ensemble0() {
 	# Genprops options
 	gprop_t_sources="${prop_t_sources}"
 	gprop_t_seps="6 7 8 9 10 11 12"
-	max_tseps_per_job=10
+	gprop_t_seps="6"
+	max_tseps_per_job=1
 	gprop_nvec=$nvec
 	gprop_moms="0 0 0"
 	gprop_moms="`echo "$gprop_moms" | while read mx my mz; do echo "$mx $my $mz"; echo "$(( -mx )) $(( -my )) $(( -mz ))"; done | sort -u`"
 	gprop_max_rhs=$prop_max_rhs
-	gprop_max_tslices_in_contraction=2
-	gprop_max_mom_in_contraction=10
+	gprop_max_tslices_in_contraction=1
+	gprop_max_mom_in_contraction=1
 	gprop_slurm_nodes="${prop_slurm_nodes}"
 	gprop_chroma_geometry="${prop_chroma_geometry}"
 	gprop_chroma_minutes=120
@@ -369,8 +371,8 @@ ensemble0() {
 	baryon_chroma_max_tslices_in_contraction=12 # as large as possible
 	baryon_chroma_max_moms_in_contraction=2 # as large as possible (zero means do all momenta at once)
 	baryon_chroma_max_vecs=8 # as large as possible (zero means do all eigenvectors are contracted at once)
-	baryon_slurm_nodes=3
-	baryon_chroma_geometry="1 1 3 4"
+	baryon_slurm_nodes=$prop_slurm_nodes
+	baryon_chroma_geometry="$prop_chroma_geometry"
 	baryon_chroma_minutes=20
 	baryon_file_name() {
 		local n node
@@ -392,7 +394,7 @@ ensemble0() {
 	baryon_delete_after_transfer_back="nop"
 	baryon_transfer_from_jlab="nop"
 	redstar_op_bases=all
-	#redstar_op_bases=1
+	redstar_op_bases=1
 	baryon_extra_xml="
         <!-- List of displacement arrays -->
         <displacement_list>
@@ -540,7 +542,25 @@ $(
 		echo 0 0 $i   0 0 $i
 		echo 0 0 -$i  0 0 -$i
 	done
-)"
+)
+1 0 5   0 0 5   
+0 1 4   0 0 4   
+0 1 5   0 0 5   
+0 1 6   0 0 6   
+1 0 4   0 0 4   
+1 1 5   0 0 5   
+1 0 6   0 0 6   
+1 1 4   0 0 4   
+1 1 4   0 1 4   
+1 1 4   1 0 4   
+1 1 6   1 0 6   
+1 1 5   0 1 5   
+1 1 5   1 0 5   
+1 1 6   0 0 6   
+1 1 6   0 1 6   
+2 0 4   1 0 4   
+2 0 5   1 0 5   
+2 0 6   1 0 6"
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
 1 0 5   0 0 5   

@@ -18,7 +18,7 @@ get_grouping_vars() {
 	phase_groups="$( get_all_phases )"
 
 	# Set mom groups
-	[ ${run_onthefly} != yes ] && max_moms_per_job=1
+	#[ ${run_onthefly} != yes ] && max_moms_per_job=1
 
 	# Set tsep groups
 	if [ ${redstar_3pt} == yes ] ; then
