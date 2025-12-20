@@ -15,7 +15,6 @@ for ens in $ensembles; do
 	k_split $max_phases_per_job $phase_groups | while read phase_group ; do
 	phase_leader="`take_first $phase_group`"
 
-	[ ${run_onthefly} != yes ] && max_moms_per_job=1
 	k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read mom_group ; do
 	[ $( num_args $mom_group ) == 0 ] && continue
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
@@ -41,7 +40,7 @@ for ens in $ensembles; do
 			# Genprops creation
 			#
 			tsep_leader="`take_first $tsep_group`"
-			prefix="${runpath}/gprop_t${t_source}_phase${phase_leader}_mf${mom_leader}_tsep${tsep_leader}"
+			prefix="${runpath}/gprop_t${t_source}_mf${mom_leader}_tsep${tsep_leader}"
 			gprop_xml="${prefix}.xml"
 			cat << EOF > $gprop_xml
 <?xml version="1.0"?>

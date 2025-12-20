@@ -18,8 +18,8 @@ get_combos() {
 		phase_snk="$( get_sink $( get_phase_from_corr_line $l ) )"
 		mom_src="$( get_source $( get_mom_from_corr_line $l ) )"
 		phase_src="$( get_source $( get_phase_from_corr_line $l ) )"
-		echo "<elem><phase>$( mom_flip $phase_snk )</phase><mom_list><elem>$( mom_flip $mom_snk )</elem></mom_list></elem>"
-		echo "<elem><phase>$phase_src</phase><mom_list><elem>$( mom_flip $mom_src )</elem></mom_list></elem>"
+		echo "<elem><phase>$phase_snk</phase><mom_list><elem>$( mom_flip $mom_snk )</elem></mom_list></elem>"
+		echo "<elem><phase>$( mom_flip $phase_src )</phase><mom_list><elem>$( mom_flip $mom_src )</elem></mom_list></elem>"
 	done
 }
 
