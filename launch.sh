@@ -36,7 +36,7 @@ done
 last_c="_"
 tag="0"
 echo z 0 0 0 0 >> $jobsfile
-sort $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jobs job; do
+sort -u $jobsfile | while read class max_mins nodes jobs_per_node max_concurrent_jobs job; do
 	c="${class}_${max_mins}_${nodes}_${jobs_per_node}_${max_concurrent_jobs}"
 	if [ $c != $last_c ]; then
 		[ $last_c != _ ] && echo
