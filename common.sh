@@ -281,15 +281,10 @@ my_srun() {
 }
 
 emit_clean_commnads() {
-	for f in $@ ; do
+	for f in "$@" ; do
 		rm_f="${f#afs:}"
 		mkdir_f="${rm_f%\*}"
-		if [ $run_onthefly == yes -a $srun_aggregate != yes ] ; then
-			echo "$( my_srun /dev/null rm -f $rm_f )"
-			echo "$( my_srun /dev/null mkdir -p `dirname $mkdir_f` )"
-		else
-			echo "rm -f $rm_f"
-			echo "mkdir -p `dirname $mkdir_f`"
-		fi
+		echo "rm -f $rm_f"
+		echo "mkdir -p `dirname $mkdir_f`"
 	done
 }
