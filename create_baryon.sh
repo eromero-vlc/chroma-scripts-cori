@@ -40,8 +40,9 @@ for ens in $ensembles; do
 		# Baryon creation
 		#
 
-		t_sources="all"
-		[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
+		#t_sources="all"
+		run_onthefly="yes"
+		#[ ${run_onthefly} == yes ] && t_sources="$gprop_t_sources"
 		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read mom_group ; do
  		combos="$( get_combos $mom_group | sort -u )"
 		for cfg in $confs; do
@@ -53,7 +54,9 @@ for ens in $ensembles; do
 			[ -f ${runpath}.tar.gz ] && continue
 			mkdir -p $runpath
 
+			echo hola $t_sources
 			for t_source in $t_sources; do
+			echo hola $t_source
 			if [ ${run_onthefly} == yes ] ; then
 				# Find t_origin
 				baryon_t_source="`shuffle_t_source $cfg $t_size $t_source`"
@@ -66,10 +69,12 @@ for ens in $ensembles; do
 				prefix_extra=""
 			fi
 
-			baryon_file="`baryon_file_name single`"
+			baryon_file="/tmp/baryon.sdb"
+			#baryon_file="`baryon_file_name single`"
 			[ $run_onthefly != yes ] && mkdir -p `dirname ${baryon_file}`
 
 			prefix="$runpath/baryon_${prefix_extra}"
+			echo $prefix
 			baryon_xml="${prefix}.xml"
 			cat << EOF > $baryon_xml
 <?xml version="1.0"?>
@@ -83,7 +88,7 @@ for ens in $ensembles; do
         <version>2</version>
         <max_tslices_in_contraction>${baryon_chroma_max_tslices_in_contraction}</max_tslices_in_contraction>
         <max_moms_in_contraction>${baryon_chroma_max_moms_in_contraction}</max_moms_in_contraction>
-        <max_vecs>${baryon_chroma_max_vecs}</max_vecs>
+        <max_vecs>${nvec}</max_vecs>
         
         <use_derivP>true</use_derivP>
         <t_source>$baryon_t_source</t_source>
@@ -94,7 +99,31 @@ for ens in $ensembles; do
         <use_superb_format>true</use_superb_format>
         <output_file_is_local>$( if [ $run_onthefly == yes ] ; then echo true ; else echo false; fi )</output_file_is_local>
         <combos>$combos</combos>
-        $baryon_extra_xml
+
+        <!-- List of displacement arrays -->
+        <displacement_list>
+          <elem><left>0</left><middle>0</middle><right>0</right></elem>
+	$( [ $redstar_op_bases == 3 -o $redstar_op_bases == all ] && echo "
+          <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>" )
+	$( [ $redstar_op_bases == all ] && echo "
+          <elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3</right></elem>
+          <elem><left>0</left><middle>1</middle><right>1</right></elem>
+          <elem><left>0</left><middle>1</middle><right>2</right></elem>
+          <elem><left>0</left><middle>1</middle><right>3</right></elem>
+          <elem><left>0</left><middle>2</middle><right>2</right></elem>
+          <elem><left>0</left><middle>2</middle><right>3</right></elem>
+          <elem><left>0</left><middle>3</middle><right>3</right></elem>" )
+        </displacement_list>
 
         <LinkSmearing>
           <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>

@@ -27,7 +27,7 @@ for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
-	runpathens="$PWD/${tag}"
+	runpathens="$PWD/${tag}/conf_*"
 	find $runpathens -name '*.sh' | while read f; do
 		[ -f $f.launched ] || [ -f $f.launched.verified ] || echo `bash $f class` $f >> $jobsfile
 	done
@@ -79,6 +79,7 @@ EOF
 	max_jobs_in_seq="$(( max_minutes / minutes_per_job ))"
 	# minimum number of jobs to run
 	max_concurrent_jobs="$(( max_concurrent_jobs == 0 ? slurm_max_bundled_jobs : ( max_concurrent_jobs < slurm_max_bundled_jobs ? max_concurrent_jobs : slurm_max_bundled_jobs ) ))"
+	echo $max_concurrent_jobs $max_jobs_in_seq
 	min_slurm_jobs="$(( max_concurrent_jobs == 0 ? 0 : num_jobs / (max_concurrent_jobs*max_jobs_in_seq) ))"
 	# total SLURM jobs to launch
 	num_slurm_jobs="$(( num_jobs<max_jobs ? num_jobs : max_jobs ))"

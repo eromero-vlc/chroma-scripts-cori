@@ -2,6 +2,20 @@
 
 source ensembles.sh
 
+get_combos() {
+	local word_l
+	local l
+	for word_l in $@ ; do
+		l="${word_l//\~/ }"
+		mom_snk="$( get_sink $( get_mom_from_corr_line $l ) )"
+		phase_snk="$( get_sink $( get_phase_from_corr_line $l ) )"
+		mom_src="$( get_source $( get_mom_from_corr_line $l ) )"
+		phase_src="$( get_source $( get_phase_from_corr_line $l ) )"
+		echo "<elem><phase>$( neg_mom $phase_snk )</phase><mom_list><elem>$( neg_mom $mom_snk )</elem></mom_list></elem>"
+		echo "<elem><phase>$( neg_mom $phase_src )</phase><mom_list><elem>$( neg_mom $mom_src )</elem></mom_list></elem>"
+	done
+}
+
 num_zeros_mom() {
 	local n=0
 	for i in $@; do
@@ -362,10 +376,12 @@ corr_graph() {
       <smeared_glue_dbs>
       </smeared_glue_dbs>
       <prop_dbs>
+         <elem>$localpath/prop.sdb</elem>
       </prop_dbs>
       <twoquark_discoblock_dbs>
       </twoquark_discoblock_dbs>
       <smeared_baryon_dbs>
+         <elem>$localpath/baryon.sdb</elem>
       </smeared_baryon_dbs>
       <unsmeared_meson_dbs>
       </unsmeared_meson_dbs>
@@ -390,73 +406,148 @@ corr_graph() {
 
 chroma_corr_task() {
 	local corr_graph_file="$1"
-	local corr_file="$2"
-	local t_origin="$3"
+	local corr_graph_file_runner="${1%.bin}_runner.sh"
+	local t_origin="$2"
+	local output="$3"
 	cat << EOF
 <?xml version="1.0"?>
 
 <chroma>
 <Param>
   <InlineMeasurements>
-
     <elem>
-      <Name>CORR_SUPERB</Name>
+      <Name>BARYON_MATELEM_COLORVEC_SUPERB</Name>
       <Frequency>1</Frequency>
       <Param>
-          <num_vecs>$prop_nvec</num_vecs>
-          <Nt_forward>${redstar_t_corr}</Nt_forward>
-          <t_origin>${t_origin}</t_origin>
+        <version>2</version>
+        <max_tslices_in_contraction>$(( slurm_procs_per_node*redstar_slurm_nodes*redstar_max_tslides_baryon ))</max_tslices_in_contraction>
+        <max_moms_in_contraction>${redstar_max_mom_baryon}</max_moms_in_contraction>
+        <max_vecs>${redstar_max_vecs_baryons}</max_vecs>
+        
+        <use_derivP>true</use_derivP>
+        <t_source>$t_origin</t_source>
+        <Nt_forward>$(( redstar_t_corr+t_sources_in_seq ))</Nt_forward>
+        <num_vecs>$nvec</num_vecs>
+        <displacement_length>1</displacement_length>
+        <decay_dir>3</decay_dir>
+        <use_superb_format>true</use_superb_format>
+        <output_file_is_local>false</output_file_is_local>
+        <combos>$combos</combos>
+
+        <!-- List of displacement arrays -->
+        <displacement_list>
+          <elem><left>0</left><middle>0</middle><right>0</right></elem>
+	$( [ $redstar_op_bases == 3 -o $redstar_op_bases == all ] && echo "
+          <elem><left>0</left><middle>0</middle><right>1 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>1 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2 3</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3 2</right></elem>" )
+	$( [ $redstar_op_bases == all ] && echo "
+          <elem><left>0</left><middle>0</middle><right>1</right></elem>
+          <elem><left>0</left><middle>0</middle><right>2</right></elem>
+          <elem><left>0</left><middle>0</middle><right>3</right></elem>
+          <elem><left>0</left><middle>1</middle><right>1</right></elem>
+          <elem><left>0</left><middle>1</middle><right>2</right></elem>
+          <elem><left>0</left><middle>1</middle><right>3</right></elem>
+          <elem><left>0</left><middle>2</middle><right>2</right></elem>
+          <elem><left>0</left><middle>2</middle><right>3</right></elem>
+          <elem><left>0</left><middle>3</middle><right>3</right></elem>" )
+        </displacement_list>
+
+        <LinkSmearing>
+          <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
+          <link_smear_fact>$eigs_smear_rho</link_smear_fact>
+          <link_smear_num>$eigs_smear_steps</link_smear_num>
+          <no_smear_dir>3</no_smear_dir>
+        </LinkSmearing>
+      </Param>
+      <NamedObject>
+        <gauge_id>default_gauge_field</gauge_id>
+        <colorvec_files><elem>${colorvec_file}</elem></colorvec_files>
+        <baryon_op_file>$localpath/baryon.sdb</baryon_op_file>
+      </NamedObject>
+    </elem>
+
+    <elem>
+      <Name>PROP_AND_MATELEM_DISTILLATION_SUPERB</Name>
+      <Frequency>1</Frequency>
+      <Param>
+        <Contractions>
+          <mass_label>${prop_mass_label}</mass_label>
+          <num_vecs>$redstar_nvec</num_vecs>
+          <t_sources>$(
+		for (( t_source_disp=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
+			echo -n "\$(( ($t_origin+$t_source_disp)%$t_size )) "
+		done
+ )</t_sources>
+          <Nt_forward>$(( redstar_t_corr + 1))</Nt_forward>
+          <Nt_backward>0</Nt_backward>
           <decay_dir>3</decay_dir>
-          <ensemble>${confsname}</ensemble>
+          <num_tries>-1</num_tries>
           <max_rhs>${prop_max_rhs}</max_rhs>
-          <flavor_to_mass>
-            <elem>
-              <flavor>l</flavor>
-              <mass>${prop_mass_label}</mass>
-            </elem>
-          </flavor_to_mass>
-          <flavor_to_prop>
-            <elem>
-              <flavor>l</flavor>
-              <Propagator>
-                <version>10</version>
-                <quarkSpinType>FULL</quarkSpinType>
-                <obsvP>false</obsvP>
-                <numRetries>1</numRetries>
-                <FermionAction>
-                  <FermAct>CLOVER</FermAct>
-                  <Mass>${prop_mass}</Mass>
-                  <clovCoeff>${prop_clov}</clovCoeff>
-                  <FermState>
-                    <Name>STOUT_FERM_STATE</Name>
-                    <rho>0.125</rho>
-                    <n_smear>1</n_smear>
-                    <orthog_dir>-1</orthog_dir>
-                    <FermionBC>
-                      <FermBC>SIMPLE_FERMBC</FermBC>
-                      <boundary>1 1 1 -1</boundary>
-                    </FermionBC>
-                  </FermState>
-                </FermionAction>
-                <InvertParam>
-                    $prop_inv
-                </InvertParam>
-              </Propagator>
-             </elem>
-          </flavor_to_prop>
-          <LinkSmearing>
-            <LinkSmearingType>STOUT_SMEAR</LinkSmearingType>
-            <link_smear_fact>$eigs_smear_rho</link_smear_fact>
-            <link_smear_num>$eigs_smear_steps</link_smear_num>
-            <no_smear_dir>3</no_smear_dir>
-          </LinkSmearing>
+          <phases>$(
+		for phase in $phase_group; do
+			phase_snk="$( get_sink ${phase//_/ } )"
+			phase_src="$( get_source ${phase//_/ } )"
+			echo "<elem><source>${phase_src}</source><sink>$( neg_mom ${phase_snk} )</sink></elem>"
+		done
+          )</phases>
+          <use_superb_format>true</use_superb_format>
+          <output_file_is_local>false</output_file_is_local>
+        </Contractions>
+        <Propagator>
+          <version>10</version>
+          <quarkSpinType>FULL</quarkSpinType>
+          <obsvP>false</obsvP>
+          <numRetries>1</numRetries>
+          <FermionAction>
+            <FermAct>CLOVER</FermAct>
+            <Mass>${prop_mass}</Mass>
+            <clovCoeff>${prop_clov}</clovCoeff>
+            <FermState>
+              <Name>STOUT_FERM_STATE</Name>
+              <rho>0.125</rho>
+              <n_smear>1</n_smear>
+              <orthog_dir>-1</orthog_dir>
+              <FermionBC>
+                <FermBC>SIMPLE_FERMBC</FermBC>
+                <boundary>1 1 1 -1</boundary>
+              </FermionBC>
+            </FermState>
+          </FermionAction>
+            <InvertParam>
+              $prop_inv
+            </InvertParam>
+        </Propagator>
       </Param>
       <NamedObject>
         <gauge_id>default_gauge_field</gauge_id>
         <colorvec_files><elem>$colorvec_file</elem></colorvec_files>
-        <corr_graph_file>$corr_graph_file</corr_graph_file>
-        <corr_file>$corr_file</corr_file>
+        <prop_op_file>$localpath/prop.sdb</prop_op_file>
       </NamedObject>
+    </elem>
+
+    <elem>
+      <Name>CMD</Name>
+      <Frequency>1</Frequency>
+      <Param>
+          <only_on_master>false</only_on_master>
+          <cmd>$(
+		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
+			local t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
+			for (( i=0 ; i<num_procs ; ++i, ++p )) ; do
+				local corr_graph_file_runner="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}_proc${i}_runner.sh"
+				local corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
+				echo "<elem>CUDA_VISIBLE_DEVICES=$(( p % slurm_procs_per_node )) bash ${corr_graph_file_runner} ${t_source} ${corr_file}_$i ${output}_npt_$i</elem>"
+			done
+		done
+	)</cmd>
+      </Param>
     </elem>
 
   </InlineMeasurements>
@@ -493,13 +584,15 @@ for ens in $ensembles; do
 	get_grouping_vars
 
 	corr_runpath="$PWD/${tag}/redstar_corr_graph-${ens}"
-	rm -rf $corr_runpath
+	#rm -rf $corr_runpath
 	mkdir -p $corr_runpath
 
 	template_runpath="$PWD/${tag}/redstar_template-${ens}"
-	rm -rf ${template_runpath}
+	#rm -rf ${template_runpath}
 	mkdir -p ${template_runpath}
 	cfg="@CFG"
+	lime_file="`lime_file_name`"
+	colorvec_file="`colorvec_file_name`"
 	runpath="$PWD/${tag}/conf_${cfg}"
 	rm -f ${redstar_files}*
 
@@ -507,14 +600,17 @@ for ens in $ensembles; do
 	phase_leader="`take_first $phase_group`"
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		tsep_leader="`take_first $tsep_group`"
-
+$insert_op_mom_combos
 		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read this_all_moms ; do
+ 			combos="$( get_combos $this_all_moms | sort -u )"
 			mom_leader="`take_first $this_all_moms`"
 			combo_line=0
-			k_split $max_corr_per_job $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos ; do
-				corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}.bin"
-				output="${corr_graph_bin}.out"
-				cat << EOF > ${corr_graph_bin}.sh
+			k_split $max_corr_per_job $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos; do
+				proc_line=0
+				k_split_lines $(( redstar_slurm_nodes*slurm_procs_per_node )) $insert_op_mom_combos | while read insert_op_mom_combos_proc ; do
+					corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}_proc${proc_line}.bin"
+					output="${corr_graph_bin}.out"
+					true || cat << EOF > ${corr_graph_bin}.sh
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -530,13 +626,13 @@ run() {
 	[ -e ${localpath} ] || tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
 	mkdir -p \$tmp_runpath
 	cd \$tmp_runpath
-	rm -f ${corr_graph_bin}
+	#rm -f ${corr_graph_bin}
 	cat << EOFeof > corr_graph.xml
-$( corr_graph "${corr_graph_bin}" "none" "-1" "${tsep_group}" $insert_op_mom_combos )
+$( corr_graph "${corr_graph_bin}" "none" "-1" "${tsep_group}" $insert_op_mom_combos_proc )
 EOFeof
 	echo Starting $redstar_corr_graph corr_graph.xml output_xml > $output
 	$redstar_corr_graph corr_graph.xml output_xml &>> $output
-	rm -r \$tmp_runpath
+	#rm -r \$tmp_runpath
 }
 
 check() {
@@ -559,20 +655,43 @@ globus() { echo -n; }
 
 eval "\${1:-run}"
 EOF
+					cat << EOF > ${corr_graph_bin%.bin}_runner.sh
+tmp_runpath="${localpath}/${corr_graph_bin//\//_}"
+[ -e ${localpath} ] || tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
+mkdir -p \$tmp_runpath
+cd \$tmp_runpath
+#rm -f ${corr_graph_bin}
+t_origin="\$1"
+corr_file="\$2"
+output="\$3"
+cat << EOFeof > corr_graph.xml
+$( corr_graph "${corr_graph_bin}" "\$corr_file" "\$t_origin" "${tsep_group}" $insert_op_mom_combos_proc )
+EOFeof
+echo Starting $redstar_corr_graph corr_graph.xml output_xml > \$output
+$redstar_npt corr_graph.xml output_xml &>> \$output
+rm -r \$tmp_runpath
+EOF
+					proc_line="$(( proc_line+1 ))"
+				done # insert_op_mom_combos_proc
+				num_insert_op_mom_combos="$( num_args $insert_op_mom_combos )"
+				num_procs="$(( redstar_slurm_nodes*slurm_procs_per_node ))"
+				num_procs="$(( num_insert_op_mom_combos < num_procs ? num_insert_op_mom_combos : num_procs ))"
 
-				for t_source in $t_sources; do
-					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
-					mkdir -p `dirname ${corr_file}`
-					prefix="t${t_source}_insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
+				for t_source_from in $t_sources; do
+					for (( t_source_disp=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
+						corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader t_source=$(( (t_source_from+t_source_disp)%t_size )) corr_file_name`"
+						mkdir -p `dirname ${corr_file}`
+					done
+					prefix="t${t_source_from}_insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
 					output_xml="redstar_xml_out_${prefix}.out"
 					output="$runpath/redstar_${prefix}.out"
 					redstar_sh="redstar_${prefix}.sh"
 					redstar_sh+=".template"
-					echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
+					echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source_from
 					cat << EOF > $template_runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
-#SBATCH -t $redstar_minutes
+#SBATCH -t $redstar_chroma_minutes
 #SBATCH --nodes=$redstar_slurm_nodes -n $(( slurm_procs_per_node*redstar_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J redstar-${prefix}
 
@@ -580,21 +699,41 @@ environ() {
 	$slurm_script_prologue
 }
 
+xml() {
+	cat << EOFeof
+$( chroma_corr_task "${corr_graph_bin}" "@T_ORIGIN" "$output" )
+EOFeof
+}
+
 run() {
 	cd $runpath
-	$( emit_clean_commnads "${corr_file}*" )
-	redstar_xml="\$(mktemp)"
-	cat << EOFeof > \${redstar_xml}
-$( chroma_corr_task "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" )
-EOFeof
-	mkdir -p `dirname ${corr_file}`
-	$( my_srun $output $chroma -i \${redstar_xml} -geom $redstar_chroma_geometry $chroma_extra_args )
+	$(
+		t_origin="@T_ORIGIN"
+		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
+			t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
+			corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
+			echo "mkdir -p \`dirname ${corr_file}\`"
+			for (( i=0 ; i<num_procs ; ++i, ++p )) ; do
+				echo "rm -f ${corr_file}_${i}*"
+			done
+		done
+	)
+	$( my_srun $output $chroma -i \$1 -geom $redstar_chroma_geometry $chroma_extra_args )
 }
 
 check() {
-	[ -f $corr_file ] || exit 1
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
-	exit 1
+	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null || exit 1
+	$(
+		t_origin="@T_ORIGIN"
+		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
+			t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
+			corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
+			for (( i=0 ; i<num_procs ; ++i )) ; do
+				echo "[ -f ${corr_file}_$i ] || exit 1"
+				echo "(tail -n 10 ${output}_npt_$i 2> /dev/null | grep -q \"REDSTAR_NPT: total time\") || exit 1"
+			done
+		done
+	)
 }
 
 deps() {
@@ -614,12 +753,12 @@ globus() {
 	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
 }
 
-eval "\${1:-run}"
+eval "\$@"
 EOF
-				done # t_source
+				done # t_source_from
 	
-				combo_line="$(( combo_line+1 ))"
-			done # insert_op_mom_combos
+			combo_line="$(( combo_line+1 ))"
+			done # insert_op_mom_combos_group
 		done # this_all_moms
 	done # tsep_group
 	done # phase_group
@@ -642,7 +781,7 @@ EOF
 				cat << EOF > $runpath/${template_file%.template}
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/${template_file%.sh.template}.out0
-#SBATCH -t $redstar_minutes
+#SBATCH -t $redstar_chroma_minutes
 #SBATCH --nodes=$redstar_slurm_nodes -n $(( slurm_procs_per_node*redstar_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J redstar-${prefix}
 
@@ -650,7 +789,7 @@ t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash $BASH_INVOCATION_OPTIONS \$t
+	bash $BASH_INVOCATION_OPTIONS \$t run $runpath/${template_file%.template}.xml
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -658,7 +797,7 @@ elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
 elif [ x\$1 == xrun ]; then
-	bash $BASH_INVOCATION_OPTIONS \$t \$@
+	bash $BASH_INVOCATION_OPTIONS \$t run $runpath/${template_file%.template}.xml
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -669,7 +808,7 @@ else
 	exit \$r
 fi
 EOF
-
+				bash $runpath/${template_file%.template} xml > $runpath/${template_file%.template}.xml
 			done # template_file
 		done # t_source
 	done # cfg
