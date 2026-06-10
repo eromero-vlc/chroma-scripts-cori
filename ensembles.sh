@@ -12,7 +12,8 @@ ensemble0() {
 
 	onthefly_chroma_minutes=120
 	max_moms_per_job=100000
-	max_corr_per_job=20
+	max_corr_per_job=100000
+	max_corr_per_redstar=5
 	max_phases_per_job=10000
 	max_tseps_per_job=1000
 
@@ -23,6 +24,7 @@ ensemble0() {
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 5160`"
 	confs=1000
+	confs="`seq 1010 10 1990`"
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -41,9 +43,9 @@ ensemble0() {
 	eigs_chroma_minutes=30
 
 	# Props options
-	t_sources="`seq 0 $t_size`"
 	t_sources="0"
 	t_sources_in_seq="8"
+	t_sources="`seq 0 $t_sources_in_seq $(( t_size-1 ))`"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -345,7 +347,7 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=20 # Number of time slices
+	redstar_t_corr=16 # Number of time slices
 	redstar_nvec="$nvec"
 	redstar_tag="."
 	redstar_auto_phasing="0 1 2 3"
@@ -980,7 +982,7 @@ $(
 	redstar_max_tslides_baryon=4
 	redstar_minutes=30
 	redstar_slurm_nodes="$prop_slurm_nodes"
-	redstar_chroma_minutes="180"
+	redstar_chroma_minutes="360"
 	redstar_chroma_geometry="$prop_chroma_geometry"
 	redstar_transfer_back=nop
 
@@ -1006,6 +1008,7 @@ dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
+dbcombine="$adat/bin/dbcombine"
 
 slurm_procs_per_node=4
 slurm_cores_per_node="$(( 72*4 ))"
@@ -1044,7 +1047,7 @@ export HADRON_EVICTION_THRESHOLD=\"30G\"
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
 max_jobs=30 # maximum jobs to be launched
-max_minutes=180 # maximum hours for a single job
+max_minutes=360 # maximum hours for a single job
 slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 
 #

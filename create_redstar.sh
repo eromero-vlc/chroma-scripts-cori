@@ -542,9 +542,29 @@ chroma_corr_task() {
 			local t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
 			for (( i=0 ; i<num_procs ; ++i, ++p )) ; do
 				local corr_graph_file_runner="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}_proc${i}_runner.sh"
-				local corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
-				echo "<elem>CUDA_VISIBLE_DEVICES=$(( p % slurm_procs_per_node )) bash ${corr_graph_file_runner} ${t_source} ${corr_file}_$i ${output}_npt_$i</elem>"
+				local corr_file_i="$localpath/corr_${t_source}_${i}.sdb"
+				echo "<elem>CUDA_VISIBLE_DEVICES=$(( p % slurm_procs_per_node )) bash ${corr_graph_file_runner} ${t_source} ${corr_file_i} ${output}_npt_$i</elem>"
 			done
+		done
+	)</cmd>
+      </Param>
+    </elem>
+
+    <elem>
+      <Name>CMD</Name>
+      <Frequency>1</Frequency>
+      <Param>
+          <only_on_master>true</only_on_master>
+          <cmd>$(
+		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
+			local t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
+			local corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
+			echo -n "<elem>$dbcombine $corr_file "
+			for (( i=0 ; i<num_procs ; ++i, ++p )) ; do
+				local corr_file_i="$localpath/corr_${t_source}_${i}.sdb"
+				echo -n "$corr_file_i "
+			done
+			echo "</elem>"
 		done
 	)</cmd>
       </Param>
@@ -600,14 +620,13 @@ for ens in $ensembles; do
 	phase_leader="`take_first $phase_group`"
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		tsep_leader="`take_first $tsep_group`"
-$insert_op_mom_combos
 		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read this_all_moms ; do
  			combos="$( get_combos $this_all_moms | sort -u )"
 			mom_leader="`take_first $this_all_moms`"
 			combo_line=0
 			k_split $max_corr_per_job $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos; do
 				proc_line=0
-				k_split_lines $(( redstar_slurm_nodes*slurm_procs_per_node )) $insert_op_mom_combos | while read insert_op_mom_combos_proc ; do
+				k_split $max_corr_per_redstar $insert_op_mom_combos | while read insert_op_mom_combos_proc ; do
 					corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}_proc${proc_line}.bin"
 					output="${corr_graph_bin}.out"
 					true || cat << EOF > ${corr_graph_bin}.sh
@@ -674,8 +693,7 @@ EOF
 					proc_line="$(( proc_line+1 ))"
 				done # insert_op_mom_combos_proc
 				num_insert_op_mom_combos="$( num_args $insert_op_mom_combos )"
-				num_procs="$(( redstar_slurm_nodes*slurm_procs_per_node ))"
-				num_procs="$(( num_insert_op_mom_combos < num_procs ? num_insert_op_mom_combos : num_procs ))"
+				num_procs="$(( (num_insert_op_mom_combos + max_corr_per_redstar-1)/max_corr_per_redstar ))"
 
 				for t_source_from in $t_sources; do
 					for (( t_source_disp=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
