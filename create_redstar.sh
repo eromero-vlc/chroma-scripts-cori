@@ -494,7 +494,7 @@ chroma_corr_task() {
 		for phase in $phase_group; do
 			phase_snk="$( get_sink ${phase//_/ } )"
 			phase_src="$( get_source ${phase//_/ } )"
-			echo "<elem><source>${phase_src}</source><sink>$( neg_mom ${phase_snk} )</sink></elem>"
+			echo "<elem><source>$( neg_mom ${phase_src} )</source><sink>${phase_snk}</sink></elem>"
 		done
           )</phases>
           <use_superb_format>true</use_superb_format>
@@ -554,7 +554,7 @@ chroma_corr_task() {
       <Name>CMD</Name>
       <Frequency>1</Frequency>
       <Param>
-          <only_on_master>true</only_on_master>
+          <only_on_master>false</only_on_master>
           <cmd>$(
 		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
 			local t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
@@ -629,7 +629,7 @@ for ens in $ensembles; do
 				k_split $max_corr_per_redstar $insert_op_mom_combos | while read insert_op_mom_combos_proc ; do
 					corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}_proc${proc_line}.bin"
 					output="${corr_graph_bin}.out"
-					true || cat << EOF > ${corr_graph_bin}.sh
+					cat << EOF > ${corr_graph_bin}.sh
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -675,20 +675,27 @@ globus() { echo -n; }
 eval "\${1:-run}"
 EOF
 					cat << EOF > ${corr_graph_bin%.bin}_runner.sh
-tmp_runpath="${localpath}/${corr_graph_bin//\//_}"
-[ -e ${localpath} ] || tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}"
-mkdir -p \$tmp_runpath
-cd \$tmp_runpath
-#rm -f ${corr_graph_bin}
 t_origin="\$1"
 corr_file="\$2"
+tmp_runpath="${localpath}/${corr_graph_bin//\//_}_t\$t_origin"
+[ -e ${localpath} ] || tmp_runpath="\${TMPDIR:-/tmp}/${corr_graph_bin//\//_}_t\$t_origin"
+mkdir -p \$tmp_runpath
+cd \$tmp_runpath
 output="\$3"
 cat << EOFeof > corr_graph.xml
 $( corr_graph "${corr_graph_bin}" "\$corr_file" "\$t_origin" "${tsep_group}" $insert_op_mom_combos_proc )
 EOFeof
-echo Starting $redstar_corr_graph corr_graph.xml output_xml > \$output
-$redstar_npt corr_graph.xml output_xml &>> \$output
-rm -r \$tmp_runpath
+echo Starting $redstar_corr_graph corr_graph.xml output_xml > output
+if $redstar_npt corr_graph.xml output_xml &>> output ; then
+  cd
+  rm -r \$tmp_runpath
+  exit 0
+else
+  cp output \$output
+  cd
+  rm -r \$tmp_runpath
+  exit -1
+fi
 EOF
 					proc_line="$(( proc_line+1 ))"
 				done # insert_op_mom_combos_proc
@@ -746,10 +753,7 @@ check() {
 		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
 			t_source="\$(( ($t_origin+$t_source_disp)%$t_size ))"
 			corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
-			for (( i=0 ; i<num_procs ; ++i )) ; do
-				echo "[ -f ${corr_file}_$i ] || exit 1"
-				echo "(tail -n 10 ${output}_npt_$i 2> /dev/null | grep -q \"REDSTAR_NPT: total time\") || exit 1"
-			done
+			echo "[ -f ${corr_file} ] || exit 1"
 		done
 	)
 }

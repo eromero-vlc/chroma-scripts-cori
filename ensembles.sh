@@ -23,8 +23,8 @@ ensemble0() {
 	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 5160`"
-	confs=1000
-	confs="`seq 1010 10 1990`"
+	confs="`seq 1000 10 1690`"
+	#confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
 
@@ -43,9 +43,9 @@ ensemble0() {
 	eigs_chroma_minutes=30
 
 	# Props options
-	t_sources="0"
 	t_sources_in_seq="8"
 	t_sources="`seq 0 $t_sources_in_seq $(( t_size-1 ))`"
+	#t_sources="0"
 	prop_mass="-0.2350"
 	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
@@ -960,7 +960,7 @@ $(
 	}
 	corr_file_name() {
 		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
-		prefix_path_extra="_2pt_test_nvec${prop_nvec}"
+		prefix_path_extra="_2pt_nvec${nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
@@ -982,7 +982,7 @@ $(
 	redstar_max_tslides_baryon=4
 	redstar_minutes=30
 	redstar_slurm_nodes="$prop_slurm_nodes"
-	redstar_chroma_minutes="360"
+	redstar_chroma_minutes="540"
 	redstar_chroma_geometry="$prop_chroma_geometry"
 	redstar_transfer_back=nop
 
@@ -1002,7 +1002,7 @@ redstar="$chromaform/install/redstar-colorvec-hadron-cuda-adat-superbblas-sp"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat"
+adat="$chromaform/install/adat-superbblas-sp"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -1027,7 +1027,7 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
-export SB_TRACK_TIME=1
+#export SB_TRACK_TIME=1
 #export SB_CACHEGB_GPU=60
 export REDSTAR_SB_MEM_GB=40
 export MPICH_GPU_SUPPORT_ENABLED=1
@@ -1047,7 +1047,7 @@ export HADRON_EVICTION_THRESHOLD=\"30G\"
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
 max_jobs=30 # maximum jobs to be launched
-max_minutes=360 # maximum hours for a single job
+max_minutes=540 # maximum hours for a single job
 slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 
 #
