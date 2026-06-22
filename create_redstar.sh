@@ -730,7 +730,7 @@ $( chroma_corr_task "${corr_graph_bin}" "@T_ORIGIN" "$output" )
 EOFeof
 }
 
-run() {
+pre() {
 	cd $runpath
 	$(
 		t_origin="@T_ORIGIN"
@@ -743,11 +743,20 @@ run() {
 			done
 		done
 	)
+}
+
+run() {
+	pre
 	$( my_srun $output $chroma -i \$1 -geom $redstar_chroma_geometry $chroma_extra_args )
 }
 
+run_list() {
+	num_lines="\$( cat \$1 | wc -l )"
+	srun -N \$(( num_lines*$redstar_slurm_nodes )) $chroma -ilp \$1 -geom $redstar_chroma_geometry -replicas \$num_lines  $chroma_extra_args
+}
+
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null || exit 1
+	grep -q "CHROMA: measurements: time=" 2>&1 ${output} > /dev/null || exit 1
 	$(
 		t_origin="@T_ORIGIN"
 		for (( t_source_disp=0, p=0 ; t_source_disp < t_sources_in_seq ; t_source_disp++ )) ; do
@@ -764,6 +773,10 @@ deps() {
 
 outs() {
 	echo $corr_file
+}
+
+output() {
+	echo $output
 }
 
 class() {
