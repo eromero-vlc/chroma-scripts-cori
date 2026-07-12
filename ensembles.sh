@@ -24,6 +24,9 @@ ensemble0() {
 	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
 	confs="`seq 1000 10 5160`"
 	confs="`seq 1000 10 1690`"
+	confs="`seq 1700 10 1900`"
+	confs="`seq 1910 10 5160`"
+	confs="`seq 10 10 990`"
 	#confs=1000
 	s_size=32 # lattice spatial size
 	t_size=64 # lattice temporal size
@@ -1016,7 +1019,7 @@ slurm_gpus_per_node=4
 slurm_sbatch_prologue="#!/bin/bash
 #SBATCH --uenv=prgenv-gnu/26.3
 #SBATCH --view=modules
-#SBATCH -A lp153
+#SBATCH -A lp153 --exclusive
 #SBATCH --gres=gpu:4 --hint=nomultithread --cpus-per-task=8
 #SBATCH --gpu-bind=none --tasks-per-node=4"
 
@@ -1046,7 +1049,7 @@ export HADRON_EVICTION_THRESHOLD=\"30G\"
 
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
-max_jobs=30 # maximum jobs to be launched
+max_jobs=1 # maximum jobs to be launched
 max_minutes=540 # maximum hours for a single job
 slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 
