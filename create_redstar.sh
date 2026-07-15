@@ -2,6 +2,20 @@
 
 source ensembles.sh
 
+get_combos() {
+	local word_l
+	local l
+	for word_l in $@ ; do
+		l="${word_l//\~/ }"
+		mom_snk="$( get_sink $( get_mom_from_corr_line $l ) )"
+		phase_snk="$( get_sink $( get_phase_from_corr_line $l ) )"
+		mom_src="$( get_source $( get_mom_from_corr_line $l ) )"
+		phase_src="$( get_source $( get_phase_from_corr_line $l ) )"
+		echo "<elem><phase>$( neg_mom $phase_snk )</phase><mom_list><elem>$( neg_mom $mom_snk )</elem></mom_list></elem>"
+		echo "<elem><phase>$( neg_mom $phase_src )</phase><mom_list><elem>$( neg_mom $mom_src )</elem></mom_list></elem>"
+	done
+}
+
 num_zeros_mom() {
 	local n=0
 	for i in $@; do
@@ -642,7 +656,7 @@ EOF
 				cat << EOF > $runpath/${template_file%.template}
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/${template_file%.sh.template}.out0
-#SBATCH -t $redstar_minutes
+#SBATCH -t $redstar_chroma_minutes
 #SBATCH --nodes=$redstar_slurm_nodes -n $(( slurm_procs_per_node*redstar_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J redstar-${prefix}
 
