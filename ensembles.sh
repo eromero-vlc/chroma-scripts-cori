@@ -530,8 +530,8 @@ $(
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
-		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus// /,}"
-		prefix_path_extra="_2pt_test_nvec${prop_nvec}"
+		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
+		prefix_path_extra="_2pt_nvec${nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
@@ -544,7 +544,7 @@ $(
 		fi
 	}
 	pack_file_name() {
-		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus// /,}"
+		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
 		prefix_path_extra="_2pt-disco"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/corr_pack_cfg_${cfg}.tar.gz"
 	}
