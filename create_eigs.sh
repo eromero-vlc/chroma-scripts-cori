@@ -86,8 +86,9 @@ pre() {
 }
 
 run() {
+	. environ
 	pre
-	$( my_srun $output $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args )
+	$( my_srun $output $chroma -i $runpath/eigs.sh.xml -geom $eigs_chroma_geometry $chroma_extra_args )
 }
 
 run_list() {
@@ -117,11 +118,15 @@ class() {
 	echo a $eigs_chroma_minutes $eigs_slurm_nodes 1 0
 }
 
-globus() {
-	[ $eigs_transfer_back == yes ] && echo ${colorvec_file}.globus ${this_ep}${colorvec_file#${confspath}} ${jlab_ep}${colorvec_file#${confspath}} ${eigs_delete_after_transfer_back}
-}
+#globus() {
+#	[ $eigs_transfer_back == yes ] && echo ${colorvec_file}.globus ${this_ep}${colorvec_file#${confspath}} ${jlab_ep}${colorvec_file#${confspath}} ${eigs_delete_after_transfer_back}
+#}
 
-eval "\$@"
+if [ x\$1 == x ]; then
+	run
+else
+	eval "\$@"
+fi
 EOF
 	done # cfg
 done # ens

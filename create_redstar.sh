@@ -514,6 +514,8 @@ for ens in $ensembles; do
 	rm -rf ${template_runpath}
 	mkdir -p ${template_runpath}
 	cfg="@CFG"
+	lime_file="`lime_file_name`"
+	colorvec_file="`colorvec_file_name`"
 	runpath="$PWD/${tag}/conf_${cfg}"
 	rm -f ${redstar_files}*
 
@@ -521,7 +523,6 @@ for ens in $ensembles; do
 	phase_leader="`take_first $phase_group`"
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		tsep_leader="`take_first $tsep_group`"
-
 		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read this_all_moms ; do
 			mom_leader="`take_first $this_all_moms`"
 			combo_line=0
@@ -574,19 +575,20 @@ globus() { echo -n; }
 eval "\${1:-run}"
 EOF
 
-				for t_source in $t_sources; do
-					corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
-					mkdir -p `dirname ${corr_file}`
-					prefix="t${t_source}_insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
-					output_xml="redstar_xml_out_${prefix}.out"
-					output="$runpath/redstar_${prefix}.out"
-					redstar_sh="redstar_${prefix}.sh"
-					redstar_sh+=".template"
-					echo ${redstar_sh} >> ${redstar_files}.tsrc$t_source
-					cat << EOF > $template_runpath/${redstar_sh}
+				$t_source="@T_SOURCE"
+				$t_origin="@T_ORIGIN"
+				corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
+				mkdir -p `dirname ${corr_file}`
+				prefix="insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
+				job_runpath="$PWD/${tag}/conf_${cfg}"
+				output="$job_runpath/redstar_${prefix}_t${t_source}.out"
+				xml="$job_runpath/redstar_${prefix}_t${t_source}.sh.xml"
+				redstar_sh="redstar_${prefix}.sh.template"
+				echo ${redstar_sh} >> ${redstar_files}
+				cat << EOF > $template_runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
-#SBATCH -t $redstar_minutes
+#SBATCH -t $redstar_chroma_minutes
 #SBATCH --nodes=$redstar_slurm_nodes -n $(( slurm_procs_per_node*redstar_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J redstar-${prefix}
 
@@ -594,15 +596,27 @@ environ() {
 	$slurm_script_prologue
 }
 
-run() {
-	cd $runpath
-	$( emit_clean_commnads "${corr_file}*" )
-	redstar_xml="\$(mktemp)"
-	cat << EOFeof > \${redstar_xml}
-$( chroma_corr_task "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" )
+xml() {
+	cat << EOFeof
+$( chroma_corr_task "${corr_graph_bin}" "\$(( (@T_ORIGIN+@T_SOURCE)%$t_size ))" "$output" )
 EOFeof
+}
+
+pre() {
+	cd $runpath
+	rm -f $corr_file
 	mkdir -p `dirname ${corr_file}`
-	$( my_srun $output $chroma -i \${redstar_xml} -geom $redstar_chroma_geometry $chroma_extra_args )
+}
+
+run() {
+	environ
+	pre
+	$( my_srun $output $chroma -i $xml -geom $redstar_chroma_geometry $chroma_extra_args )
+}
+
+run_list() {
+	num_lines="\$( cat \$1 | wc -l )"
+	srun -N \$(( num_lines*$redstar_slurm_nodes )) $chroma -ilp \$1 -geom $redstar_chroma_geometry -replicas \$num_lines  $chroma_extra_args
 }
 
 check() {
@@ -624,14 +638,13 @@ class() {
 	echo b $redstar_chroma_minutes $redstar_slurm_nodes 1 0
 }
 
-globus() {
-	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
-}
+#globus() {
+#	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
+#}
 
 eval "\${1:-run}"
 EOF
-				done # t_source
-	
+
 				combo_line="$(( combo_line+1 ))"
 			done # insert_op_mom_combos
 		done # this_all_moms
@@ -652,8 +665,8 @@ EOF
 			# Find t_origin
 			t_offset="`shuffle_t_source $cfg $t_size $t_source`"
 
-			cat ${redstar_files}.tsrc$t_source | while read template_file; do
-				cat << EOF > $runpath/${template_file%.template}
+			cat ${redstar_files} | while read template_file; do
+				cat << EOF > $runpath/${template_file%.sh.template}_t${t_source}.sh
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/${template_file%.sh.template}.out0
 #SBATCH -t $redstar_chroma_minutes
@@ -661,29 +674,24 @@ $slurm_sbatch_prologue
 #SBATCH -J redstar-${prefix}
 
 t="\$(mktemp)"
-sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
+sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g;s/@T_SOURCE/$t_source/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash $BASH_INVOCATION_OPTIONS \$t
+	bash $BASH_INVOCATION_OPTIONS \$t run
 	r="\$?"
 	rm -f \$t
 	exit \$r
 elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
-elif [ x\$1 == xrun ]; then
-	bash $BASH_INVOCATION_OPTIONS \$t \$@
-	r="\$?"
-	rm -f \$t
-	exit \$r
 else
-	bash \$t \$@
+	bash  $BASH_INVOCATION_OPTIONS \$t \$@
 	r="\$?"
 	rm -f \$t
 	exit \$r
 fi
 EOF
-
+				bash $runpath/${template_file%.sh.template}_t${t_source}.sh xml > $runpath/${template_file%.sh.template}.sh.xml
 			done # template_file
 		done # t_source
 	done # cfg
