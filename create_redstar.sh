@@ -403,11 +403,13 @@ chroma_corr_task() {
       <Name>CORR_SUPERB</Name>
       <Frequency>1</Frequency>
       <Param>
-          <num_vecs>$prop_nvec</num_vecs>
+          <num_vecs>${redstar_nvec}</num_vecs>
           <Nt_forward>${redstar_t_corr}</Nt_forward>
           <t_origin>${t_origin}</t_origin>
           <decay_dir>3</decay_dir>
           <ensemble>${confsname}</ensemble>
+          <max_vecs_in_contraction_for_baryons>${redstar_max_vecs_baryons}</max_vecs_in_contraction_for_baryons>
+          <max_moms_in_contraction_for_baryons>${redstar_max_mom_baryon}</max_moms_in_contraction_for_baryons>
           <max_rhs>${prop_max_rhs}</max_rhs>
           <flavor_to_mass>
             <elem>
@@ -500,6 +502,8 @@ for ens in $ensembles; do
 	rm -rf ${template_runpath}
 	mkdir -p ${template_runpath}
 	cfg="@CFG"
+	lime_file="`lime_file_name`"
+	colorvec_file="`colorvec_file_name`"
 	runpath="$PWD/${tag}/conf_${cfg}"
 	rm -f ${redstar_files}*
 
@@ -572,7 +576,7 @@ EOF
 					cat << EOF > $template_runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
-#SBATCH -t $redstar_minutes
+#SBATCH -t $redstar_chroma_minutes
 #SBATCH --nodes=$redstar_slurm_nodes -n $(( slurm_procs_per_node*redstar_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J redstar-${prefix}
 
@@ -580,15 +584,17 @@ environ() {
 	$slurm_script_prologue
 }
 
+xml() {
+	cat << EOFeof
+$( chroma_corr_task "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" )
+EOFeof
+}
+
 run() {
 	cd $runpath
 	$( emit_clean_commnads "${corr_file}*" )
-	redstar_xml="\$(mktemp)"
-	cat << EOFeof > \${redstar_xml}
-$( chroma_corr_task "${corr_graph_bin}" "$corr_file" "@T_ORIGIN" )
-EOFeof
 	mkdir -p `dirname ${corr_file}`
-	$( my_srun $output $chroma -i \${redstar_xml} -geom $redstar_chroma_geometry $chroma_extra_args )
+	$( my_srun $output $chroma -i \$1 -geom $redstar_chroma_geometry $chroma_extra_args )
 }
 
 check() {
@@ -614,7 +620,7 @@ globus() {
 	[ $redstar_transfer_back == yes ] && echo ${corr_file}.globus ${this_ep}${corr_file#${confspath}} ${jlab_ep}${corr_file#${confspath}} ${redstar_delete_after_transfer_back}
 }
 
-eval "\${1:-run}"
+eval "\$@"
 EOF
 				done # t_source
 	
@@ -642,7 +648,7 @@ EOF
 				cat << EOF > $runpath/${template_file%.template}
 $slurm_sbatch_prologue
 #SBATCH -o $runpath/${template_file%.sh.template}.out0
-#SBATCH -t $redstar_minutes
+#SBATCH -t $redstar_chroma_minutes
 #SBATCH --nodes=$redstar_slurm_nodes -n $(( slurm_procs_per_node*redstar_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J redstar-${prefix}
 
@@ -650,7 +656,7 @@ t="\$(mktemp)"
 sed 's/@CFG/${cfg}/g; s/@T_ORIGIN/$t_offset/g' ${template_runpath}/${template_file} > \$t
 if [ x\$1 == x ]; then
 	. \$t environ
-	bash $BASH_INVOCATION_OPTIONS \$t
+	bash $BASH_INVOCATION_OPTIONS \$t run $runpath/${template_file%.template}.xml
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -658,7 +664,7 @@ elif [ x\$1 == xenviron ]; then
 	. \$t \$@
 	rm -f \$t
 elif [ x\$1 == xrun ]; then
-	bash $BASH_INVOCATION_OPTIONS \$t \$@
+	bash $BASH_INVOCATION_OPTIONS \$t run $runpath/${template_file%.template}.xml
 	r="\$?"
 	rm -f \$t
 	exit \$r
@@ -669,7 +675,7 @@ else
 	exit \$r
 fi
 EOF
-
+				bash $runpath/${template_file%.template} xml > $runpath/${template_file%.template}.xml
 			done # template_file
 		done # t_source
 	done # cfg

@@ -6,48 +6,49 @@ ensembles="ensemble0"
 
 ensemble0() {
 	# Tasks to run
-	run_eigs="nop"
+	run_eigs="yes"
 	run_discos="nop"
 	run_redstar="yes"
 
 	onthefly_chroma_minutes=120
-	max_moms_per_job=1000
-	max_corr_per_job=10000
+	max_moms_per_job=100000
+	max_corr_per_job=100000
 	max_phases_per_job=1000
 	max_tseps_per_job=1000
 
 	# Ensemble properties
-	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
-	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
-	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
-	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
-	confs="`seq 1010 30 7634`"
-	confs=1010
-	s_size=48 # lattice spatial size
-	t_size=128 # lattice temporal size
+	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
+	ensemble="cl21_32_64_b6p3_m0p2390_m0p2050"
+	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
+	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
+	confs="`seq 1000 10 5160`"
+	confs=1000
+	confs="`seq 10 10 990`"
+	s_size=32 # lattice spatial size
+	t_size=64 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
 
 	# Colorvecs options
-	max_nvec=512  # colorvecs to compute
-	nvec=128  # colorvecs to use
+	max_nvec=64  # colorvecs to compute
+	nvec=64  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
 	eigs_slurm_nodes=1
 	eigs_chroma_geometry="1 1 1 4"
-	eigs_chroma_minutes=60
+	eigs_chroma_minutes=30
 
 	# Props options
-	t_sources="0 32 64 96"
-	prop_mass="-0.2070"
-	prop_clov="1.170082389372972"
+	t_sources="0"
+	prop_mass="-0.2350"
+	prop_clov="1.20536588031793"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=6
-	prop_chroma_geometry="1 1 3 8"
-	prop_chroma_minutes=20
+	prop_slurm_nodes=1
+	prop_chroma_geometry="1 1 1 4"
+	prop_chroma_minutes=60
 	prop_max_rhs=8
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
@@ -229,12 +230,12 @@ ensemble0() {
 	gprop_t_seps="6 7 8 9 10 11 12"
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
-	localpath="/tmp"
+	#localpath="/tmp"
 	localpath="/dev/shm"
 
 	# Baryon options
 	redstar_op_bases=all
-	redstar_op_bases=1
+	#redstar_op_bases=1
 
 	# Disco options
 	disco_max_displacement=16
@@ -344,128 +345,444 @@ $(
 
 	# Redstar options
 	redstar_t_corr=20 # Number of time slices
-	redstar_nvec=$nvec
+	redstar_nvec="$nvec"
 	redstar_tag="."
-	redstar_auto_phasing="0 1 3"
+	redstar_auto_phasing="0 1 2 3"
+	redstar_auto_phasing="2"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
 0 0 0  0 0 0
-$(
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 0 $i   0 0 $i
-		echo 0 0 -$i  0 0 -$i
-	done
-)"
-	redstar_3pt="yes"
+1 1 1 1 1 1
+1 0 0 2 0 1
+1 0 0 1 0 2
+1 0 1 2 0 2
+1 0 1 1 0 1
+1 0 1 1 0 3
+1 0 2 1 0 0
+1 0 2 1 0 1
+1 0 2 1 0 3
+1 0 3 1 0 1
+1 0 3 1 0 2
+1 0 4 1 1 2
+1 0 4 2 0 1
+1 1 1 1 0 3
+1 1 2 1 0 3
+1 2 2 1 0 1
+3 0 1 2 0 0
+0 1 0 1 2 1
+0 1 1 1 1 0
+0 1 1 1 1 1
+0 1 1 1 1 2
+0 1 1 2 1 2
+0 1 2 1 1 1
+0 1 3 1 1 1
+0 1 3 1 1 2
+0 0 1 1 1 1
+0 0 0 1 0 0
+0 0 0 1 1 0
+0 0 0 2 0 1
+0 0 0 2 0 2
+0 0 0 2 2 1
+0 0 1 3 0 1
+0 0 1 0 2 1
+0 0 1 1 2 0
+0 0 1 1 0 3
+0 0 1 1 1 2
+0 0 1 2 0 1
+0 0 1 2 0 2
+0 0 1 2 1 1
+0 0 1 2 2 1
+0 0 2 1 0 3
+0 0 2 1 1 1
+0 0 2 2 0 0
+0 0 3 1 0 1
+0 0 3 1 0 2
+0 0 3 1 1 1
+0 0 3 1 1 2
+0 1 1 0 0 1
+0 1 1 0 0 2
+0 1 1 0 0 0
+0 1 2 0 0 1
+0 1 2 0 0 2
+0 1 2 0 0 0
+0 1 0 0 1 0
+0 1 0 0 0 1
+0 1 0 0 0 2
+0 1 0 0 0 1
+0 1 0 0 0 2
+0 1 0 2 0 0
+0 1 1 0 1 1
+0 1 1 0 0 0
+0 1 1 0 0 1
+0 1 1 0 0 2
+0 1 1 1 0 3
+0 1 2 0 0 0
+0 1 2 0 0 1
+0 1 2 0 0 2
+0 1 2 1 0 3
+0 1 3 1 0 1
+0 1 4 0 0 4
+0 1 5 0 0 5
+0 1 6 0 0 6
+0 2 2 1 0 1
+0 2 0 0 0 0
+0 3 0 0 1 0
+0 3 1 0 1 1
+1 1 0 1 1 0
+1 1 4 2 0 6
+1 1 5 2 2 4
+1 1 6 2 2 5
+1 2 2 0 2 5
+1 0 1 0 0 1
+1 0 2 0 0 2
+1 0 0 2 0 2
+1 0 0 2 1 0
+1 0 1 0 0 1
+1 0 1 0 0 3
+1 0 1 0 0 4
+1 0 1 3 0 1
+1 0 2 0 0 2
+1 0 2 0 0 5
+1 0 2 0 0 6
+1 0 3 0 0 1
+1 0 4 1 1 2
+1 0 4 1 0 2
+1 0 4 1 0 4
+1 0 4 0 0 1
+1 0 4 0 0 2
+1 0 4 0 0 4
+1 0 5 1 0 2
+1 0 5 1 0 4
+1 0 5 1 0 5
+1 0 5 0 0 2
+1 0 5 0 0 4
+1 0 5 0 0 5
+1 0 6 1 1 4
+1 0 6 1 0 4
+1 0 6 1 0 5
+1 0 6 1 0 6
+1 0 6 0 0 2
+1 0 6 0 0 4
+1 0 6 0 0 5
+1 0 6 0 0 6
+1 0 6 2 2 5
+1 1 1 0 0 1
+1 1 1 0 0 2
+1 1 1 0 0 0
+1 1 1 0 1 1
+1 1 1 1 0 2
+1 1 1 1 0 0
+1 1 1 2 2 1
+1 1 2 0 0 1
+1 1 2 0 0 2
+1 1 2 0 0 0
+1 1 2 0 1 2
+1 1 2 1 0 1
+1 1 2 1 0 0
+1 1 3 0 0 3
+1 1 0 0 0 1
+1 1 0 0 0 2
+1 1 0 0 0 1
+1 1 0 0 0 2
+1 1 0 1 0 1
+1 1 0 1 0 2
+1 1 0 1 0 1
+1 1 0 1 0 2
+1 1 0 2 2 0
+1 1 1 0 0 0
+1 1 1 0 0 1
+1 1 1 0 0 2
+1 1 1 0 0 3
+1 1 1 0 1 1
+1 1 1 1 0 0
+1 1 1 1 0 2
+1 1 2 0 0 0
+1 1 2 0 0 1
+1 1 2 0 0 2
+1 1 2 0 0 4
+1 1 2 0 0 5
+1 1 2 0 1 2
+1 1 2 1 0 0
+1 1 2 1 0 1
+1 1 3 0 0 3
+1 1 4 1 1 4
+1 1 4 0 1 4
+1 1 4 0 0 4
+1 1 4 0 0 6
+1 1 4 0 1 4
+1 1 4 1 0 4
+1 1 5 1 1 5
+1 1 5 0 1 4
+1 1 5 0 1 5
+1 1 5 0 0 4
+1 1 5 0 0 5
+1 1 5 0 1 5
+1 1 5 1 0 5
+1 1 6 1 1 5
+1 1 6 1 1 6
+1 1 6 0 1 5
+1 1 6 0 1 6
+1 1 6 0 0 5
+1 1 6 0 0 6
+1 1 6 0 1 6
+1 1 6 1 0 6
+1 3 0 1 1 0
+2 0 1 0 0 2
+2 0 1 0 0 0
+2 0 1 1 0 1
+2 0 2 0 0 1
+2 0 2 0 0 0
+2 0 2 1 0 2
+2 0 2 1 0 3
+2 0 0 0 0 1
+2 0 0 0 0 2
+2 0 0 0 0 1
+2 0 0 0 0 2
+2 0 1 0 0 0
+2 0 1 0 0 2
+2 0 1 1 0 1
+2 0 2 0 0 0
+2 0 2 0 0 1
+2 0 2 1 0 0
+2 0 2 1 0 2
+2 0 4 1 0 4
+2 0 5 1 0 5
+2 0 6 1 0 6
+2 1 1 0 1 2
+2 1 1 0 1 0
+2 1 1 1 0 1
+2 1 1 1 0 2
+2 1 1 1 0 0
+2 1 1 1 1 1
+2 1 1 2 0 1
+2 1 1 2 0 2
+2 1 1 2 0 0
+2 1 2 0 1 1
+2 1 2 0 1 0
+2 1 2 1 0 1
+2 1 2 1 0 2
+2 1 2 1 0 0
+2 1 2 1 1 2
+2 1 2 2 0 1
+2 1 2 2 0 2
+2 1 2 2 0 0
+2 1 0 0 1 1
+2 1 0 0 1 2
+2 1 0 0 1 1
+2 1 0 0 1 2
+2 1 0 1 0 1
+2 1 0 1 0 2
+2 1 0 1 0 1
+2 1 0 1 0 2
+2 1 0 2 0 1
+2 1 0 2 0 2
+2 1 0 2 0 1
+2 1 0 2 0 2
+2 1 1 0 1 0
+2 1 1 0 1 2
+2 1 1 1 0 0
+2 1 1 1 0 1
+2 1 1 1 0 2
+2 1 1 1 1 1
+2 1 1 2 0 0
+2 1 1 2 0 1
+2 1 1 2 0 2
+2 1 2 0 1 0
+2 1 2 0 1 1
+2 1 2 1 0 0
+2 1 2 1 0 1
+2 1 2 1 0 2
+2 1 2 1 1 2
+2 1 2 2 0 0
+2 1 2 2 0 1
+2 1 2 2 0 2
+2 2 1 0 0 0
+2 2 4 1 0 6
+2 2 5 0 0 4
+2 2 6 0 0 5
+5 0 1 4 0 1
+-1 0 4 -1 -1 2
+-1 0 4 -2 0 1
+0 0 -1 0 0 -2
+0 0 -1 0 0 0
+0 0 -2 0 0 -1
+0 0 -2 0 0 0
+0 0 0 0 0 -1
+0 0 0 0 0 -2
+0 0 0 0 0 2
+0 0 1 0 0 -1
+0 0 1 0 0 0
+0 0 1 0 0 2
+0 0 2 0 0 0
+0 0 2 0 0 1
+0 0 4 0 1 4
+0 0 4 1 0 4
+0 0 4 1 1 4
+0 0 5 0 1 5
+0 0 5 1 0 5
+0 0 6 0 1 6
+0 0 6 1 0 6
+0 0 6 1 1 6
+0 1 -1 0 0 -1
+0 1 -1 0 0 -2
+0 1 -1 0 0 0
+0 1 -1 0 1 -2
+0 1 -1 0 1 0
+0 1 -2 0 0 -1
+0 1 -2 0 0 -2
+0 1 -2 0 0 0
+0 1 -2 0 1 -1
+0 1 -2 0 1 0
+0 1 0 0 0 -1
+0 1 0 0 0 -2
+0 1 0 0 1 -1
+0 1 0 0 1 -2
+0 1 0 0 1 1
+0 1 0 0 1 2
+0 1 1 0 1 0
+0 1 1 0 1 2
+0 1 2 0 1 0
+0 1 2 0 1 1
+0 1 4 1 1 4
+0 1 5 1 1 5
+0 1 6 1 1 6
+1 -1 4 2 0 6
+1 -1 5 2 -2 4
+1 -1 6 2 -2 5
+1 -2 2 0 -2 5
+1 0 -1 0 0 -1
+1 0 -1 1 0 -2
+1 0 -1 1 0 0
+1 0 -2 0 0 -2
+1 0 -2 1 0 -1
+1 0 -2 1 0 0
+1 0 0 1 0 -1
+1 0 0 1 0 -2
+1 0 0 1 0 1
+1 0 1 1 0 0
+1 0 1 1 0 2
+1 0 4 -1 -1 2
+1 0 4 -1 0 2
+1 0 4 -1 0 4
+1 0 4 2 0 4
+1 0 5 -1 0 2
+1 0 5 -1 0 4
+1 0 5 -1 0 5
+1 0 5 1 1 5
+1 0 6 -1 -1 4
+1 0 6 -1 0 4
+1 0 6 -1 0 5
+1 0 6 -1 0 6
+1 0 6 1 1 6
+1 0 6 2 0 6
+1 1 -1 0 0 -1
+1 1 -1 0 0 -2
+1 1 -1 0 0 0
+1 1 -1 0 1 -1
+1 1 -1 1 0 -2
+1 1 -1 1 0 0
+1 1 -1 1 1 -2
+1 1 -1 1 1 0
+1 1 -2 0 0 -1
+1 1 -2 0 0 -2
+1 1 -2 0 0 0
+1 1 -2 0 1 -2
+1 1 -2 1 0 -1
+1 1 -2 1 0 0
+1 1 -2 1 1 -1
+1 1 -2 1 1 0
+1 1 -3 0 0 -3
+1 1 0 0 0 -1
+1 1 0 0 0 -2
+1 1 0 1 0 -1
+1 1 0 1 0 -2
+1 1 0 1 1 -1
+1 1 0 1 1 -2
+1 1 0 1 1 1
+1 1 0 1 1 2
+1 1 1 1 1 0
+1 1 1 1 1 2
+1 1 2 1 1 0
+1 1 2 1 1 1
+1 1 4 -1 -1 4
+1 1 4 0 -1 4
+1 1 5 -1 -1 5
+1 1 5 0 -1 4
+1 1 5 0 -1 5
+1 1 6 -1 -1 5
+1 1 6 -1 -1 6
+1 1 6 0 -1 5
+1 1 6 0 -1 6
+2 0 -1 0 0 -2
+2 0 -1 0 0 0
+2 0 -1 1 0 -1
+2 0 -1 2 0 -2
+2 0 -1 2 0 0
+2 0 -2 0 0 -1
+2 0 -2 0 0 0
+2 0 -2 1 0 -2
+2 0 -2 2 0 -1
+2 0 -2 2 0 0
+2 0 0 0 0 -1
+2 0 0 0 0 -2
+2 0 0 2 0 -1
+2 0 0 2 0 -2
+2 0 0 2 0 1
+2 0 0 2 0 2
+2 0 1 2 0 0
+2 0 1 2 0 2
+2 0 2 2 0 0
+2 0 2 2 0 1
+2 0 5 1 0 1
+2 1 -1 0 1 -2
+2 1 -1 0 1 0
+2 1 -1 1 0 -1
+2 1 -1 1 0 -2
+2 1 -1 1 0 0
+2 1 -1 1 1 -1
+2 1 -1 2 0 -1
+2 1 -1 2 0 -2
+2 1 -1 2 0 0
+2 1 -1 2 1 -2
+2 1 -1 2 1 0
+2 1 -2 0 1 -1
+2 1 -2 0 1 0
+2 1 -2 1 0 -1
+2 1 -2 1 0 -2
+2 1 -2 1 0 0
+2 1 -2 1 1 -2
+2 1 -2 2 0 -1
+2 1 -2 2 0 -2
+2 1 -2 2 0 0
+2 1 -2 2 1 -1
+2 1 -2 2 1 0
+2 1 0 0 1 -1
+2 1 0 0 1 -2
+2 1 0 1 0 -1
+2 1 0 1 0 -2
+2 1 0 2 0 -1
+2 1 0 2 0 -2
+2 1 0 2 1 -1
+2 1 0 2 1 -2
+2 1 0 2 1 1
+2 1 0 2 1 2
+2 1 1 2 1 0
+2 1 1 2 1 2
+2 1 2 2 1 0
+2 1 2 2 1 1
+5 0 1 4 0 -1 "
+	redstar_3pt="nop"
 	redstar_3pt_snkmom_srcmom="\
-   0   0   0   2   0   1
-   0   0   0   2   0   2
-   0   0   0   2   2   1
-   0   0   1  -3   0   1
-   0   0   1   1  -2   0
-   0   0   1   1   0   3
-   0   0   1   1   1   2
-   0   0   1   2   0   1
-   0   0   1   2   0   2
-   0   0   1   2   1   1
-   0   0   1   2   2   1
-   0   0   2   1   0   3
-   0   0   2   1   1   1
-   0   0   2   2   0   0
-   0   0   3   1   0   1
-   0   0   3   1   0   2
-   0   0   3   1   1   1
-   0   0   3   1   1   2
-   0   1  -3  -1  -1  -2
-   0   1  -3  -1  -1  -1
-   0   1  -2  -1  -1  -1
-   0   1  -1  -2  -1  -2
-   0   1  -1  -1  -1  -2
-   0   1  -1  -1  -1  -1
-   0   1  -1  -1  -1   0
-   0   1   0   1   2  -1
-   0   1   1   1   0   3
-   0   1   2   1   0   3
-   0   1   3   1   0   1
-   0   2  -2   1   0  -1
-   1  -2  -2  -1   0  -1
-   1  -2   2   0  -2   5
-   1  -1  -2  -1   0  -3
-   1  -1  -1  -1   0  -3
-   1  -1   4   2   0   6
-   1  -1   5   2  -2   4
-   1  -1   6   2  -2   5
-   1   0  -4   1   1  -2
-   1   0  -4   2   0  -1
-   1   0  -3  -1   0  -2
-   1   0  -3  -1   0  -1
-   1   0  -2  -1   0  -3
-   1   0  -2  -1   0  -1
-   1   0  -2  -1   0   0
-   1   0  -1  -1   0  -3
-   1   0  -1  -1   0  -1
-   1   0  -1   2   0  -2
-   1   0   0  -1   0  -2
-   1   0   0   2   0  -1
-   1   0   0   2   0   2
-   1   0   1   0   0   3
-   1   0   1   0   0   4
-   1   0   1   3   0   1
-   1   0   2   0   0   5
-   1   0   2   0   0   6
-   1   0   3   0   0   1
-   1   0   4  -1  -1   2
-   1   0   4  -1   0   2
-   1   0   4  -1   0   4
-   1   0   4   0   0   1
-   1   0   4   0   0   2
-   1   0   5  -1   0   2
-   1   0   5  -1   0   4
-   1   0   5  -1   0   5
-   1   0   5   0   0   2
-   1   0   5   0   0   4
-   1   0   6  -1  -1   4
-   1   0   6  -1   0   4
-   1   0   6  -1   0   5
-   1   0   6  -1   0   6
-   1   0   6   0   0   2
-   1   0   6   0   0   4
-   1   0   6   0   0   5
-   1   0   6   2   2   5
-   1   1  -1  -1  -1  -1
-   1   1   1   0   0   3
-   1   1   2   0   0   4
-   1   1   2   0   0   5
-   1   1   4  -1  -1   4
-   1   1   4   0  -1   4
-   1   1   4   0   0   6
-   1   1   5  -1  -1   5
-   1   1   5   0  -1   4
-   1   1   5   0  -1   5
-   1   1   5   0   0   4
-   1   1   6  -1  -1   5
-   1   1   6  -1  -1   6
-   1   1   6   0  -1   5
-   1   1   6   0  -1   6
-   1   1   6   0   0   5
-   2   0  -2   1   0  -3
-   2   0   2   1   0   0
-   2   0   5   1   0   1
-   2   2   1   0   0   0
-   2   2   4   1   0   6
-   2   2   5   0   0   4
-   2   2   6   0   0   5
-   3   0  -1   2   0   0
-   5   0   1   4   0  -1 "
-	redstar_2pt_moms="
-$(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
-			echo $m0 $m1 $m2  $m0 $m1 $m2
-			echo $m3 $m4 $m5  $m3 $m4 $m5
-		done | sort -u
-)
-$redstar_3pt_snkmom_srcmom"
+"
+#	redstar_2pt_moms="
+#$(
+#		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+#			echo $m0 $m1 $m2  $m0 $m1 $m2
+#			echo $m3 $m4 $m5  $m3 $m4 $m5
+#		done | sort -u
+#)
+#$redstar_3pt_snkmom_srcmom"
 	redstar_2pt_moms="$( echo "$redstar_2pt_moms" | auto_phase_moms )"
 	redstar_3pt_snkmom_srcmom="$( echo "$redstar_3pt_snkmom_srcmom" | auto_phase_moms )"
 	redstar_disco="nop" # contracting for disco
@@ -484,9 +801,12 @@ $redstar_3pt_snkmom_srcmom"
 		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E"
 		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE"
 	else
-		redstar_000="NucleonMHg1MxD0J0S_J3o2_Hg1 NucleonMG1u1MxD0J0S_J1o2_G1u1 NucleonMG1u2MxD0J0S_J1o2_G1u1 NucleonMG1u3MxD0J0S_J1o2_G1u1 NucleonMHu1MxD0J0S_J3o2_Hu1 NucleonMG1g2MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g3MxD0J0S_J1o2_G1g1"
-		redstar_n00="NucleonMHg1MxD0J0S_J3o2_H1o2D4E1 NucleonMHg1MxD0J0S_J3o2_H3o2D4E3 NucleonMG1u1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u2MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u3MxD0J0S_J1o2_H1o2D4E1 NucleonMHu1MxD0J0S_J3o2_H1o2D4E1 NucleonMHu1MxD0J0S_J3o2_H3o2D4E3 NucleonMG1g2MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g3MxD0J0S_J1o2_H1o2D4E1"
-		redstar_nn0="NucleonMHg1MxD0J0S_J3o2_H1o2D2E NucleonMHg1MxD0J0S_J3o2_H3o2D2E NucleonMG1u1MxD0J0S_J1o2_H1o2D2E NucleonMG1u2MxD0J0S_J1o2_H1o2D2E NucleonMG1u3MxD0J0S_J1o2_H1o2D2E NucleonMHu1MxD0J0S_J3o2_H1o2D2E NucleonMHu1MxD0J0S_J3o2_H3o2D2E NucleonMG1g2MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g3MxD0J0S_J1o2_H1o2D2E"
+		redstar_000="NucleonMG1g1MxD0J0S_J1o2_G1g1 NucleonMG1g1MxD2J0M_J1o2_G1g1 NucleonMG1g1MxD2J0S_J1o2_G1g1 NucleonMG1g1MxD2J1A_J1o2_G1g1 NucleonMG1g1MxD2J1M_J1o2_G1g1 NucleonMG1g2MxD0J0S_J1o2_G1g1 NucleonMG1g3MxD0J0S_J1o2_G1g1 NucleonMG1u1MxD0J0S_J1o2_G1u1 NucleonMG1u2MxD0J0S_J1o2_G1u1 NucleonMG1u3MxD0J0S_J1o2_G1u1 NucleonMHg1MxD0J0S_J3o2_Hg1 NucleonMHg1SxD2J1M_J1o2_G1g1 NucleonMHg1SxD2J2M_J1o2_G1g1 NucleonMHu1MxD0J0S_J3o2_Hu1"
+		redstar_n00="NucleonMG1g1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D4E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D4E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D4E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D4E1 NucleonMG1g2MxD0J0S_J1o2_H1o2D4E1 NucleonMG1g3MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u1MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u2MxD0J0S_J1o2_H1o2D4E1 NucleonMG1u3MxD0J0S_J1o2_H1o2D4E1 NucleonMHg1MxD0J0S_J3o2_H1o2D4E1 NucleonMHg1MxD0J0S_J3o2_H3o2D4E3 NucleonMHg1SxD1J1M_J1o2_H1o2D4E1 NucleonMHg1SxD1J1M_J3o2_H1o2D4E1 NucleonMHg1SxD1J1M_J5o2_H1o2D4E1 NucleonMHg1SxD2J0M_J3o2_H1o2D4E1 NucleonMHg1SxD2J1M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J1o2_H1o2D4E1 NucleonMHg1SxD2J2M_J3o2_H1o2D4E1 NucleonMHu1MxD0J0S_J3o2_H1o2D4E1 NucleonMHu1MxD0J0S_J3o2_H3o2D4E3"
+		redstar_nn0="NucleonMG1g1MxD0J0S_J1o2_H1o2D2E NucleonMG1g1MxD1J1M_J1o2_H1o2D2E NucleonMG1g1MxD1J1M_J3o2_H1o2D2E NucleonMG1g1MxD2J0M_J1o2_H1o2D2E NucleonMG1g1MxD2J1A_J1o2_H1o2D2E NucleonMG1g1MxD2J1M_J1o2_H1o2D2E NucleonMG1g1MxD2J2M_J3o2_H1o2D2E NucleonMG1g1MxD2J2S_J3o2_H1o2D2E NucleonMG1g1MxD2J2S_J5o2_H1o2D2E NucleonMG1g2MxD0J0S_J1o2_H1o2D2E NucleonMG1g3MxD0J0S_J1o2_H1o2D2E NucleonMG1u1MxD0J0S_J1o2_H1o2D2E NucleonMG1u2MxD0J0S_J1o2_H1o2D2E NucleonMG1u3MxD0J0S_J1o2_H1o2D2E NucleonMHg1MxD0J0S_J3o2_H1o2D2E NucleonMHg1MxD0J0S_J3o2_H3o2D2E NucleonMHg1SxD1J1M_J1o2_H1o2D2E NucleonMHg1SxD1J1M_J3o2_H1o2D2E NucleonMHg1SxD1J1M_J5o2_H1o2D2E NucleonMHg1SxD2J0M_J3o2_H1o2D2E NucleonMHg1SxD2J1M_J1o2_H1o2D2E NucleonMHg1SxD2J2M_J1o2_H1o2D2E NucleonMHg1SxD2J2M_J3o2_H1o2D2E NucleonMHu1MxD0J0S_J3o2_H1o2D2E NucleonMHu1MxD0J0S_J3o2_H3o2D2E"
+		redstar_nnn="NucleonMG1g1MxD0J0S_J1o2_H1o2D3E1 NucleonMG1g1MxD1J1M_J1o2_H1o2D3E1 NucleonMG1g1MxD1J1M_J3o2_H1o2D3E1 NucleonMG1g1MxD2J0M_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1A_J1o2_H1o2D3E1 NucleonMG1g1MxD2J1M_J1o2_H1o2D3E1 NucleonMG1g1MxD2J2M_J3o2_H1o2D3E1 NucleonMG1g1MxD2J2S_J3o2_H1o2D3E1 NucleonMG1g1MxD2J2S_J5o2_H1o2D3E1 NucleonMHg1SxD1J1M_J1o2_H1o2D3E1 NucleonMHg1SxD1J1M_J3o2_H1o2D3E1 NucleonMHg1SxD1J1M_J5o2_H1o2D3E1 NucleonMHg1SxD2J0M_J3o2_H1o2D3E1 NucleonMHg1SxD2J1M_J1o2_H1o2D3E1 NucleonMHg1SxD2J2M_J1o2_H1o2D3E1 NucleonMHg1SxD2J2M_J3o2_H1o2D3E1"
+		redstar_nm0="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nm0E NucleonMG1g1MxD1J1M_J1o2_H1o2C4nm0E NucleonMG1g1MxD1J1M_J3o2_H1o2C4nm0E NucleonMG1g1MxD2J0M_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1A_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J1M_J1o2_H1o2C4nm0E NucleonMG1g1MxD2J2M_J3o2_H1o2C4nm0E NucleonMG1g1MxD2J2S_J3o2_H1o2C4nm0E NucleonMG1g1MxD2J2S_J5o2_H1o2C4nm0E NucleonMHg1SxD1J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD1J1M_J3o2_H1o2C4nm0E NucleonMHg1SxD1J1M_J5o2_H1o2C4nm0E NucleonMHg1SxD2J0M_J3o2_H1o2C4nm0E NucleonMHg1SxD2J1M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J2M_J1o2_H1o2C4nm0E NucleonMHg1SxD2J2M_J3o2_H1o2C4nm0E"
+		redstar_nnm="NucleonMG1g1MxD0J0S_J1o2_H1o2C4nnmE NucleonMG1g1MxD1J1M_J1o2_H1o2C4nnmE NucleonMG1g1MxD1J1M_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J0M_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1A_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J1M_J1o2_H1o2C4nnmE NucleonMG1g1MxD2J2M_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J2S_J3o2_H1o2C4nnmE NucleonMG1g1MxD2J2S_J5o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J3o2_H1o2C4nnmE NucleonMHg1SxD1J1M_J5o2_H1o2C4nnmE NucleonMHg1SxD2J0M_J3o2_H1o2C4nnmE NucleonMHg1SxD2J1M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J2M_J1o2_H1o2C4nnmE NucleonMHg1SxD2J2M_J3o2_H1o2C4nnmE"
 	fi
 	redstar_insertion_operators="\
 fl_a0xDX__J0_A1
@@ -527,7 +847,7 @@ $(
 		[ $# == 6 ] && echo "snk$1.$2.$3src$4.$5.$6"
 	}
 	corr_file_name() {
-		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus// /,}"
+		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
 		prefix_path_extra="_2pt_test_nvec${prop_nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
@@ -541,12 +861,17 @@ $(
 		fi
 	}
 	pack_file_name() {
-		local prefix_path="auto_phasing_3_${redstar_auto_phasing_3}_4p_${redstar_auto_phasing_4plus// /,}"
+		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
 		prefix_path_extra="_2pt-disco"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/corr_pack_cfg_${cfg}.tar.gz"
 	}
-	redstar_slurm_nodes=3
-	redstar_minutes=30
+	redstar_max_vecs_baryons=8
+	redstar_max_mom_baryon=1
+	redstar_minutes=60
+	redstar_slurm_nodes="$prop_slurm_nodes"
+	redstar_chroma_minutes="$prop_chroma_minutes"
+	redstar_chroma_geometry="$prop_chroma_geometry"
+	redstar_transfer_back=nop
 
 	globus_check_dirs="${confspath}/${confsprefix}/corr-none"
 }
@@ -555,15 +880,15 @@ $(
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="${HOME}/work_qch_sf/chromaform-h100"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-superbblas-cuda-next/bin/chroma"
+chromaform="/capstor/store/cscs/userlab/lp153/chromaform"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-redstardl-superbblas-cuda-next/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512" # -libdevice-path /opt/rocm-6.0.0/llvm/lib"
 
-redstar="/home/eloy/PHY/src/chromaform/install/redstar-colorvec-hadron-cpu-adat"
+redstar="$chromaform/install-here/redstar-colorvec-hadron-cpu-adat"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install-here/adat-pdf-next-meta-superbblas-sp"
+adat="$chromaform/install/adat"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
@@ -571,12 +896,13 @@ dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
 
 slurm_procs_per_node=4
-slurm_cores_per_node=96
+slurm_cores_per_node="$(( 72*4 ))"
 slurm_gpus_per_node=4
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A qch@h100
-#SBATCH -C h100
-#SBATCH --gres=gpu:4 --hint=nomultithread --cpus-per-task=24
+#SBATCH --uenv=prgenv-gnu/26.3
+#SBATCH --view=modules
+#SBATCH -A lp153
+#SBATCH --gres=gpu:4 --hint=nomultithread --cpus-per-task=8
 #SBATCH --gpu-bind=none --tasks-per-node=4"
 
 slurm_script_prologue="
@@ -587,6 +913,7 @@ export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=1
 #export SB_CACHEGB_GPU=60
+export REDSTAR_SB_MEM_GB=40
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
@@ -602,17 +929,16 @@ export QUDA_ENABLE_MPS=0
 
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
-max_jobs=400 # maximum jobs to be launched
-max_minutes=120 # maximum hours for a single job
-slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
-slurm_max_jobs=400 # maximum bundled jobs in a slurm job
+max_jobs=30 # maximum jobs to be launched
+max_minutes=30 # maximum hours for a single job
+slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 
 #
 # Path options
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$HOME/work_qch"
+confspath="/capstor/store/cscs/userlab/lp153"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
