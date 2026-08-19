@@ -27,7 +27,7 @@ for ens in $ensembles; do
 	# Load the variables from the function
 	eval "$ens"
 
-	runpathens="$PWD/${tag}"
+	runpathens="$PWD/${tag}/conf_*"
 	find $runpathens -name '*.sh' | while read f; do
 		[ -f $f.launched ] || [ -f $f.launched.verified ] || echo `bash $f class` $f >> $jobsfile
 	done
@@ -94,21 +94,16 @@ EOF
 	bundle_id=0
 	k_split $max_jobs_in_bundle $jobs | while read bjs; do
 		echo "if [ $bundle_id == \\\$SLURM_ARRAY_TASK_ID ] ; then"
+		bundle_file="$runpath/run_${jobtag}_${bundle_id}.list"
 		bundle_id="$((bundle_id + 1))"
-		j_seq=0
-		k_split $max_jobs_in_seq $bjs | while read js; do
-			echo "("
-			for job in $js; do
-				if [ $srun_aggregate == yes ] ; then
-					echo "srun -N $num_nodes_per_job -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0 bash $BASH_INVOCATION_OPTIONS $job run"
-				else
-					echo "MY_SRUN_ARGS='-N $num_nodes_per_job -r $(( j_seq*num_nodes_per_job )) -K0 -k -W0' bash $BASH_INVOCATION_OPTIONS $job run"
-				fi
-			done
-			echo ") &"
-			j_seq="$(( j_seq+1 ))"
+		for job in $bjs ; do
+			xmlfile="${job}.xml"
+			outfile="$( bash $job output )"
+			echo "$xmlfile" "$outfile" >> $bundle_file
+			echo "bash $job pre"
 		done
-		echo fi
+		echo "bash $BASH_INVOCATION_OPTIONS $( take_first $bjs ) run_list $bundle_file"
+		echo "fi"
 	done
 `
 wait

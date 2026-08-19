@@ -131,9 +131,15 @@ get_type_from_corr_line() {
 # Return all pair of phases returned by `get_all_corr`
 get_all_phases() {
 	local l
+	local phase_src
+	local phase
 	get_all_corr | while read l ; do
-		[ $(num_args $l ) -gt 0 ] && echo $( mom_word $( get_phase_from_corr_line $l ) )
-	done | sort -u
+		[ $(num_args $l ) -gt 0 ] || continue
+		local phase_snk_src="$( get_phase_from_corr_line $l )"
+		echo $( mom_word $( get_source $phase_snk_src ) ) $( mom_word $phase_snk_src )
+	done | sort -u | while read phase_src phase ; do
+		echo $phase
+	done
 }
 
 # Return a word for each line returned by `get_all_corr` such that matches an input phase

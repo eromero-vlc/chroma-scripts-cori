@@ -25,7 +25,7 @@ for ens in $ensembles; do
 		# Basis creation
 		#
 		
-		cat << EOF > $runpath/eigs.xml
+		cat << EOF > $runpath/eigs.sh.xml
 <?xml version="1.0"?>
 <chroma>
  <Param>
@@ -76,12 +76,28 @@ $slurm_sbatch_prologue
 #SBATCH --nodes=$eigs_slurm_nodes -n $(( slurm_procs_per_node*eigs_slurm_nodes )) -c $(( slurm_cores_per_node/slurm_procs_per_node ))
 #SBATCH -J eig-${cfg}
 
-run() {
+environ() {
 	$slurm_script_prologue
+}
 	
+pre() {
 	cd $runpath
 	rm -f $colorvec_file
-	$( my_srun $output $chroma -i $runpath/eigs.xml -geom $eigs_chroma_geometry $chroma_extra_args )
+}
+
+run() {
+	. environ
+	pre
+	$( my_srun $output $chroma -i $runpath/eigs.sh.xml -geom $eigs_chroma_geometry $chroma_extra_args )
+}
+
+run_list() {
+	num_lines="\$( cat \$1 | wc -l )"
+	srun -N \$(( num_lines*$eigs_slurm_nodes )) $chroma -ilp \$1 -geom $eigs_chroma_geometry -replicas \$num_lines  $chroma_extra_args
+}
+
+output() {
+	echo $output
 }
 
 check() {
@@ -102,11 +118,15 @@ class() {
 	echo a $eigs_chroma_minutes $eigs_slurm_nodes 1 0
 }
 
-globus() {
-	[ $eigs_transfer_back == yes ] && echo ${colorvec_file}.globus ${this_ep}${colorvec_file#${confspath}} ${jlab_ep}${colorvec_file#${confspath}} ${eigs_delete_after_transfer_back}
-}
+#globus() {
+#	[ $eigs_transfer_back == yes ] && echo ${colorvec_file}.globus ${this_ep}${colorvec_file#${confspath}} ${jlab_ep}${colorvec_file#${confspath}} ${eigs_delete_after_transfer_back}
+#}
 
-eval "\${1:-run}"
+if [ x\$1 == x ]; then
+	run
+else
+	eval "\$@"
+fi
 EOF
 	done # cfg
 done # ens

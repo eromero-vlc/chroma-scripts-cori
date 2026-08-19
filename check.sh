@@ -16,7 +16,7 @@ for ens in $ensembles; do
 	eval "$ens"
 
 	# Check for SLURM finished jobs
-	runpathens="$PWD/${tag}"
+	runpathens="$PWD/${tag}/conf_*"
 	echo -n > $ok
 	echo -n > $fail
 	find $runpathens -name '*.sh.launched' | while read f; do
@@ -26,9 +26,9 @@ for ens in $ensembles; do
 			continue
 		elif bash ${f%.launched} check; then
 			echo >> $ok
-			bash ${f%.launched} globus | while read fglobus orig dest delete ; do
-                		echo pending $orig $dest $delete > $fglobus
-			done
+			#bash ${f%.launched} globus | while read fglobus orig dest delete ; do
+                	#	echo pending $orig $dest $delete > $fglobus
+			#done
 			touch $f.verified
 			echo ok $f
 		else

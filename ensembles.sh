@@ -848,7 +848,7 @@ $(
 	}
 	corr_file_name() {
 		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
-		prefix_path_extra="_2pt_test_nvec${prop_nvec}"
+		prefix_path_extra="_2pt_nvec${nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
@@ -867,9 +867,10 @@ $(
 	}
 	redstar_max_vecs_baryons=8
 	redstar_max_mom_baryon=1
-	redstar_minutes=60
+	redstar_max_tslides_baryon=4
+	redstar_minutes=30
 	redstar_slurm_nodes="$prop_slurm_nodes"
-	redstar_chroma_minutes="$prop_chroma_minutes"
+	redstar_chroma_minutes="540"
 	redstar_chroma_geometry="$prop_chroma_geometry"
 	redstar_transfer_back=nop
 
