@@ -3,19 +3,22 @@
 . common.sh
 
 ensembles="ensemble0 ensemble1 ensemble2 ensemble3"
-#ensembles="ensemble0"
+ensembles="ensemble4"
+#ensembles="ensemble1"
+#ensembles="ensemble1 ensemble4"
 
 ensemble0() { ensemble_nvecs_boosting 128 1 ; }
 ensemble1() { ensemble_nvecs_boosting 128 2 ; }
 ensemble2() { ensemble_nvecs_boosting 128 3 ; }
 ensemble3() { ensemble_nvecs_boosting 128 4 ; }
 ensemble4() { ensemble_nvecs_boosting 128 0 ; }
+ensemble5() { ensemble_nvecs_boosting 128 -1 ; }
 
-ensemble4() { ensemble_nvecs_boosting 256 1 ; }
-ensemble5() { ensemble_nvecs_boosting 256 2 ; }
-ensemble6() { ensemble_nvecs_boosting 256 3 ; }
-ensemble7() { ensemble_nvecs_boosting 256 4 ; }
-ensemble4() { ensemble_nvecs_boosting 256 0 ; }
+#ensemble4() { ensemble_nvecs_boosting 256 1 ; }
+#ensemble5() { ensemble_nvecs_boosting 256 2 ; }
+#ensemble6() { ensemble_nvecs_boosting 256 3 ; }
+#ensemble7() { ensemble_nvecs_boosting 256 4 ; }
+#ensemble4() { ensemble_nvecs_boosting 256 0 ; }
 
 ensemble_nvecs_boosting() {
 	nvec=$1
@@ -36,18 +39,25 @@ ensemble_nvecs_boosting() {
 	onthefly_chroma_minutes=120
 	max_moms_per_job=100
 
+	#run_eigs="yes"
+	#run_props="nop"
+	#run_gprops="nop"
+	#run_baryons="nop"
+	#run_mesons="nop"
+	#run_discos="nop"
+	#run_redstar="nop"
+	#run_onthefly="nop"
+
 	# Ensemble properties
-	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
-	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
-	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
-	tag="cl21_48_128_b6p5_m0p2070_m0p1750-${prop_nvec}-${redstar_auto_phasing_4plus}"
-	confs="`seq 1010 30 7634`"
-	confs="`seq 1010 30 2210`"
-	#confs="`seq 1610 30 1999`"
-	#confs="`seq 2000 30 7634`"
-	#confs=1010
-	s_size=48 # lattice spatial size
-	t_size=128 # lattice temporal size
+	confsprefix="cl21_64_192_b6p7_m0p1830_m0p1650"
+	ensemble="cl21_64_192_b6p7_m0p1830_m0p1650"
+	confsname="cl21_64_192_b6p7_m0p1830_m0p1650"
+	tag="cl21_64_192_b6p7_m0p1830_m0p1650-${prop_nvec}-${redstar_auto_phasing_4plus}"
+	confs="`seq 1000 10 10530`"
+	confs="`seq 1010 10 1600`"
+	#confs=1000
+	s_size=64 # lattice spatial size
+	t_size=192 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
@@ -60,26 +70,25 @@ ensemble_nvecs_boosting() {
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
-	eigs_slurm_nodes=1
-	eigs_chroma_geometry="1 1 1 4"
+	eigs_slurm_nodes=12
+	eigs_chroma_geometry="1 1 1 48"
 	eigs_chroma_minutes=60
 	eigs_transfer_back="nop"
 	eigs_delete_after_transfer_back="nop"
 	eigs_transfer_from_jlab="nop"
 
 	# Props options
-	prop_t_sources="0 32 64 96"
-	#prop_t_sources="`seq 0 127`"
-	#prop_t_sources="0"
+	t_sources="0 48 96 144"
+	prop_t_sources="$t_sources"
+	prop_mass="-0.1830"
+	prop_clov="1.14272664055312"
 	prop_create_if_missing="nop"
-	prop_t_fwd=22
+	prop_t_fwd=52
 	prop_t_back=0
 	#prop_nvec=128
-	prop_mass="-0.2070"
-	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=3
-	prop_chroma_geometry="1 1 3 4"
+	prop_slurm_nodes=12
+	prop_chroma_geometry="2 2 2 6"
 	prop_chroma_minutes=20
 	prop_max_rhs=8
 	prop_save_file="nop"
@@ -285,7 +294,7 @@ ensemble_nvecs_boosting() {
 	prop_transfer_from_jlab="nop"
 
 	# Genprops options
-	gprop_t_sources="${prop_t_sources}"
+	gprop_t_sources="${t_sources}"
 	gprop_t_seps="6 7 8 9 10 11 12"
 	max_tseps_per_job=10
 	gprop_nvec=$nvec
@@ -387,8 +396,8 @@ ensemble_nvecs_boosting() {
 	baryon_chroma_max_tslices_in_contraction=12 # as large as possible
 	baryon_chroma_max_moms_in_contraction=2 # as large as possible (zero means do all momenta at once)
 	baryon_chroma_max_vecs=8 # as large as possible (zero means do all eigenvectors are contracted at once)
-	baryon_slurm_nodes=3
-	baryon_chroma_geometry="1 1 3 4"
+	baryon_slurm_nodes=$prop_slurm_nodes
+	baryon_chroma_geometry="$prop_chroma_geometry"
 	baryon_chroma_minutes=20
 	baryon_file_name() {
 		local n node
@@ -544,7 +553,7 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=20 # Number of time slices
+	redstar_t_corr=50 # Number of time slices
 	redstar_nvec=$nvec
 	redstar_tag="."
 	#redstar_auto_phasing_4plus=2
@@ -740,7 +749,7 @@ export QUDA_ENABLE_MPS=0
 #
 
 slurm_script_prologue_redstar="
-#. $chromaform/env.sh
+. $chromaform/env.sh
 . $chromaform/env_extra1.sh
 export OPENBLAS_NUM_THREADS=1
 export SLURM_CPU_BIND=\"cores\"
