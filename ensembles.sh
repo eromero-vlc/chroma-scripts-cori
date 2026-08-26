@@ -4,7 +4,7 @@
 
 ensembles="ensemble0 ensemble1 ensemble2 ensemble3"
 ensembles="ensemble4"
-#ensembles="ensemble1"
+ensembles="ensemble1"
 #ensembles="ensemble1 ensemble4"
 
 ensemble0() { ensemble_nvecs_boosting 128 1 ; }
@@ -36,7 +36,7 @@ ensemble_nvecs_boosting() {
 	run_redstar="yes"
 
 	run_onthefly="yes"
-	onthefly_chroma_minutes=120
+	onthefly_chroma_minutes=240
 	max_moms_per_job=100
 
 	#run_eigs="yes"
@@ -765,7 +765,7 @@ export SB_CACHEGB_CPU=5
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
 max_jobs=400 # maximum jobs to be launched
-max_minutes=120 # maximum hours for a single job
+max_minutes=240 # maximum hours for a single job
 slurm_max_bundled_jobs=200 # maximum bundled jobs in a slurm job
 slurm_max_jobs=400 # maximum bundled jobs in a slurm job
 
