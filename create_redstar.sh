@@ -563,8 +563,8 @@ globus() { echo -n; }
 eval "\${1:-run}"
 EOF
 
-				$t_source="@T_SOURCE"
-				$t_origin="@T_ORIGIN"
+				t_source="@T_SOURCE"
+				t_origin="@T_ORIGIN"
 				corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
 				mkdir -p `dirname ${corr_file}`
 				prefix="insop${combo_line}_mf${mom_leader}_tsep${tsep_leader}"
@@ -586,7 +586,7 @@ environ() {
 
 xml() {
 	cat << EOFeof
-$( chroma_corr_task "${corr_graph_bin}" "\$(( (@T_ORIGIN+@T_SOURCE)%$t_size ))" "$output" )
+$( chroma_corr_task "${corr_graph_bin}" "${corr_file}" "\$(( (@T_ORIGIN+@T_SOURCE)%$t_size ))" )
 EOFeof
 }
 
@@ -679,7 +679,7 @@ else
 	exit \$r
 fi
 EOF
-				bash $runpath/${template_file%.sh.template}_t${t_source}.sh xml > $runpath/${template_file%.sh.template}.sh.xml
+				bash $runpath/${template_file%.sh.template}_t${t_source}.sh xml > $runpath/${template_file%.sh.template}_t${t_source}.sh.xml
 			done # template_file
 		done # t_source
 	done # cfg
