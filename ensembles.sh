@@ -6,7 +6,7 @@ ensembles="ensemble0"
 
 ensemble0() {
 	# Tasks to run
-	run_eigs="yes"
+	run_eigs="nop"
 	run_discos="nop"
 	run_redstar="yes"
 
@@ -14,42 +14,40 @@ ensemble0() {
 	max_moms_per_job=100000
 	max_corr_per_job=100000
 	max_phases_per_job=1000
-	max_tseps_per_job=1000
+	max_tseps_per_job=1
 
 	# Ensemble properties
-	confsprefix="cl21_32_64_b6p3_m0p2350_m0p2050"
-	ensemble="cl21_32_64_b6p3_m0p2390_m0p2050"
-	confsname="cl21_32_64_b6p3_m0p2350_m0p2050"
-	tag="cl21_32_64_b6p3_m0p2350_m0p2050"
-	confs="`seq 1000 10 5160`"
+	confsprefix="cl21_64_192_b6p7_m0p1830_m0p1650"
+	ensemble="cl21_64_192_b6p7_m0p1830_m0p1650"
+	confsname="cl21_64_192_b6p7_m0p1830_m0p1650"
+	tag="cl21_64_192_b6p7_m0p1830_m0p1650"
+	confs="`seq 1000 10 10530`"
 	confs=1000
-	confs="`seq 10 10 990`"
-	s_size=32 # lattice spatial size
-	t_size=64 # lattice temporal size
+	confs="`seq 1000 10 1310`"
+	confs="`seq 1320 10 1610`"
+	s_size=64 # lattice spatial size
+	t_size=192 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
 
 	# Colorvecs options
-	max_nvec=64  # colorvecs to compute
-	nvec=64  # colorvecs to use
+	max_nvec=512  # colorvecs to compute
+	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
-	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.mod${cfg}"; }
-	eigs_slurm_nodes=1
-	eigs_chroma_geometry="1 1 1 4"
-	eigs_chroma_minutes=30
+	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
+	eigs_slurm_nodes=12
+	eigs_chroma_geometry="1 1 1 48"
+	eigs_chroma_minutes=60
 
 	# Props options
-	t_sources="0"
-	prop_mass="-0.2350"
-	prop_clov="1.20536588031793"
+	t_sources="0 48 96 144"
+	prop_mass="-0.1830"
+	prop_clov="1.14272664055312"
 	prop_mass_label="U${prop_mass}"
-	prop_slurm_nodes=1
-	prop_chroma_geometry="1 1 1 4"
-	prop_chroma_minutes=60
-	prop_max_rhs=8
+	prop_max_rhs=4
 	prop_inv="
               <invType>QUDA_MULTIGRID_CLOVER_INVERTER</invType>
               <CloverParams>
@@ -228,14 +226,14 @@ ensemble0() {
 
 	# Genprops options
 	gprop_t_seps="6 7 8 9 10 11 12"
+	#gprop_t_seps="6"
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
 	#localpath="/tmp"
 	localpath="/dev/shm"
 
 	# Baryon options
-	redstar_op_bases=all
-	#redstar_op_bases=1
+	redstar_op_bases=1
 
 	# Disco options
 	disco_max_displacement=16
@@ -344,10 +342,9 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=20 # Number of time slices
+	redstar_t_corr=50 # Number of time slices
 	redstar_nvec="$nvec"
 	redstar_tag="."
-	redstar_auto_phasing="0 1 2 3"
 	redstar_auto_phasing="2"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
@@ -772,17 +769,30 @@ $(
 2 1 2 2 1 0
 2 1 2 2 1 1
 5 0 1 4 0 -1 "
-	redstar_3pt="nop"
+	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
-"
-#	redstar_2pt_moms="
-#$(
-#		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
-#			echo $m0 $m1 $m2  $m0 $m1 $m2
-#			echo $m3 $m4 $m5  $m3 $m4 $m5
-#		done | sort -u
-#)
-#$redstar_3pt_snkmom_srcmom"
+0 0 0  0 0 0
+$(
+	#for i in `seq 1 $redstar_2pt_max_mom`; do
+	#	echo $i 0 0  $i 0 0
+	#	echo -$i 0 0 -$i 0 0
+	#done
+	#for i in `seq 1 $redstar_2pt_max_mom`; do
+	#	echo 0 $i 0  0 $i 0
+	#	echo 0 -$i 0 0 -$i 0
+	#done
+	for i in `seq 1 $redstar_2pt_max_mom`; do
+		echo 0 0 $i   0 0 $i
+		echo 0 0 -$i  0 0 -$i
+	done
+)"
+	redstar_2pt_moms="
+$(
+		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+			echo $m0 $m1 $m2  $m0 $m1 $m2
+			echo $m3 $m4 $m5  $m3 $m4 $m5
+		done | sort -u
+)"
 	redstar_2pt_moms="$( echo "$redstar_2pt_moms" | auto_phase_moms )"
 	redstar_3pt_snkmom_srcmom="$( echo "$redstar_3pt_snkmom_srcmom" | auto_phase_moms )"
 	redstar_disco="nop" # contracting for disco
@@ -848,7 +858,7 @@ $(
 	}
 	corr_file_name() {
 		local prefix_path="auto_phasing_4p_${redstar_auto_phasing// /,}"
-		prefix_path_extra="_2pt_nvec${nvec}"
+		prefix_path_extra="_3pt_nvec${nvec}"
 		local tsep_extra=""
 		[ ${redstar_3pt} == yes ] && tsep_extra="_tsep${tsep}"
 		if [ x$cfg != xavg -a x$cfg != x ] ; then
@@ -865,13 +875,13 @@ $(
 		prefix_path_extra="_2pt-disco"
 		echo "${confspath}/${confsprefix}/corr/${prefix_path}${prefix_path_extra}/corr_pack_cfg_${cfg}.tar.gz"
 	}
-	redstar_max_vecs_baryons=8
+	redstar_max_vecs_baryons=4
 	redstar_max_mom_baryon=1
 	redstar_max_tslides_baryon=4
 	redstar_minutes=30
-	redstar_slurm_nodes="$prop_slurm_nodes"
-	redstar_chroma_minutes="540"
-	redstar_chroma_geometry="$prop_chroma_geometry"
+	redstar_slurm_nodes="12"
+	redstar_chroma_minutes="400"
+	redstar_chroma_geometry="2 2 2 6"
 	redstar_transfer_back=nop
 
 	globus_check_dirs="${confspath}/${confsprefix}/corr-none"
@@ -912,9 +922,9 @@ slurm_script_prologue="
 export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
-export SB_MPI_GPU=1
+export SB_MPI_GPU=0
 #export SB_CACHEGB_GPU=60
-export REDSTAR_SB_MEM_GB=40
+export REDSTAR_SB_MEM_GB=4
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
@@ -930,8 +940,8 @@ export QUDA_ENABLE_MPS=0
 
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
-max_jobs=30 # maximum jobs to be launched
-max_minutes=30 # maximum hours for a single job
+max_jobs=100 # maximum jobs to be launched
+max_minutes=400 # maximum hours for a single job
 slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 
 #

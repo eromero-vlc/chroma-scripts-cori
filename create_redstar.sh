@@ -609,7 +609,7 @@ run_list() {
 
 check() {
 	[ -f $corr_file ] || exit 1
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
+	grep -q "CORR_SUPERB: ran successfull" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
 }
 
@@ -619,6 +619,10 @@ deps() {
 
 outs() {
 	echo $corr_file
+}
+
+output() {
+	echo $output
 }
 
 class() {
