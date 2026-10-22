@@ -13,6 +13,7 @@ for ens in $ensembles; do
 		lime_file="`lime_file_name`"
 		colorvec_file="`colorvec_file_name`"
 		[ -f $lime_file ] || continue
+		[ -f $colorvec_file ] && continue
 		
 		runpath="$PWD/${tag}/conf_${cfg}"
 		[ -f ${runpath}.tar.gz ] && continue
@@ -101,7 +102,7 @@ output() {
 }
 
 check() {
-	grep -q "CHROMA: ran successfully" 2>&1 ${output} > /dev/null && exit 0
+	grep -q "CREATE_COLORVECS_SUPERB: ran successfully" 2>&1 ${output} > /dev/null && exit 0
 	exit 1
 }
 

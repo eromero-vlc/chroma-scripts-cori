@@ -495,11 +495,11 @@ for ens in $ensembles; do
 	get_grouping_vars
 
 	corr_runpath="$PWD/${tag}/redstar_corr_graph-${ens}"
-	rm -rf $corr_runpath
+	#rm -rf $corr_runpath
 	mkdir -p $corr_runpath
 
 	template_runpath="$PWD/${tag}/redstar_template-${ens}"
-	rm -rf ${template_runpath}
+	#rm -rf ${template_runpath}
 	mkdir -p ${template_runpath}
 	cfg="@CFG"
 	lime_file="`lime_file_name`"
@@ -517,7 +517,10 @@ for ens in $ensembles; do
 			k_split $max_corr_per_job $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos ; do
 				corr_graph_bin="${corr_runpath}/corr_graph_insop${combo_line}_m${mom_leader}_tsep${tsep_leader}.bin"
 				output="${corr_graph_bin}.out"
-				cat << EOF > ${corr_graph_bin}.sh
+				do_corr_fun="yes"
+				[ -f ${corr_graph_bin}.ops ] && [ "$( echo `cat ${corr_graph_bin}.ops` )" == "$( echo $insert_op_mom_combos )" ] && do_corr_fun="nop"
+				if [ $do_corr_fun == yes ] ; then
+					cat << EOF > ${corr_graph_bin}.sh
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0
 #SBATCH -t $redstar_minutes
@@ -562,7 +565,9 @@ globus() { echo -n; }
 
 eval "\${1:-run}"
 EOF
-
+					echo $insert_op_mom_combos > ${corr_graph_bin}.ops
+					rm -f ${corr_graph_bin}
+				fi
 				t_source="@T_SOURCE"
 				t_origin="@T_ORIGIN"
 				corr_file="`mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name`"
@@ -573,6 +578,7 @@ EOF
 				xml="$job_runpath/redstar_${prefix}_t${t_source}.sh.xml"
 				redstar_sh="redstar_${prefix}.sh.template"
 				echo ${redstar_sh} >> ${redstar_files}
+				echo creating $redstar_sh $redstar_chroma_minutes
 				cat << EOF > $template_runpath/${redstar_sh}
 $slurm_sbatch_prologue
 #SBATCH -o ${output}0

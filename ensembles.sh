@@ -10,42 +10,49 @@ ensemble0() {
 	run_discos="nop"
 	run_redstar="yes"
 
+	#run_eigs="yes"
+	#run_discos="nop"
+	#run_redstar="nop"
+
 	onthefly_chroma_minutes=120
 	max_moms_per_job=100000
 	max_corr_per_job=100000
-	max_phases_per_job=1000
+	max_phases_per_job=1
 	max_tseps_per_job=1
 
 	# Ensemble properties
-	confsprefix="cl21_64_192_b6p7_m0p1830_m0p1650"
-	ensemble="cl21_64_192_b6p7_m0p1830_m0p1650"
-	confsname="cl21_64_192_b6p7_m0p1830_m0p1650"
-	tag="cl21_64_192_b6p7_m0p1830_m0p1650"
-	confs="`seq 1000 10 10530`"
-	confs=1000
-	confs="`seq 1000 10 1310`"
-	confs="`seq 1320 10 1610`"
-	s_size=64 # lattice spatial size
-	t_size=192 # lattice temporal size
+	confsprefix="cl21_48_128_b6p5_m0p2070_m0p1750"
+	ensemble="cl21_48_128_b6p5_m0p2070_m0p1750"
+	confsname="cl21_48_128_b6p5_m0p2070_m0p1750"
+	tag="cl21_48_128_b6p5_m0p2070_m0p1750"
+	#confs="`seq 4980 30 7630`"
+	#confs="`seq 1010 30 7630`"
+	confs="`seq 1010 30 4970` `seq 4980 30 7630`"
+	#confs="1010"
+	confs="${confs//1250/}"
+	s_size=48 # lattice spatial size
+	t_size=128 # lattice temporal size
 
 	# configuration filename
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
 
 	# Colorvecs options
-	max_nvec=512  # colorvecs to compute
+	max_nvec=128  # colorvecs to compute
 	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
 	# colorvec filename
 	colorvec_file_name() { echo "${confspath}/${confsprefix}/eigs_mod/${confsname}.3d.eigs.n${max_nvec}.mod${cfg}"; }
-	eigs_slurm_nodes=12
-	eigs_chroma_geometry="1 1 1 48"
-	eigs_chroma_minutes=60
+	eigs_slurm_nodes=4
+	eigs_chroma_geometry="1 1 1 32"
+	eigs_chroma_minutes=20
 
 	# Props options
-	t_sources="0 48 96 144"
-	prop_mass="-0.1830"
-	prop_clov="1.14272664055312"
+	t_sources="0 32 64 96"
+	t_sources="0 32 96"
+	t_sources="64"
+	prop_mass="-0.2070"
+	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
 	prop_max_rhs=4
 	prop_inv="
@@ -342,433 +349,14 @@ $(
 )"
 
 	# Redstar options
-	redstar_t_corr=50 # Number of time slices
+	redstar_t_corr=32 # Number of time slices
 	redstar_nvec="$nvec"
 	redstar_tag="."
 	redstar_auto_phasing="2"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
-0 0 0  0 0 0
-1 1 1 1 1 1
-1 0 0 2 0 1
-1 0 0 1 0 2
-1 0 1 2 0 2
-1 0 1 1 0 1
-1 0 1 1 0 3
-1 0 2 1 0 0
-1 0 2 1 0 1
-1 0 2 1 0 3
-1 0 3 1 0 1
-1 0 3 1 0 2
-1 0 4 1 1 2
-1 0 4 2 0 1
-1 1 1 1 0 3
-1 1 2 1 0 3
-1 2 2 1 0 1
-3 0 1 2 0 0
-0 1 0 1 2 1
-0 1 1 1 1 0
-0 1 1 1 1 1
-0 1 1 1 1 2
-0 1 1 2 1 2
-0 1 2 1 1 1
-0 1 3 1 1 1
-0 1 3 1 1 2
-0 0 1 1 1 1
-0 0 0 1 0 0
-0 0 0 1 1 0
-0 0 0 2 0 1
-0 0 0 2 0 2
-0 0 0 2 2 1
-0 0 1 3 0 1
-0 0 1 0 2 1
-0 0 1 1 2 0
-0 0 1 1 0 3
-0 0 1 1 1 2
-0 0 1 2 0 1
-0 0 1 2 0 2
-0 0 1 2 1 1
-0 0 1 2 2 1
-0 0 2 1 0 3
-0 0 2 1 1 1
-0 0 2 2 0 0
-0 0 3 1 0 1
-0 0 3 1 0 2
-0 0 3 1 1 1
-0 0 3 1 1 2
-0 1 1 0 0 1
-0 1 1 0 0 2
-0 1 1 0 0 0
-0 1 2 0 0 1
-0 1 2 0 0 2
-0 1 2 0 0 0
-0 1 0 0 1 0
-0 1 0 0 0 1
-0 1 0 0 0 2
-0 1 0 0 0 1
-0 1 0 0 0 2
-0 1 0 2 0 0
-0 1 1 0 1 1
-0 1 1 0 0 0
-0 1 1 0 0 1
-0 1 1 0 0 2
-0 1 1 1 0 3
-0 1 2 0 0 0
-0 1 2 0 0 1
-0 1 2 0 0 2
-0 1 2 1 0 3
-0 1 3 1 0 1
-0 1 4 0 0 4
-0 1 5 0 0 5
-0 1 6 0 0 6
-0 2 2 1 0 1
-0 2 0 0 0 0
-0 3 0 0 1 0
-0 3 1 0 1 1
-1 1 0 1 1 0
-1 1 4 2 0 6
-1 1 5 2 2 4
-1 1 6 2 2 5
-1 2 2 0 2 5
-1 0 1 0 0 1
-1 0 2 0 0 2
-1 0 0 2 0 2
-1 0 0 2 1 0
-1 0 1 0 0 1
-1 0 1 0 0 3
-1 0 1 0 0 4
-1 0 1 3 0 1
-1 0 2 0 0 2
-1 0 2 0 0 5
-1 0 2 0 0 6
-1 0 3 0 0 1
-1 0 4 1 1 2
-1 0 4 1 0 2
-1 0 4 1 0 4
-1 0 4 0 0 1
-1 0 4 0 0 2
-1 0 4 0 0 4
-1 0 5 1 0 2
-1 0 5 1 0 4
-1 0 5 1 0 5
-1 0 5 0 0 2
-1 0 5 0 0 4
-1 0 5 0 0 5
-1 0 6 1 1 4
-1 0 6 1 0 4
-1 0 6 1 0 5
-1 0 6 1 0 6
-1 0 6 0 0 2
-1 0 6 0 0 4
-1 0 6 0 0 5
-1 0 6 0 0 6
-1 0 6 2 2 5
-1 1 1 0 0 1
-1 1 1 0 0 2
-1 1 1 0 0 0
-1 1 1 0 1 1
-1 1 1 1 0 2
-1 1 1 1 0 0
-1 1 1 2 2 1
-1 1 2 0 0 1
-1 1 2 0 0 2
-1 1 2 0 0 0
-1 1 2 0 1 2
-1 1 2 1 0 1
-1 1 2 1 0 0
-1 1 3 0 0 3
-1 1 0 0 0 1
-1 1 0 0 0 2
-1 1 0 0 0 1
-1 1 0 0 0 2
-1 1 0 1 0 1
-1 1 0 1 0 2
-1 1 0 1 0 1
-1 1 0 1 0 2
-1 1 0 2 2 0
-1 1 1 0 0 0
-1 1 1 0 0 1
-1 1 1 0 0 2
-1 1 1 0 0 3
-1 1 1 0 1 1
-1 1 1 1 0 0
-1 1 1 1 0 2
-1 1 2 0 0 0
-1 1 2 0 0 1
-1 1 2 0 0 2
-1 1 2 0 0 4
-1 1 2 0 0 5
-1 1 2 0 1 2
-1 1 2 1 0 0
-1 1 2 1 0 1
-1 1 3 0 0 3
-1 1 4 1 1 4
-1 1 4 0 1 4
-1 1 4 0 0 4
-1 1 4 0 0 6
-1 1 4 0 1 4
-1 1 4 1 0 4
-1 1 5 1 1 5
-1 1 5 0 1 4
-1 1 5 0 1 5
-1 1 5 0 0 4
-1 1 5 0 0 5
-1 1 5 0 1 5
-1 1 5 1 0 5
-1 1 6 1 1 5
-1 1 6 1 1 6
-1 1 6 0 1 5
-1 1 6 0 1 6
-1 1 6 0 0 5
-1 1 6 0 0 6
-1 1 6 0 1 6
-1 1 6 1 0 6
-1 3 0 1 1 0
-2 0 1 0 0 2
-2 0 1 0 0 0
-2 0 1 1 0 1
-2 0 2 0 0 1
-2 0 2 0 0 0
-2 0 2 1 0 2
-2 0 2 1 0 3
-2 0 0 0 0 1
-2 0 0 0 0 2
-2 0 0 0 0 1
-2 0 0 0 0 2
-2 0 1 0 0 0
-2 0 1 0 0 2
-2 0 1 1 0 1
-2 0 2 0 0 0
-2 0 2 0 0 1
-2 0 2 1 0 0
-2 0 2 1 0 2
-2 0 4 1 0 4
-2 0 5 1 0 5
-2 0 6 1 0 6
-2 1 1 0 1 2
-2 1 1 0 1 0
-2 1 1 1 0 1
-2 1 1 1 0 2
-2 1 1 1 0 0
-2 1 1 1 1 1
-2 1 1 2 0 1
-2 1 1 2 0 2
-2 1 1 2 0 0
-2 1 2 0 1 1
-2 1 2 0 1 0
-2 1 2 1 0 1
-2 1 2 1 0 2
-2 1 2 1 0 0
-2 1 2 1 1 2
-2 1 2 2 0 1
-2 1 2 2 0 2
-2 1 2 2 0 0
-2 1 0 0 1 1
-2 1 0 0 1 2
-2 1 0 0 1 1
-2 1 0 0 1 2
-2 1 0 1 0 1
-2 1 0 1 0 2
-2 1 0 1 0 1
-2 1 0 1 0 2
-2 1 0 2 0 1
-2 1 0 2 0 2
-2 1 0 2 0 1
-2 1 0 2 0 2
-2 1 1 0 1 0
-2 1 1 0 1 2
-2 1 1 1 0 0
-2 1 1 1 0 1
-2 1 1 1 0 2
-2 1 1 1 1 1
-2 1 1 2 0 0
-2 1 1 2 0 1
-2 1 1 2 0 2
-2 1 2 0 1 0
-2 1 2 0 1 1
-2 1 2 1 0 0
-2 1 2 1 0 1
-2 1 2 1 0 2
-2 1 2 1 1 2
-2 1 2 2 0 0
-2 1 2 2 0 1
-2 1 2 2 0 2
-2 2 1 0 0 0
-2 2 4 1 0 6
-2 2 5 0 0 4
-2 2 6 0 0 5
-5 0 1 4 0 1
--1 0 4 -1 -1 2
--1 0 4 -2 0 1
-0 0 -1 0 0 -2
-0 0 -1 0 0 0
-0 0 -2 0 0 -1
-0 0 -2 0 0 0
-0 0 0 0 0 -1
-0 0 0 0 0 -2
-0 0 0 0 0 2
-0 0 1 0 0 -1
-0 0 1 0 0 0
-0 0 1 0 0 2
-0 0 2 0 0 0
-0 0 2 0 0 1
-0 0 4 0 1 4
-0 0 4 1 0 4
-0 0 4 1 1 4
-0 0 5 0 1 5
-0 0 5 1 0 5
-0 0 6 0 1 6
-0 0 6 1 0 6
-0 0 6 1 1 6
-0 1 -1 0 0 -1
-0 1 -1 0 0 -2
-0 1 -1 0 0 0
-0 1 -1 0 1 -2
-0 1 -1 0 1 0
-0 1 -2 0 0 -1
-0 1 -2 0 0 -2
-0 1 -2 0 0 0
-0 1 -2 0 1 -1
-0 1 -2 0 1 0
-0 1 0 0 0 -1
-0 1 0 0 0 -2
-0 1 0 0 1 -1
-0 1 0 0 1 -2
-0 1 0 0 1 1
-0 1 0 0 1 2
-0 1 1 0 1 0
-0 1 1 0 1 2
-0 1 2 0 1 0
-0 1 2 0 1 1
-0 1 4 1 1 4
-0 1 5 1 1 5
-0 1 6 1 1 6
-1 -1 4 2 0 6
-1 -1 5 2 -2 4
-1 -1 6 2 -2 5
-1 -2 2 0 -2 5
-1 0 -1 0 0 -1
-1 0 -1 1 0 -2
-1 0 -1 1 0 0
-1 0 -2 0 0 -2
-1 0 -2 1 0 -1
-1 0 -2 1 0 0
-1 0 0 1 0 -1
-1 0 0 1 0 -2
-1 0 0 1 0 1
-1 0 1 1 0 0
-1 0 1 1 0 2
-1 0 4 -1 -1 2
-1 0 4 -1 0 2
-1 0 4 -1 0 4
-1 0 4 2 0 4
-1 0 5 -1 0 2
-1 0 5 -1 0 4
-1 0 5 -1 0 5
-1 0 5 1 1 5
-1 0 6 -1 -1 4
-1 0 6 -1 0 4
-1 0 6 -1 0 5
-1 0 6 -1 0 6
-1 0 6 1 1 6
-1 0 6 2 0 6
-1 1 -1 0 0 -1
-1 1 -1 0 0 -2
-1 1 -1 0 0 0
-1 1 -1 0 1 -1
-1 1 -1 1 0 -2
-1 1 -1 1 0 0
-1 1 -1 1 1 -2
-1 1 -1 1 1 0
-1 1 -2 0 0 -1
-1 1 -2 0 0 -2
-1 1 -2 0 0 0
-1 1 -2 0 1 -2
-1 1 -2 1 0 -1
-1 1 -2 1 0 0
-1 1 -2 1 1 -1
-1 1 -2 1 1 0
-1 1 -3 0 0 -3
-1 1 0 0 0 -1
-1 1 0 0 0 -2
-1 1 0 1 0 -1
-1 1 0 1 0 -2
-1 1 0 1 1 -1
-1 1 0 1 1 -2
-1 1 0 1 1 1
-1 1 0 1 1 2
-1 1 1 1 1 0
-1 1 1 1 1 2
-1 1 2 1 1 0
-1 1 2 1 1 1
-1 1 4 -1 -1 4
-1 1 4 0 -1 4
-1 1 5 -1 -1 5
-1 1 5 0 -1 4
-1 1 5 0 -1 5
-1 1 6 -1 -1 5
-1 1 6 -1 -1 6
-1 1 6 0 -1 5
-1 1 6 0 -1 6
-2 0 -1 0 0 -2
-2 0 -1 0 0 0
-2 0 -1 1 0 -1
-2 0 -1 2 0 -2
-2 0 -1 2 0 0
-2 0 -2 0 0 -1
-2 0 -2 0 0 0
-2 0 -2 1 0 -2
-2 0 -2 2 0 -1
-2 0 -2 2 0 0
-2 0 0 0 0 -1
-2 0 0 0 0 -2
-2 0 0 2 0 -1
-2 0 0 2 0 -2
-2 0 0 2 0 1
-2 0 0 2 0 2
-2 0 1 2 0 0
-2 0 1 2 0 2
-2 0 2 2 0 0
-2 0 2 2 0 1
-2 0 5 1 0 1
-2 1 -1 0 1 -2
-2 1 -1 0 1 0
-2 1 -1 1 0 -1
-2 1 -1 1 0 -2
-2 1 -1 1 0 0
-2 1 -1 1 1 -1
-2 1 -1 2 0 -1
-2 1 -1 2 0 -2
-2 1 -1 2 0 0
-2 1 -1 2 1 -2
-2 1 -1 2 1 0
-2 1 -2 0 1 -1
-2 1 -2 0 1 0
-2 1 -2 1 0 -1
-2 1 -2 1 0 -2
-2 1 -2 1 0 0
-2 1 -2 1 1 -2
-2 1 -2 2 0 -1
-2 1 -2 2 0 -2
-2 1 -2 2 0 0
-2 1 -2 2 1 -1
-2 1 -2 2 1 0
-2 1 0 0 1 -1
-2 1 0 0 1 -2
-2 1 0 1 0 -1
-2 1 0 1 0 -2
-2 1 0 2 0 -1
-2 1 0 2 0 -2
-2 1 0 2 1 -1
-2 1 0 2 1 -2
-2 1 0 2 1 1
-2 1 0 2 1 2
-2 1 1 2 1 0
-2 1 1 2 1 2
-2 1 2 2 1 0
-2 1 2 2 1 1
-5 0 1 4 0 -1 "
+"
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
 0 0 0  0 0 0
@@ -786,9 +374,8 @@ $(
 		echo 0 0 -$i  0 0 -$i
 	done
 )"
-	redstar_2pt_moms="
-$(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+	redstar_2pt_moms="$(
+		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2  $m0 $m1 $m2
 			echo $m3 $m4 $m5  $m3 $m4 $m5
 		done | sort -u
@@ -879,9 +466,9 @@ $(
 	redstar_max_mom_baryon=1
 	redstar_max_tslides_baryon=4
 	redstar_minutes=30
-	redstar_slurm_nodes="12"
-	redstar_chroma_minutes="400"
-	redstar_chroma_geometry="2 2 2 6"
+	redstar_slurm_nodes="6"
+	redstar_chroma_minutes="30"
+	redstar_chroma_geometry="2 2 3 4"
 	redstar_transfer_back=nop
 
 	globus_check_dirs="${confspath}/${confsprefix}/corr-none"
@@ -891,30 +478,31 @@ $(
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="/capstor/store/cscs/userlab/lp153/chromaform"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-redstardl-superbblas-cuda-next/bin/chroma"
-chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512" # -libdevice-path /opt/rocm-6.0.0/llvm/lib"
+chromaform="$HOME/scratch/chromaform-lumi-25"
+chroma="$chromaform/install/chroma-sp-quda-qdpxx-double-nd4-cmake-redstardl-superbblas-hip-next/bin/chroma"
+chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-redstardl-superbblas-hip-next/bin/chroma"
+chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -temp-files-path=/dev/shm"
 
 redstar="$chromaform/install-here/redstar-colorvec-hadron-cpu-adat"
+redstar="$chromaform/install/redstar-colorvec-hadron-hip-adat-superbblas"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
-adat="$chromaform/install/adat"
+adat="$chromaform/install/adat-superbblas"
 dbavg="$adat/bin/dbavg"
 dbavgsrc="$adat/bin/dbavgsrc"
 dbavg_disco="$adat/bin/dbavg_disco"
 dbmerge="$adat/bin/dbmerge"
 dbutil="$adat/bin/dbutil"
+dbcombine="$adat/bin/dbcombine"
 
-slurm_procs_per_node=4
-slurm_cores_per_node="$(( 72*4 ))"
-slurm_gpus_per_node=4
+slurm_procs_per_node=8
+slurm_cores_per_node=56
+slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH --uenv=prgenv-gnu/26.3
-#SBATCH --view=modules
-#SBATCH -A lp153
-#SBATCH --gres=gpu:4 --hint=nomultithread --cpus-per-task=8
-#SBATCH --gpu-bind=none --tasks-per-node=4"
+#SBATCH -A project_465002924 --exclusive -p standard-g
+#SBATCH --gres=gpu:8 --hint=nomultithread --mem=0
+#SBATCH --gpu-bind=none --tasks-per-node=8"
 
 slurm_script_prologue="
 . $chromaform/env.sh
@@ -923,8 +511,9 @@ export OPENBLAS_NUM_THREADS=1
 export OMP_NUM_THREADS=$(( slurm_cores_per_node/slurm_gpus_per_node - 1))
 export SLURM_CPU_BIND=\"cores\"
 export SB_MPI_GPU=0
+export SB_CACHEGB_CPU=5
 #export SB_CACHEGB_GPU=60
-export REDSTAR_SB_MEM_GB=4
+export REDSTAR_SB_MEM_GB=8
 export MPICH_GPU_SUPPORT_ENABLED=1
 export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
@@ -932,6 +521,8 @@ export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
 export QUDA_ENABLE_NVSHMEM=0
 export QUDA_ENABLE_MPS=0
+export SB_TRACK_TIME=0
+ulimit -c 0
 "
 
 #
@@ -940,8 +531,8 @@ export QUDA_ENABLE_MPS=0
 
 BASH_INVOCATION_OPTIONS=
 srun_aggregate=nop
-max_jobs=100 # maximum jobs to be launched
-max_minutes=400 # maximum hours for a single job
+max_jobs=25 # maximum jobs to be launched
+max_minutes=30 # maximum hours for a single job
 slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 
 #
@@ -949,7 +540,7 @@ slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="/capstor/store/cscs/userlab/lp153"
+confspath="$HOME/scratch"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
