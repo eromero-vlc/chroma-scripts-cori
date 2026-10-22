@@ -25,6 +25,7 @@ ensemble0() {
 	confs=1000
 	confs="`seq 1000 10 1310`"
 	confs="`seq 1320 10 1610`"
+	confs="`seq 1620 10 2000`"
 	s_size=64 # lattice spatial size
 	t_size=192 # lattice temporal size
 
@@ -788,7 +789,7 @@ $(
 )"
 	redstar_2pt_moms="
 $(
-		echo $redstar_3pt_snkmom_srcmom | while read m0 m1 m2 m3 m4 m5 ; do
+		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2  $m0 $m1 $m2
 			echo $m3 $m4 $m5  $m3 $m4 $m5
 		done | sort -u
