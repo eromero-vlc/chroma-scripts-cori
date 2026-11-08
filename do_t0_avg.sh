@@ -35,18 +35,16 @@ for ens in $ensembles; do
 
 	get_grouping_vars
 
-	num_t_sources="`num_args $prop_t_sources`"
 	cfg="@CFG"
 	t_source="@SRC"
 	k_split $max_phases_per_job $phase_groups | while read phase_group ; do
 	phase_leader="`take_first $phase_group`"
 	k_split $max_tseps_per_job $tsep_groups | while read tsep_group ; do
 		tsep_leader="`take_first $tsep_group`"
-
 		k_split $max_moms_per_job $( word_moms_filtered_by_phases $phase_group ) | while read this_all_moms ; do
 			mom_leader="`take_first $this_all_moms`"
 			combo_line=0
-			k_split_lines $(( slurm_procs_per_node*redstar_slurm_nodes )) $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos ; do
+			k_split $max_corr_per_job $( get_corr_lines $this_all_moms ) | while read insert_op_mom_combos ; do
 				mom="${mom_leader//_/ }" insertion_op=${combo_line} tsep=$tsep_leader corr_file_name
 				combo_line="$(( combo_line+1 ))"
 			done # insert_op_mom_combos
@@ -61,7 +59,7 @@ for ens in $ensembles; do
 			echo "Excluding $cfg : missing lime file $lime_file" >&2
 			continue
 		fi
-		files="$( for t_source in $prop_t_sources ; do
+		files="$( for t_source in $t_sources ; do
 			sed "s/@CFG/${cfg}/g;s/@SRC/${t_source}/g" ${redstar_files}
 		done )"
 		if ls $files &> /dev/null ; then
@@ -77,7 +75,7 @@ for ens in $ensembles; do
 	rm -rf $corr_dir
 	mkdir -p $corr_dir
 	for redstar_file in `cat ${redstar_files}` ; do 
-	for t_source in $prop_t_sources ; do
+	for t_source in $t_sources ; do
 	(
 		merge_files="`mktemp`"
 		cfg_number=0
@@ -98,12 +96,13 @@ for ens in $ensembles; do
 	wait
 
 	for redstar_file in `cat ${redstar_files}` ; do 
-		files="$( for t_source in $prop_t_sources ; do
+		files="$( for t_source in $t_sources ; do
 			echo $corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/${t_source}/g" ) )
 		done )"
 		corr_file_avg="$corr_dir/$( basename $( echo $redstar_file | sed "s/@CFG/all/g;s/@SRC/all/g" ) )"
 		echo creating final $corr_file_avg
 		rm -f $corr_file_avg
+		echo ">" $dbavgsrc $corr_file_avg $files
 		$dbavgsrc $corr_file_avg $files
 	done # redstar_file
 

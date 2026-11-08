@@ -49,8 +49,6 @@ ensemble0() {
 
 	# Props options
 	t_sources="0 32 64 96"
-	t_sources="0 32 96"
-	t_sources="64"
 	prop_mass="-0.2070"
 	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
