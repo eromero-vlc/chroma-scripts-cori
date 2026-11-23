@@ -306,7 +306,11 @@ corr_graph() {
 			local momj="$( get_source $( get_mom_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
 			local phasej="$( get_source $( get_phase_from_corr_line ${insert_op_mom_combo//\~/ } ) )"
 			if [ $insertion_op == 2pt ] ; then
-				npoint_2pt "$phasei" "$momi" "$phasej" "$momj"
+				for tsep in $tseps ; do
+					if [ $tsep == $do_2pt_on_tsep_group ] ; then 
+						npoint_2pt "$phasei" "$momi" "$phasej" "$momj"
+					fi
+				done
 			else
 				npoint_3pt "$phasei" "$momi" "$phasej" "$momj" "$insertion_op" "$tseps" "$redstar_insertion_disps"
 			fi

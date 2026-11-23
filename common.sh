@@ -24,10 +24,11 @@ get_grouping_vars() {
 	if [ ${redstar_3pt} == yes ] ; then
 		tsep_groups="$( for tsep in $gprop_t_seps ; do echo $tsep ; done | sort -u -n )"
 		[ x${max_tseps_per_job} == x ] && max_tseps_per_job="$( num_args $tsep_groups )"
-		
+		do_2pt_on_tsep_group="`take_first $tsep_groups`"
 	else
 		tsep_groups=0
 		max_tseps_per_job=1
+		do_2pt_on_tsep_group=0
 	fi
 }
 

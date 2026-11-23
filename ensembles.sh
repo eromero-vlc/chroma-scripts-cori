@@ -15,7 +15,7 @@ ensemble0() {
 	#run_redstar="nop"
 
 	onthefly_chroma_minutes=120
-	max_moms_per_job=100000
+	max_moms_per_job=2000
 	max_corr_per_job=100000
 	max_phases_per_job=1
 	max_tseps_per_job=1
@@ -28,7 +28,7 @@ ensemble0() {
 	#confs="`seq 4980 30 7630`"
 	#confs="`seq 1010 30 7630`"
 	confs="`seq 1010 30 4970` `seq 4980 30 7630`"
-	#confs="1010"
+	confs="1010"
 	confs="${confs//1250/}"
 	s_size=48 # lattice spatial size
 	t_size=128 # lattice temporal size
@@ -37,7 +37,7 @@ ensemble0() {
 	lime_file_name() { echo "${confspath}/${confsprefix}/cfgs/${confsname}_cfg_${cfg}.lime"; }
 
 	# Colorvecs options
-	max_nvec=128  # colorvecs to compute
+	max_nvec=512  # colorvecs to compute
 	nvec=128  # colorvecs to use
 	eigs_smear_rho=0.08 # smearing factor
 	eigs_smear_steps=10 # smearing steps
@@ -49,6 +49,7 @@ ensemble0() {
 
 	# Props options
 	t_sources="0 32 64 96"
+	t_sources="0"
 	prop_mass="-0.2070"
 	prop_clov="1.170082389372972"
 	prop_mass_label="U${prop_mass}"
@@ -230,8 +231,8 @@ ensemble0() {
 	"
 
 	# Genprops options
-	gprop_t_seps="6 7 8 9 10 11 12"
-	#gprop_t_seps="6"
+	gprop_t_seps="`seq 8 16`"
+	gprop_t_seps="8 16"
 	gprop_max_tslices_in_contraction=1
 	gprop_max_mom_in_contraction=1
 	#localpath="/tmp"
@@ -350,28 +351,145 @@ $(
 	redstar_t_corr=32 # Number of time slices
 	redstar_nvec="$nvec"
 	redstar_tag="."
-	redstar_auto_phasing="2"
+	redstar_auto_phasing="0"
 	redstar_2pt="yes"
 	redstar_2pt_max_mom=9
 	redstar_2pt_moms="\
 "
 	redstar_3pt="yes"
 	redstar_3pt_snkmom_srcmom="\
-0 0 0  0 0 0
-$(
-	#for i in `seq 1 $redstar_2pt_max_mom`; do
-	#	echo $i 0 0  $i 0 0
-	#	echo -$i 0 0 -$i 0 0
-	#done
-	#for i in `seq 1 $redstar_2pt_max_mom`; do
-	#	echo 0 $i 0  0 $i 0
-	#	echo 0 -$i 0 0 -$i 0
-	#done
-	for i in `seq 1 $redstar_2pt_max_mom`; do
-		echo 0 0 $i   0 0 $i
-		echo 0 0 -$i  0 0 -$i
-	done
-)"
+   5   0   1   4   0  -1
+   3   0   1   1   0   1
+   3   0  -1   2   0   0
+   3   0  -1   0   0  -1
+   2   2   6   0   0   5
+   2   2   5   1   0   6
+   2   2   5   0   0   4
+   2   2   4   1   0   6
+   2   2   1   0   0   1
+   2   2   1   0   0   0
+   2   1   2   0  -1   1
+   2   1   1   0   0   1
+   2   0   6   1   0   6
+   2   0   6   1  -1   4
+   2   0   5   1   0   5
+   2   0   5   1   0   1
+   2   0   4   1   0   4
+   2   0   2   1   0   0
+   2   0   2   0   0   1
+   2   0   2   0   0   0
+   2   0   1   0   0   1
+   2   0   1   0   0   0
+   2   0   0   0   0   2
+   2   0  -1   1   0   0
+   2   0  -1   1   0  -4
+   2   0  -2   1   0  -1
+   2   0  -2   1   0  -3
+   2  -2   5   1  -1   6
+   2  -2   4   1  -1   5
+   1   2  -1   0   1   0
+   1   1   6   1   0   6
+   1   1   6   0   1   6
+   1   1   6   0   0   6
+   1   1   6   0   0   5
+   1   1   6   0  -1   6
+   1   1   6   0  -1   5
+   1   1   6  -1  -1   6
+   1   1   6  -1  -1   5
+   1   1   5   1   0   5
+   1   1   5   0   1   5
+   1   1   5   0   0   5
+   1   1   5   0   0   4
+   1   1   5   0  -1   5
+   1   1   5   0  -1   4
+   1   1   5  -1  -1   5
+   1   1   4   1   0   4
+   1   1   4   0   1   4
+   1   1   4   0   0   6
+   1   1   4   0   0   4
+   1   1   4   0  -1   4
+   1   1   4  -1  -1   4
+   1   1   2   0   0   5
+   1   1   2   0   0   4
+   1   1   2   0   0   3
+   1   1   2   0   0   1
+   1   1   2   0  -1   3
+   1   1   2   0  -1   1
+   1   1   1   0   0   3
+   1   1   1   0   0   2
+   1   1   1   0  -1   3
+   1   1   1   0  -1   2
+   1   1   1   0  -1   1
+   1   1   1  -1  -1   1
+   1   1   0   0  -1   1
+   1   1  -2   1   0  -4
+   1   1  -2  -1   0  -4
+   1   1  -4  -1   0  -6
+   1   0   6   0   0   6                                                                                  
+   1   0   6   0   0   5
+   1   0   6   0   0   4
+   1   0   6   0   0   2
+   1   0   6  -1   0   6
+   1   0   6  -1   0   5
+   1   0   6  -1   0   4
+   1   0   5   0   0   5
+   1   0   5   0   0   4
+   1   0   5   0   0   2
+   1   0   5  -1   0   5
+   1   0   5  -1   0   4
+   1   0   5  -1   0   2
+   1   0   4   0   0   4
+   1   0   4   0   0   2
+   1   0   4   0   0   1
+   1   0   4  -1   0   4
+   1   0   4  -1   0   2
+   1   0   3   0   1   2
+   1   0   3   0   1   1
+   1   0   3   0   0   2
+   1   0   3   0   0   1
+   1   0   3  -1   1   2
+   1   0   3  -1   1   1
+   1   0   3  -1   0   2
+   1   0   3  -1   0   1
+   1   0   2   0   0   6
+   1   0   2   0   0   5
+   1   0   2   0   0   3
+   1   0   2  -1   0   3
+   1   0   2  -1   0   0
+   1   0   1   0   1   3
+   1   0   1   0   0   4
+   1   0   1   0   0   3
+   1   0   1  -1   2   2
+   1   0   1  -1   0   3
+   1   0   1  -1   0   2
+   1   0   1  -1   0   1
+   1   0   0  -1   0   2
+   1   0  -1   0   2  -2
+   1  -2   2   0  -2   5
+   1  -2   0   0   0   1
+   0   1   6   0   0   6
+   0   1   5   0   0   5
+   0   1   4   0   0   4
+   0   0   9   0   0   9
+   0   0   8   0   0   8
+   0   0   7   0   0   7
+   0   0   6   0   0   6
+   0   0   5   0   0   5
+   0   0   4   0   0   4
+   0   0   3   0   0   3
+   0   0   2   0   0   2
+   0   0   1   0   0   1
+   0   0   0   0   0   0"
+#	redstar_3pt_snkmom_srcmom="$(
+#		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
+#			echo $m0 $m1 $m2  $m3 $m4 $m5
+#			echo $((-m0)) $((-m1)) $((-m2))  $((-m3)) $((-m4)) $((-m5))
+#		done | while read m0 m1 m2 m3 m4 m5 ; do
+#			echo $m0 $m1 $m2  $m3 $m4 $m5
+#			echo $m1 $m2 $m0  $m4 $m5 $m3
+#			echo $m2 $m0 $m1  $m5 $m3 $m4
+#		done | sort -u
+#)"
 	redstar_2pt_moms="$(
 		echo "$redstar_3pt_snkmom_srcmom" | while read m0 m1 m2 m3 m4 m5 ; do
 			echo $m0 $m1 $m2  $m0 $m1 $m2
@@ -476,13 +594,11 @@ $(
 # SLURM configuration for eigs, props, genprops, baryons and mesons
 #
 
-chromaform="$HOME/scratch/chromaform-lumi-25"
-chroma="$chromaform/install/chroma-sp-quda-qdpxx-double-nd4-cmake-redstardl-superbblas-hip-next/bin/chroma"
-chroma="$chromaform/install/chroma-sp-quda-qdp-jit-double-nd4-cmake-redstardl-superbblas-hip-next/bin/chroma"
+chromaform="$HOME/work/chromaform"
+chroma="$chromaform/install/chroma-quda-qdp-jit-double-nd4-cmake-redstardl-superbblas-hip/bin/chroma"
 chroma_extra_args="-pool-max-alloc 0 -pool-max-alignment 512 -temp-files-path=/dev/shm"
 
-redstar="$chromaform/install-here/redstar-colorvec-hadron-cpu-adat"
-redstar="$chromaform/install/redstar-colorvec-hadron-hip-adat-superbblas"
+redstar="$chromaform/install-here/redstar-colorvec-hadron-cpu-adat-superbblas"
 redstar_corr_graph="$redstar/bin/redstar_corr_graph"
 redstar_npt="$redstar/bin/redstar_npt"
 
@@ -498,8 +614,10 @@ slurm_procs_per_node=8
 slurm_cores_per_node=56
 slurm_gpus_per_node=8
 slurm_sbatch_prologue="#!/bin/bash
-#SBATCH -A project_465002924 --exclusive -p standard-g
-#SBATCH --gres=gpu:8 --hint=nomultithread --mem=0
+#SBATCH -A c1816207 --exclusive
+#SBATCH --constraint=MI250
+#SBATCH --threads-per-core=1
+#SBATCH --gres=gpu:8
 #SBATCH --gpu-bind=none --tasks-per-node=8"
 
 slurm_script_prologue="
@@ -513,7 +631,7 @@ export SB_CACHEGB_CPU=5
 #export SB_CACHEGB_GPU=60
 export REDSTAR_SB_MEM_GB=8
 export MPICH_GPU_SUPPORT_ENABLED=1
-export SB_MPI_NONBLOCK=0
+#export SB_MPI_NONBLOCK=0
 #export SB_NUM_GPUS_ON_NODE=1
 export QUDA_ENABLE_P2P=0
 export QUDA_ENABLE_GDR=0
@@ -538,7 +656,7 @@ slurm_max_bundled_jobs=20000 # maximum bundled jobs in a slurm job
 #
 # NOTE: we try to recreate locally the directory structure at jlab; please give consistent paths
 
-confspath="$HOME/scratch"
+confspath="$HOME/work"
 this_ep="36d521b3-c182-4071-b7d5-91db5d380d42:scratch/"  # frontier
 jlab_ep="a2f9c453-2bb6-4336-919d-f195efcf327b:~/qcd/cache/isoClover/b6p3/" # jlab#gw2
 jlab_local="/cache/isoClover/b6p3"
